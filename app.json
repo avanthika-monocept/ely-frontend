@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "MLIElyChatbot",
+    "slug": "ely-chatbot",
+    "version": "1.0.0",
+    "icon": "./assets/avatar.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/avatar.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.suryamonocept.MLIElyChatbot"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "575ab8d3-e7cd-446f-8aaf-ca6bb06d7b86"
+      }
+    },
+    "owner": "monocept-consulting",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/575ab8d3-e7cd-446f-8aaf-ca6bb06d7b86"
+    },
+    "ios": {}
+  }
+}
