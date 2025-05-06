@@ -35,6 +35,8 @@ export const ChatFooter = ({
   socket,
   messages,
   copyToClipboard,
+  onInputHeightChange,
+  scrollToDown
 }) => {
   ChatFooter.propTypes = {
     copied: PropTypes.bool.isRequired,
@@ -55,6 +57,8 @@ export const ChatFooter = ({
     socket: PropTypes.object.isRequired,
     messages: PropTypes.array,
     copyToClipboard: PropTypes.func,
+    onInputHeightChange: PropTypes.func.isRequired,
+    scrollToDown: PropTypes.func
   };
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
@@ -116,16 +120,18 @@ If you need further assistance, feel free to reach out to [trishita.rastogi@maxl
       reconfigApiResponse.placeHolders || [],
       setDynamicPlaceholder,
       3000,
-      isLoading // Pass loading state
+      isLoading, // Pass loading state
+      reply
     );
 
     return () => clearPlaceholderInterval();
-  }, [reconfigApiResponse, isLoading]);
+  }, [reconfigApiResponse, isLoading, reply]);
   const handleChange = (text) => {
     setValue(text);
   };
 
   const handleSend = async () => {
+    scrollToDown();
     if (navigationPage == "COACH") if (!value.trim() || isLoading) return;
     if (navigationPage === "COACH") setnavigationPage("AGENDA");
     const messageId = uuid.v4();
@@ -161,10 +167,10 @@ If you need further assistance, feel free to reach out to [trishita.rastogi@maxl
         replyToMessageId: replyMessageId,
       };
       dispatch(addMessage(userMessage));
+      
       setValue("");
       console.log("sent message", message);
       socket.emit("user_message", message);
-      addNewMessage();
       setReply(false);
       setReplyMessageId(null);
     } catch (error) {
@@ -209,6 +215,7 @@ If you need further assistance, feel free to reach out to [trishita.rastogi@maxl
             rows={3}
             fullWidth
             disabled={isLoading}
+            onInputHeightChange={onInputHeightChange}
           />
         </View>
         <View style={styles.buttonContainer}>
@@ -246,7 +253,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    marginRight: spacing.space_base,
+    marginRight: spacing.space_s0,
   },
   buttonContainer: {
     justifyContent: "flex-end",

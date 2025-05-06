@@ -192,11 +192,6 @@ export const ChatBody = ({
       showsVerticalScrollIndicator={true}
       inverted={true}
       onScroll={handleScroll}
-      onContentSizeChange={() => {
-        if (!showFab && !showNewMessage) {
-          scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
-        }
-      }}
       onEndReachedThreshold={0.1} // This controls how early it triggers
       onEndReached={() =>
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 10)

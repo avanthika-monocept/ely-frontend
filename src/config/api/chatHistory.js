@@ -229,7 +229,7 @@ const dummyresponse = {
 export const fetchChatHistory = async (agentId, page = 0, size = 10) => {
   try {
     const response = await apiCall({
-      baseURL: "http://172.16.17.251:9091",
+      baseURL: "http://172.17.176.1:9091",
       // baseURL: "http://localhost:8080",
       url: CHAT_HISTORY,
       method: "POST",

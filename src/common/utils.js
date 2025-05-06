@@ -16,10 +16,11 @@ export const getFormattedDividerDate = (dateString) => {
     placeholders,
     updatePlaceholder,
     intervalTime = 3000,
-    isLoading = false
+    isLoading = false,
+    reply = false
   ) => {
     // If loading, set static placeholder and don't start interval
-    if (isLoading) {
+    if (isLoading || reply) {
       updatePlaceholder("Type here...");
       return () => {}; // Return empty cleanup function
     }

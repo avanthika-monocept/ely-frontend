@@ -134,7 +134,10 @@ const Dropdown = ({
       transparent={true}
       visible={isOpen}
       onRequestClose={handleClose}
-      animationType="none"
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropTransitionInTiming={0}
+      backdropTransitionOutTiming={0}
     >
       <Pressable style={styles.overlay} onPress={handleClose}>
         <Animated.View
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: spacing.space_m2,
-    left: spacing.space_m3,
+    left: spacing.space_m1,
   },
   listItem: {
     flexDirection: "row",

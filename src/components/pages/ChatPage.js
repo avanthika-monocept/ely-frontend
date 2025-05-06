@@ -39,19 +39,20 @@ export const ChatPage = () => {
   const [reply, setReply] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
+  const [inputHeight, setInputHeight] = useState(24); 
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const messages = useSelector((state) => state.chat.messages);
+  const [newMessageCount, setNewMessageCount] = useState(0);
   let messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
 
   const handleScroll = (event) => {
     const { contentOffset } = event.nativeEvent;
-    const isAtBottom = contentOffset.y <= 500;
+    const isAtBottom = contentOffset.y <= 50;
     setShowFab(!isAtBottom);
     setIsAtBottom(isAtBottom);
-
     if (isAtBottom) {
       setShowNewMessageAlert(false);
     }
@@ -59,12 +60,15 @@ export const ChatPage = () => {
 
   const addNewMessage = () => {
     if (!isAtBottom) {
+      setNewMessageCount(newMessageCount+1);
       setShowNewMessageAlert(true);
       setShowFab(false);
     }
   };
 
   const scrollToDown = () => {
+    setShowFab(false);
+    setNewMessageCount(0);
     scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
@@ -83,6 +87,7 @@ export const ChatPage = () => {
       setSocketConnected(false);
     });
     socket.on("bot_message", (data) => {
+      addNewMessage();
       console.log("Received message:", JSON.stringify(data));
       const botMessage = {
         messageId: `bot-${Date.now()}`,
@@ -205,16 +210,12 @@ export const ChatPage = () => {
 
       {navigationPage !== "coach" ? (
         <View
-          style={[
-            styles.fabIcon,
-            { bottom: isBottomSheetOpen ? bottomSheetHeight + 20 : reply ? 120 : 80 },
-          ]}
-        >
+          style={[styles.fabIcon,{ bottom: isBottomSheetOpen  ? bottomSheetHeight + 20 : reply ? 120 : 80 + (inputHeight - 24) },]}>
           <FabFloatingButton
             onClick={scrollToDown}
             showFab={showFab}
             showNewMessageAlert={showNewMessageAlert}
-            count={1}
+            count={newMessageCount}
             reply={reply}
           />
         </View>
@@ -240,6 +241,8 @@ export const ChatPage = () => {
         reconfigApiResponse={reconfigApiResponse}
         messages={messages}
         copyToClipboard={copyToClipboard}
+        onInputHeightChange={setInputHeight}
+          scrollToDown={scrollToDown}
       />
     </SafeAreaView>
   );
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
   },
   fabIcon: {
     position: "absolute",
-    right: spacing.space_m3,
+    right: spacing.space_m2,
     zIndex: 9999,
     flexDirection: "row",
     justifyContent: "flex-end",

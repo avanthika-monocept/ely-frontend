@@ -23,6 +23,7 @@ import { borderRadius, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import ImageViewer from "react-native-image-zoom-viewer";
+import Download from "../../../assets/DownloadModal.svg";
 
 const screenWidth = Dimensions.get("window").width;
 const bubbleWidth = screenWidth * 0.8 - 12;
@@ -305,11 +306,7 @@ const ImageMessageView = ({
           <TouchableOpacity
             onPress={() => downloadImage(images[selectedImageIndex])}
           >
-            <Ionicons
-              name="download-outline"
-              size={24}
-              color={colors.primaryColors.white}
-            />
+            <Download fill="#FFFFFF"/>
           </TouchableOpacity>
         </View>
 

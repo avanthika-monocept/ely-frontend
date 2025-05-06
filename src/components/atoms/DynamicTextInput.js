@@ -18,6 +18,7 @@ const DynamicTextInput = ({
   value,
   disabled,
   rows = 3,
+  onInputHeightChange
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [inputHeight, setInputHeight] = useState(24);
@@ -27,6 +28,7 @@ const DynamicTextInput = ({
 
     const newHeight = Math.max(24, Math.min(contentSize.height, 24 * rows));
     setInputHeight(newHeight);
+    onInputHeightChange(newHeight);
   };
 
   useEffect(() => {
@@ -70,6 +72,7 @@ DynamicTextInput.propTypes = {
   fullWidth: PropTypes.bool,
   disabled: PropTypes.bool,
   rows: PropTypes.number,
+  onInputHeightChange: PropTypes.func,
 };
 
 export default DynamicTextInput;

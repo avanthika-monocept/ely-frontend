@@ -83,7 +83,7 @@ export const getData = createAsyncThunk("getData", async (data) => {
   let response;
   try {
     const apiResponse = await apiCall({
-      baseURL: "http://172.16.17.171:9091",
+      baseURL: "http://172.16.17.251:9091",
       // baseURL: "http://localhost:8080",
       url: USER_CONFIG,
       method: "POST",

@@ -45,7 +45,7 @@ describe('fetchChatHistory', () => {
     const result = await fetchChatHistory(agentId, 0, 10);
     
     expect(apiCall).toHaveBeenCalledWith({
-      baseURL: "http://172.16.17.251:9091",
+      baseURL: "http://172.17.176.1:9091",
       url: "api/chatbot/chathistory",
       method: "POST",
       data: { agentId: agentId, page: 0, size: 10 }
@@ -79,7 +79,7 @@ describe('fetchChatHistory', () => {
     await fetchChatHistory(agentId);
     
     expect(apiCall).toHaveBeenCalledWith(expect.objectContaining({
-      baseURL: "http://172.16.17.251:9091"
+      baseURL: "http://172.17.176.1:9091"
     }));
     
     delete process.env.REACT_APP_API_BASE_URL;
