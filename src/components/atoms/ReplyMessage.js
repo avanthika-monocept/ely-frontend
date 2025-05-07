@@ -81,7 +81,7 @@ const ReplyMessage = ({
         <View style={styles.mediaAlign}>
           {media?.image?.length > 0 && (
             <Image
-              source={{ uri: "https://picsum.photos/200" }}
+              source={{ uri: media?.image[0].mediaUrl[0] }}
               style={styles.halfImage}
             />
           )}
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
   //   marginRight: 30,
   // },
   replyFrom: {
+    height:20,
     color: colors.primaryColors.woodSmoke,
     ...fontStyle.bodyMediumBold,
  

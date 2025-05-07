@@ -391,8 +391,8 @@ const ImageMessageView = ({
         type={"image"}
         setTableModal={setIsModalVisible}
         file={
-          "https://images.unsplash.com/photo-1607746882042-944635dfe10e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-        }
+          images[selectedImageIndex]
+         }
         copyToClipboard={copyToClipboard}
         handleReplyMessage={handleReplyMessage}
       />

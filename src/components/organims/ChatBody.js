@@ -67,65 +67,103 @@ export const ChatBody = ({
   //   return today.toISOString().split("T")[0];
   // };
 
+  // const formatSeparatorDate = (dateObj) => {
+  //   const today = new Date();
+  //   const yesterday = new Date();
+  //   yesterday.setDate(today.getDate() - 1);
+
+  //   const todayStr = today.toDateString();
+  //   const yestStr = yesterday.toDateString();
+  //   const inputDateStr = dateObj.toDateString();
+
+  //   if (inputDateStr === todayStr) return "Today";
+  //   if (inputDateStr === yestStr) return "Yesterday";
+  //   return dateObj.toLocaleDateString(); // e.g., "16/04/2025"
+  // };
+
   const formatSeparatorDate = (dateObj) => {
     const today = new Date();
     const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    const todayStr = today.toDateString();
-    const yestStr = yesterday.toDateString();
-    const inputDateStr = dateObj.toDateString();
-
+    yesterday.setUTCDate(today.getUTCDate() - 1);
+  
+    const todayStr = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate()
+    )).toUTCString();
+  
+    const yestStr = new Date(Date.UTC(
+      yesterday.getUTCFullYear(),
+      yesterday.getUTCMonth(),
+      yesterday.getUTCDate()
+    )).toUTCString();
+  
+    const inputDate = new Date(Date.UTC(
+      dateObj.getUTCFullYear(),
+      dateObj.getUTCMonth(),
+      dateObj.getUTCDate()
+    ));
+    const inputDateStr = inputDate.toUTCString();
+  
     if (inputDateStr === todayStr) return "Today";
     if (inputDateStr === yestStr) return "Yesterday";
-    return dateObj.toLocaleDateString(); // e.g., "16/04/2025"
+  
+    // Return DD/MM/YYYY format in UTC
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const year = dateObj.getUTCFullYear();
+  
+    return `${day}/${month}/${year}`;
   };
+  
 
   const generateChatDataWithSeparators = (messages = []) => {
     const result = [];
+  
     const sortedMessages = [...messages].sort((a, b) => {
       const aTime = new Date(a.dateTime || a.createdAt).getTime();
       const bTime = new Date(b.dateTime || b.createdAt).getTime();
       return aTime - bTime;
     });
-
+  
     let lastDate = "";
-
+  
     for (const msg of sortedMessages) {
-      console.log(msg,'to check');
-      
-      const rawDate = msg?.dateTime || msg?.createdAt;
+      const rawDate = msg?.dateTime || msg?.createdAt * 1000;
       if (!rawDate) continue;
-
+  
       const dateObj = new Date(rawDate);
       if (isNaN(dateObj.getTime())) continue;
-
-      const currentDate = dateObj.toDateString();
-
-      if (currentDate !== lastDate) {
+  
+      // Use UTC date string for comparison
+      const currentDateUTC = dateObj.toUTCString().split(" ").slice(0, 4).join(" "); // e.g., "Thu, 06 Jun 2025"
+  
+      if (currentDateUTC !== lastDate) {
         result.push({
-          id: `separator-${currentDate}`,
+          id: `separator-${currentDateUTC}`,
           type: "separator",
-          date: formatSeparatorDate(dateObj), // "Today", "Yesterday", or "DD/MM/YYYY"
+          date: formatSeparatorDate(dateObj), // You’ll define this below
         });
-        lastDate = currentDate;
+        lastDate = currentDateUTC;
       }
+  
       result.push({ ...msg, type: "message" });
+  
       if (msg?.conversationEnded) {
         result.push({
           id: "banner-conversation-ended",
           type: "banner",
           content: {
             text: "This conversation has been closed",
-            icon: <CheckMark />, // optional
+            icon: <CheckMark />,
           },
         });
+      }
     }
-   
-    }
+  
     return result;
   };
-
+  
   const chatWithSeparators = generateChatDataWithSeparators(messages);
   console.log("CHAT WITH SEPARATORS", chatWithSeparators);
 
@@ -177,6 +215,7 @@ export const ChatBody = ({
           copyToClipboard={copyToClipboard}
           replyMessageObj={replyMessageObj}
           socket={socket}
+          reconfigApiResponse={reconfigApiResponse}
         />
       </Animated.View>
     );
@@ -225,7 +264,7 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingVertical: spacing.space_10,
     paddingLeft: spacing.space_s3,
-    paddingBottom: spacing.space_l1,
+    paddingBottom: spacing.space_m3,
     alignItems: "flex-start",
   },
   messageContainerUser: {

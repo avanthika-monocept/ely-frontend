@@ -21,12 +21,12 @@ import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { spacing } from "../../constants/Dimensions";
 
+
 export const ChatPage = () => {
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
   const scrollViewRef = useRef(null);
   const socketRef = useRef(null);
   const { isBottomSheetOpen, bottomSheetHeight } = useSelector(
@@ -43,7 +43,7 @@ export const ChatPage = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const messages = useSelector((state) => state.chat.messages);
-  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [newMessageCount, setNewMessageCount] = useState(1);
   let messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
@@ -53,22 +53,11 @@ export const ChatPage = () => {
     const isAtBottom = contentOffset.y <= 50;
     setShowFab(!isAtBottom);
     setIsAtBottom(isAtBottom);
-    if (isAtBottom) {
-      setShowNewMessageAlert(false);
-    }
   };
 
-  const addNewMessage = () => {
-    if (!isAtBottom) {
-      setNewMessageCount(newMessageCount+1);
-      setShowNewMessageAlert(true);
-      setShowFab(false);
-    }
-  };
 
   const scrollToDown = () => {
     setShowFab(false);
-    setNewMessageCount(0);
     scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
@@ -76,39 +65,40 @@ export const ChatPage = () => {
     const socket = initializeSocket("AGT001");
     socket.on("connect", () => {
       console.log("Socket connected:", socket.id);
-      setSocketConnected(true);
-    });
+  });
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason);
-      setSocketConnected(false);
     });
     socket.on("connect_error", (err) => {
       console.error("Connection error:", err);
-      setSocketConnected(false);
     });
     socket.on("bot_message", (data) => {
-      addNewMessage();
       console.log("Received message:", JSON.stringify(data));
-      const botMessage = {
-        messageId: `bot-${Date.now()}`,
-        messageTo: "user",
-        dateTime: new Date().toISOString(),
-        activity: null,
-        replyId: null,
-        conversationEnded:data.conversationEnded,
-        message: {
-          text: data.entry?.message?.text,
-          table: data.entry?.message?.table,
-          botOption: data.entry?.message?.botOption,
-          options: [],
-        },
-        media: data?.entry?.message?.media,
-      };
       if(data){
-        dispatch(markAllMessagesAsRead());
+        const botMessage = {
+          messageId: data?.messageId,
+          messageTo: "user",
+          dateTime: data?.createdAt,
+          activity: null,
+          replyId: null,
+          conversationEnded:data?.conversationEnded,
+          message: {
+            text: data.entry?.message?.text,
+            table: data.entry?.message?.table,
+            botOption: data.entry?.message?.botOption,
+            options: [],
+          },
+          media: data?.entry?.message?.media,
+        };
+      if (!isAtBottom) {
+        setShowFab(false);
+        setShowNewMessageAlert(true);
       }
-      dispatch(addMessage(botMessage));
-    });
+        console.log("botMessage", botMessage);
+        dispatch(markAllMessagesAsRead());
+        dispatch(addMessage(botMessage));
+      }
+   });
     socket.on("acknowledgement", (data) => {
       console.log("Received acknowledgement:", JSON.stringify(data));
     if (data.data.acknowledgement === "DELIVERED") {
@@ -124,7 +114,7 @@ export const ChatPage = () => {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("connect_error");
-      socket.off("chat_message");
+      socket.off("bot_message");
       socket.disconnect();
     };
   }, []);
@@ -183,7 +173,7 @@ export const ChatPage = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
       <ChatHeader reconfigApiResponse={reconfigApiResponse} />
-      <View style={styles.content}>
+      <View style={styles.content} >
         {navigationPage === "COACH" ? (
           <LandingPage
             socket={socketRef.current}
@@ -232,7 +222,6 @@ export const ChatPage = () => {
         setMessageObjectId={setMessageObjectId}
         setReplyMessageId={setReplyMessageId}
         replyMessageId={replyMessageId}
-        addNewMessage={addNewMessage}
         socket={socketRef.current}
         setReply={setReply}
         reply={reply}

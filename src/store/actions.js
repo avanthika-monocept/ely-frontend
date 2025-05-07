@@ -87,7 +87,7 @@ export const getData = createAsyncThunk("getData", async (data) => {
       // baseURL: "http://localhost:8080",
       url: USER_CONFIG,
       method: "POST",
-      data: { agentId: "AGT001" },
+      data: { agentId: "AGT001", platform:"MSPACE" },
     });
     response = apiResponse.data;
     if (response?.error) throw new Error("API Error");

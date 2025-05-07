@@ -7,6 +7,7 @@ import {
   Platform,
   Share,
   Alert,
+  Linking,
 } from "react-native";
 import React from "react";
 import Modal from "react-native-modal";
@@ -45,7 +46,7 @@ const FileModal = ({
   const onShare = async () => {
     try {
       const result = await Share.share({
-        message: "",
+        message: file,
       });
       if (result.action === Share.sharedAction) {
         if (result.activityType) {
@@ -62,49 +63,63 @@ const FileModal = ({
   };
 
   const checkPermission = async () => {
-    if (Platform.OS === "ios") {
-      downloadFile();
-    } else {
-      try {
+    try {
+      if (Platform.OS === "android") {
         if (Platform.Version >= 33) {
+          // Android 13+
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
             {
               title: "Storage Permission Required",
               message: "App needs access to your media to download files.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
             }
           );
-
+  
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("Permission granted-------");
+            console.log("Permission granted");
             downloadFile();
+          } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+            console.warn("Permission set to never ask again");
+            Linking.openSettings(); // Open app settings for manual permission
           } else {
-            console.log("Permission denied--------");
+            console.warn("Permission denied");
           }
         } else {
-          // For Android versions < 13
+          // Android < 13
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
             {
               title: "Storage Permission Required",
               message: "App needs access to your storage to download files.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
             }
           );
-
+  
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             console.log("Permission granted");
             downloadFile();
+          } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+            console.warn("Permission set to never ask again");
+            Linking.openSettings();
           } else {
-            console.log("Permission denied or never ask again.");
+            console.warn("Permission denied");
           }
         }
-      } catch (err) {
-        console.warn("Permission error:", err);
+      } else {
+        // iOS — permissions generally handled via Info.plist + system prompt
+        downloadFile();
       }
+    } catch (err) {
+      console.error("Permission check failed:", err);
     }
   };
 
-  const downloadFile = () => {
+  const downloadFile = () => {  
     let date = new Date();
     let FILE_URL = file;
 
