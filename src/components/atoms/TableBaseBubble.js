@@ -109,29 +109,35 @@ const TableBaseBubble = ({
           testID="markdown-view"
         >
           <Markdown
-            style={{
-              body: {
-                color: "#000",
-                margin: 11,
-                backgroundColor: "white",
-              },
-              table: { borderWidth: 1, minWidth: 250 },
-              th: {
-                fontWeight: "bold",
-                padding: 5,
-                textAlign: "center",
-                justifyContent: "center",
-                borderWidth: 0.5,
-                fontSize: 12,
-              },
-              td: {
-                padding: 5,
-                borderWidth: 0.5,
-                fontSize: 12,
-                textAlign: "center",
-              },
-              bullet_list: { marginVertical: 4 },
-            }}
+           style={{
+            body: {
+              color: "#000",
+              margin: 11,
+              backgroundColor: "white",
+            },
+            table: {
+              borderWidth: 1,
+              borderColor: "#E0E0E0", // Light gray border
+              minWidth: 250,
+            },
+            th: {
+              fontWeight: "bold",
+              padding: 5,
+              textAlign: "center",
+              justifyContent: "center",
+              borderWidth: 0.5,
+              borderColor: "#E0E0E0", // match Figma's lighter border
+              fontSize: 12,
+            },
+            td: {
+              padding: 5,
+              borderWidth: 0.5,
+              borderColor: "#E0E0E0", // match Figma
+              fontSize: 12,
+              textAlign: "center",
+            },
+            bullet_list: { marginVertical: 4 },
+          }}
           >
             {apiText}
           </Markdown>

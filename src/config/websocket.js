@@ -1,7 +1,7 @@
 // config/websocket.js
 import io from 'socket.io-client';
 
-const SOCKET_URL = 'http://172.17.176.1:5050';
+const SOCKET_URL = 'http://172.16.17.251:5050';
 
 export const initializeSocket = (userId) => {
   const socket = io(SOCKET_URL, {

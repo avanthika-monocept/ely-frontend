@@ -29,7 +29,7 @@ export const LandingPage = ({ setnavigationPage, reconfigApiResponse,socket }) =
       onPress={Keyboard.dismiss} 
       accessible={false}
     >
-      <View style={styles.textContainer}>
+      <View style={styles.textContainer}  onPress={Keyboard.dismiss}>
         <Text style={styles.hiTextStyle}>{stringConstants.hiThere}{' '}{reconfigApiResponse?.userInfo?.firstName}{stringConstants.hiName}</Text>
         <View style={{ marginTop: spacing.space_base }}>
           <Text style={styles.hiTextStyle}>{stringConstants.gotQuestion}</Text>

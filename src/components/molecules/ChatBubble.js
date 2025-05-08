@@ -18,7 +18,9 @@ import ImageMessageView from "../atoms/ImageMessageView";
 import TableBaseBubble from "../atoms/TableBaseBubble";
 import { borderRadius, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
+import uuid from 'react-native-uuid';
 import { tableData } from "../atoms/testData";
+import TextMarkDown from "../atoms/TextMarkDown";
 
 export const ChatBubble = ({
   isBot,
@@ -38,7 +40,8 @@ export const ChatBubble = ({
   socket,
   handleReplyMessage,
   copyToClipboard,
-  replyMessageObj
+  replyMessageObj,
+  reconfigApiResponse
 }) => {
   ChatBubble.propTypes = {
     isBot: PropTypes.bool.isRequired,
@@ -58,14 +61,15 @@ export const ChatBubble = ({
     socket: PropTypes.object,
     handleReplyMessage: PropTypes.func.isRequired,
     copyToClipboard: PropTypes.func,
-    replyMessageObj:PropTypes.object,
+    replyMessageObj: PropTypes.object,
+    reconfigApiResponse: PropTypes.object,
   };
   const [isOpen, setIsOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const bubbleStyle = isBot ? styles.chatBubbleToMe : styles.chatBubbleToUser;
   const tailPosition = isBot ? styles.tailLeft : styles.tailRight;
   const [selectedFeedback, setSelectedFeedback] = useState("");
-  const [type, setType] = useState('tableWithText');
+  const [type, setType] = useState("tableWithText");
 
   const dispatch = useDispatch();
 
@@ -74,7 +78,7 @@ export const ChatBubble = ({
   };
 
   const reactionOptions = [
-    { id: "like", svg: <Like width={16} height={16}/> },
+    { id: "like", svg: <Like width={16} height={16} /> },
     {
       id: "dislike",
       svg: (
@@ -88,27 +92,29 @@ export const ChatBubble = ({
   const onLongPressBubble = (value, markdownText, media, table) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
-    if(table && table != ''){
+    if (table && table != "") {
       setIsTableOpen(true);
-      setType('tableWithText')
-    }else if(media && media?.image[0]?.mediaUrl?.length > 0){
+      setType("tableWithText");
+    } else if (media && media?.image[0]?.mediaUrl?.length > 0) {
       setIsOpen(true);
-    }else {
+    } else {
       dispatch(openBottomSheet());
       setDropDownType("text");
     }
   };
   const handleFeedbackSelect = (feedback) => {
+    const messageId = uuid.v4();
     const userMessage = {
-      messageId: `msg-${Date.now()}`,
+      messageId: messageId,
+      status: "SENT",
       messageTo: "bot",
       dateTime: new Date().toISOString(),
       activity: null,
       replyId: null,
       message: {
-        text: feedback.trim(),
+        text: feedback,
         botOption: true,
-        options: ["option1", "option2", "option3"],
+        options: [],
       },
       media: {
         video: [],
@@ -116,12 +122,27 @@ export const ChatBubble = ({
         document: [],
       },
     };
-
-    dispatch(addMessage(userMessage));
     setSelectedFeedback(feedback);
-  };
+    dispatch(addMessage(userMessage));
+    const message = {
+      emailId: reconfigApiResponse?.userInfo?.email,
+      userId: reconfigApiResponse?.userInfo?.agentId,
+      platform: "MSPACE",
+      sendType: "MESSAGE",
+      messageTo: "BOT",
+      messageType: "QUICK_REPLY",
+      text: feedback,
+      replyToMessageId: null,
+      messageId: messageId,
+    };
+    socket.emit("user_message", message);
+};
 
-  const dummyImage = ["https://picsum.photos/200","https://picsum.photos/200","https://picsum.photos/200"];
+  const dummyImage = [
+    "https://picsum.photos/200",
+    "https://picsum.photos/200",
+    "https://picsum.photos/200",
+  ];
 
   const apiText = `
 | Band | Fuel (Per Annum) | Car Driver (Per Annum) | Price                       |
@@ -142,16 +163,19 @@ How can I assist you today?
 3. 🧾 Claim Status
 4. 👨‍💼 Talk to Advisor`;
 
+  const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
 
-const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
+  // console.log('TABLE PART:\n', tablePart);
+  // console.log('TEXT PART:\n', textPart);
 
-// console.log('TABLE PART:\n', tablePart);
-// console.log('TEXT PART:\n', textPart);
+  //
 
-//
+  const exampleInput =
+    "Rohan, I understand that you are looking for car lease details specific to your band. Here is a detailed breakdown of the car lease entitlements and benefits for different bands, including your band (5A):\\n\\n| Band | Fuel (Per Annum) | Car Driver (Per Annum) | Car Maintenance (Per Annum) |\\n|------|------------------|------------------------|-----------------------------|\\n| 0/UC | At actual        | At actual              | At actual                   |\\n| 1    | At actual        | At actual              | At actual                   |\\n| 2A   | At actual        | At actual              | At actual                   |\\n| 2    | At actual        | At actual              | At actual                   |\\n| 3B   | 170,000          | 180,000                | 100,000                     |\\n| 3A   | 170,000          | 180,000                | 100,000                     |\\n| 3    | 170,000          | 180,000                | 100,000                     |\\n| 4    | 100,000          | Not applicable         | 80,000                      |\\n| 5    | 75,000           | Not applicable         | 70,000                      |\\n\\nFor your band (5A), the entitlements are as follows:\\n- **Fuel:** \\u20b975,000 per annum\\n- **Car Driver:** Not applicable\\n- **Car Maintenance:** \\u20b970,000 per annum\\n\\nIf you have any further questions or need additional assistance, please feel free to reach out to HR Operations at trishita.rastogi@maxlifeinsurance.com.";
+
   return (
     <TouchableWithoutFeedback
-      onLongPress={() => onLongPressBubble(messageId, text, media, table)}
+      onLongPress={() => onLongPressBubble(messageId, text, media, tablePart)}
       delayLongPress={200}
     >
       <View style={[styles.chatBubbleContainer, bubbleStyle]}>
@@ -176,16 +200,40 @@ const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
           </>
         ) : (
           <>
-            {isBot && !isLoader && tablePart && tablePart!=='' &&  (
-              <TableBaseBubble apiText={tablePart} isOpen={isTableOpen} setIsOpen={setIsTableOpen}  handleReplyMessage={handleReplyMessage} copyToClipboard={copyToClipboard} setMessageObjectId={setMessageObjectId} messageId={messageId} type={type} setType={setType} reply={false}/>
+            {isBot && !isLoader && tablePart && tablePart !== "" && (
+              <TableBaseBubble
+                apiText={tablePart}
+                isOpen={isTableOpen}
+                setIsOpen={setIsTableOpen}
+                handleReplyMessage={handleReplyMessage}
+                copyToClipboard={copyToClipboard}
+                setMessageObjectId={setMessageObjectId}
+                messageId={messageId}
+                type={type}
+                setType={setType}
+                reply={false}
+              />
             )}
-             {isBot &&
+            {/* <TextMarkDown input={text} /> */}
+            {isBot &&
               !isLoader &&
               media?.image?.length > 0 &&
-              media.image.map((img, index) => (   
-                img.mediaUrl.length > 0 && <ImageMessageView key={index} images={img.mediaUrl} setIsOpen={setIsOpen} isOpen={isOpen} copyToClipboard={copyToClipboard} handleReplyMessage={handleReplyMessage} setMessageObjectId={setMessageObjectId} messageId={messageId}/>
-              ))}
-             {/* for future enhancement */}
+              media.image.map(
+                (img, index) =>
+                  img.mediaUrl.length > 0 && (
+                    <ImageMessageView
+                      key={index}
+                      images={img.mediaUrl}
+                      setIsOpen={setIsOpen}
+                      isOpen={isOpen}
+                      copyToClipboard={copyToClipboard}
+                      handleReplyMessage={handleReplyMessage}
+                      setMessageObjectId={setMessageObjectId}
+                      messageId={messageId}
+                    />
+                  )
+              )}
+            {/* for future enhancement */}
             {/* {isBot &&
               !isLoader &&
               media?.document?.length > 0 &&
@@ -195,13 +243,13 @@ const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
 
             <MarkdownComponent markdownText={textPart} />
 
-            {botOption && options.length > 0  && isBot && !isLoader && (
+            {botOption && options.length > 0 && isBot && !isLoader && (
               <View style={styles.feedbackContainer}>
                 <FeedbackChip
                   options={options}
                   onSelect={handleFeedbackSelect}
                   selectedFeedback={selectedFeedback}
-                />
+                  />
               </View>
             )}
             <View style={styles.footer}>
@@ -237,7 +285,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.space_m1,
     paddingLeft: spacing.space_m1,
     paddingTop: spacing.space_m1,
-    paddingBottom:spacing.space_s0,
+    paddingBottom: spacing.space_s0,
     borderRadius: borderRadius.borderRadius16,
     // marginVertical: spacing.space_s2,
     position: "relative",
@@ -261,9 +309,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    marginRight:spacing.space_s3,
-    marginBottom:spacing.space_s2,
-    marginTop:spacing.space_s0,
+    marginRight: spacing.space_s3,
+    marginBottom: spacing.space_s2,
+    marginTop: spacing.space_s0,
     paddingTop: spacing.space_s0,
   },
   tail: {

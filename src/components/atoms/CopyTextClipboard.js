@@ -20,7 +20,7 @@ const CopyTextClipboard = ({ reply }) => {
     <View
       style={[
         styles.copiedMessage,
-        { bottom: reply ? 120 : 80 },
+        { bottom: reply ? 135 : 80 },
       ]}
     >
       <CopyClip

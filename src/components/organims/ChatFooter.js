@@ -26,7 +26,6 @@ export const ChatFooter = ({
   setReplyMessageId,
   navigationPage,
   setnavigationPage,
-  addNewMessage,
   setReply,
   reply,
   handleReplyClose,
@@ -48,7 +47,6 @@ export const ChatFooter = ({
     replyMessageId: PropTypes.string,
     navigationPage: PropTypes.string.isRequired,
     setnavigationPage: PropTypes.func.isRequired,
-    addNewMessage: PropTypes.func.isRequired,
     setReply: PropTypes.func.isRequired,
     reply: PropTypes.bool.isRequired,
     handleReplyClose: PropTypes.func.isRequired,
@@ -135,6 +133,9 @@ If you need further assistance, feel free to reach out to [trishita.rastogi@maxl
     if (navigationPage == "COACH") if (!value.trim() || isLoading) return;
     if (navigationPage === "COACH") setnavigationPage("AGENDA");
     const messageId = uuid.v4();
+    const lastBotMessage = [...messages].reverse().find(msg => msg.messageTo === "user");
+    console.log("lastbotmessage", lastBotMessage);
+    const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
     try {
       setReply(false);
       const userMessage = {
@@ -162,14 +163,15 @@ If you need further assistance, feel free to reach out to [trishita.rastogi@maxl
         platform: "MSPACE",
         sendType: "MESSAGE",
         messageTo: "BOT",
-        messageType: "TEXT",
+        messageType: isInteractiveReply ? "REPLY_TO_INTERACTIVE" : 
+                 (reply && replyMessageId) ? "REPLY_TO_MESSAGE" : "TEXT",
         text: value.trim(),
         replyToMessageId: replyMessageId,
       };
       dispatch(addMessage(userMessage));
       
       setValue("");
-      console.log("sent message", message);
+      console.log("sentmessage", message);
       socket.emit("user_message", message);
       setReply(false);
       setReplyMessageId(null);
