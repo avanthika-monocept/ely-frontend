@@ -10,9 +10,11 @@ import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 
 const TextMarkDown = ({ input }) => {
-  TextMarkDown.propTypes = {
-    input: PropTypes.string,
+
+  TextMarkDown.propTypes={
+    input:PropTypes.string,
   }
+
   const markdownStyles = {
     body: {
       color: colors.primaryColors.black,

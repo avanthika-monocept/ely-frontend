@@ -13,7 +13,7 @@ import React from "react";
 import Modal from "react-native-modal";
 import Download from "../../../assets/Download.svg";
 import Vector from "../../../assets/Vector.svg";
-import Upload from "../../../assets/Upload.svg";
+// import Upload from "../../../assets/Upload.svg";
 import ShareSvg from "../../../assets/Share.svg";
 import Group from "../../../assets/Group.svg";
 import Copy from "../../../assets/Copy.svg";
@@ -21,6 +21,7 @@ import RNFetchBlob from "react-native-blob-util";
 import { borderRadius, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
+import RNFS from 'react-native-fs';
 
 const FileModal = ({
   visible,
@@ -44,21 +45,33 @@ const FileModal = ({
   };
 
   const onShare = async () => {
+    const imageUrl = file;
+    const fileName = `shared_image_${Date.now()}.jpg`;
+    const localFilePath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+  
     try {
-      const result = await Share.share({
-        message: file,
-      });
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.debug(result.activityType);
-        } else {
-          console.debug("Shared successfully");
+      // Download image to local cache
+      const downloadResult = await RNFS.downloadFile({
+        fromUrl: imageUrl,
+        toFile: localFilePath,
+      }).promise;
+      if (downloadResult.statusCode === 200) {
+        // Share the image file
+        const result = await Share.share({
+          message:file,
+          url: `file://${localFilePath}`, // important to include file:// prefix
+        });
+  
+        if (result.action === Share.sharedAction) {
+          console.debug('Image shared successfully');
+        } else if (result.action === Share.dismissedAction) {
+          console.debug('Image sharing dismissed');
         }
-      } else if (result.action === Share.dismissedAction) {
-        console.debug("Share dismissed");
+      } else {
+        Alert.alert('Download failed', `Status code: ${downloadResult.statusCode}`);
       }
     } catch (error) {
-      Alert.alert(error.message);
+      Alert.alert('Error', error.message);
     }
   };
 

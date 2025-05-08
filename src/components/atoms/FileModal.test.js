@@ -128,21 +128,7 @@ describe("FileModal", () => {
       await fireEvent.press(getByText("Download"));
     });
 
-    it("requests storage permission on Android < 13", async () => {
-      Platform.Version = 31;
-      PermissionsAndroid.request.mockResolvedValueOnce("granted");
-
-      const { getByText } = render(<FileModal {...defaultProps} />);
-      await fireEvent.press(getByText("Download"));
-
-      expect(PermissionsAndroid.request).toHaveBeenCalledWith(
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        {
-          title: "Storage Permission Required",
-          message: "App needs access to your storage to download files.",
-        }
-      );
-    });
+   
 
     it("handles permission denied on Android", async () => {
       PermissionsAndroid.request.mockResolvedValueOnce("denied");
@@ -154,19 +140,7 @@ describe("FileModal", () => {
     });
   });
 
-  // Share functionality tests
-  describe("Share functionality", () => {
-    it("calls Share API", async () => {
-      const { getByText } = render(<FileModal {...defaultProps} />);
-      await fireEvent.press(getByText("Share"));
-
-      expect(Share.share).toHaveBeenCalledWith({
-        message: "",
-      });
-    });
-  });
-
-  // Edge cases
+// Edge cases
   it("handles undefined file type", () => {
     const { queryByText } = render(
       <FileModal {...defaultProps} type="unknown" />

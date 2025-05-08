@@ -57,16 +57,22 @@ describe('DynamicTextInput', () => {
   });
 
   it('respects max height based on rows', () => {
+    const mockHeightChange = jest.fn();
     const { getByTestId } = render(
-      <DynamicTextInput value="" onChange={mockChange} rows={3} />
+      <DynamicTextInput 
+        value="" 
+        onChange={mockChange} 
+        rows={3} 
+        onInputHeightChange={mockHeightChange}
+      />
     );
-
+  
     const input = getByTestId('dynamic-text-input');
-
+  
     fireEvent(input, 'contentSizeChange', {
       nativeEvent: { contentSize: { height: 200 } },
     });
-
+  
     expect(input.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -74,5 +80,6 @@ describe('DynamicTextInput', () => {
         }),
       ])
     );
+    expect(mockHeightChange).toHaveBeenCalledWith(72);
   });
 });

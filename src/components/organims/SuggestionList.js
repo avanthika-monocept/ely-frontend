@@ -23,7 +23,7 @@ export const SuggestionList = ({
   const dispatch = useDispatch();
   const data = reconfigApiResponse?.options || [];
   const [selectedItemId, setSelectedItemId] = useState(null);
-
+  const coachOptionColor = reconfigApiResponse?.theme?.coachOptionColor || colors.primaryColors.white;
   const handleTopicSelect = async (topic) => {
     setnavigationPage("AGENDA");
     const messageId = uuid.v4();

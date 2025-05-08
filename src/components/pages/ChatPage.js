@@ -44,6 +44,7 @@ export const ChatPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const messages = useSelector((state) => state.chat.messages);
   const [newMessageCount, setNewMessageCount] = useState(1);
+  const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || "#FFFFFF";
   let messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
@@ -170,7 +171,7 @@ export const ChatPage = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container,{backgroundColor:backgroundColor}]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
       <ChatHeader reconfigApiResponse={reconfigApiResponse} />
       <View style={styles.content} >

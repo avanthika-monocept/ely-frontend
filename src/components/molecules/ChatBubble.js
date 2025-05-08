@@ -26,7 +26,6 @@ export const ChatBubble = ({
   isBot,
   options,
   text,
-  table,
   time,
   status,
   media,
@@ -70,7 +69,9 @@ export const ChatBubble = ({
   const tailPosition = isBot ? styles.tailLeft : styles.tailRight;
   const [selectedFeedback, setSelectedFeedback] = useState("");
   const [type, setType] = useState("tableWithText");
-
+  const messageColor = isBot 
+  ? reconfigApiResponse?.theme?.botMessageColor.trim() || "#CDEAF8" 
+  : reconfigApiResponse?.theme?.userMessageColor.trim() || "#f4f6fa";
   const dispatch = useDispatch();
 
   const handleSelection = (id, messageId) => {
@@ -178,7 +179,7 @@ How can I assist you today?
       onLongPress={() => onLongPressBubble(messageId, text, media, tablePart)}
       delayLongPress={200}
     >
-      <View style={[styles.chatBubbleContainer, bubbleStyle]}>
+      <View style={[styles.chatBubbleContainer, bubbleStyle,{backgroundColor: messageColor}]}>
         {replyMessage && (
           <ReplyMessage
             replyFrom={replyFrom === "bot" ? "YOU" : "BOT"}
@@ -200,7 +201,7 @@ How can I assist you today?
           </>
         ) : (
           <>
-            {isBot && !isLoader && tablePart && tablePart !== "" && (
+            {isBot && !isLoader && tablePart !== "" && (
               <TableBaseBubble
                 apiText={tablePart}
                 isOpen={isTableOpen}
@@ -249,6 +250,7 @@ How can I assist you today?
                   options={options}
                   onSelect={handleFeedbackSelect}
                   selectedFeedback={selectedFeedback}
+                  reconfigApiResponse={reconfigApiResponse}
                   />
               </View>
             )}

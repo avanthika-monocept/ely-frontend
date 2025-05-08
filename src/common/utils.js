@@ -54,7 +54,7 @@ export const getFormattedDividerDate = (dateString) => {
 
   export function splitMarkdownIntoTableAndText(markdown) {
     if (typeof markdown !== 'string') {
-      return '';
+     return { tablePart: '', textPart: '' }
    }
     const lines = markdown?.trim().split('\n');
     const tableLines = [];

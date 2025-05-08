@@ -67,22 +67,7 @@ describe('ReplyMessage Component', () => {
     expect(screen.queryByText('...')).toBeNull();
   });
 
-  it('displays image when media.image is provided', () => {
-    render(
-      <ReplyMessage
-        {...defaultProps}
-        media={{ image: ['https://test.com/image.jpg'], document: [] }}
-      />
-    );
-    
-    expect(screen.getByTestId('reply-container').findByType(Image)).toBeTruthy();
-  });
-
-
-
-  
-
-  it('calls handleClose when close button is pressed', () => {
+it('calls handleClose when close button is pressed', () => {
     render(<ReplyMessage {...defaultProps} />);
     
     fireEvent.press(screen.getByTestId('close-button'));

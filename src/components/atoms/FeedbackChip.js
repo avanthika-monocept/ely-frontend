@@ -9,12 +9,14 @@ import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 
-export const FeedbackChip = ({ options, onSelect, selectedFeedback }) => {
+export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiResponse }) => {
   FeedbackChip.propTypes = {
     options: PropTypes.array.isRequired,
     onSelect: PropTypes.func.isRequired,
     selectedFeedback: PropTypes.string,
+    reconfigApiResponse: PropTypes.object.isRequired,
   };
+  const botOptionColor = reconfigApiResponse?.theme?.botOptionColor || colors.primaryColors.white;
   return (
     <View style={styles.feedbackChipContainer}>
       {options.map((option, index) => (
