@@ -73,7 +73,6 @@ const TextMarkDown = ({ input }) => {
 
   const decoded = input.replace(/\\n/g, "\n");
   const lines = decoded.split("\n");
-  console.log("Lines", lines);
   const elements = [];
   let tableLines = [];
   for (let line of lines) {

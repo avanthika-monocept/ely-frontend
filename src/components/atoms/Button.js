@@ -29,7 +29,8 @@ const SendButtonImage = ({ isEnabled, buttonColor }) => {
     width: 35,
     height: 35,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    paddingLeft: 12,
   };
 
   const iconProps = {

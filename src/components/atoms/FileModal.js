@@ -21,7 +21,7 @@ import RNFetchBlob from "react-native-blob-util";
 import { borderRadius, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-import RNFS from 'react-native-fs';
+import RNFS from "react-native-fs";
 
 const FileModal = ({
   visible,
@@ -45,33 +45,21 @@ const FileModal = ({
   };
 
   const onShare = async () => {
-    const imageUrl = file;
-    const fileName = `shared_image_${Date.now()}.jpg`;
-    const localFilePath = `${RNFS.CachesDirectoryPath}/${fileName}`;
-  
     try {
-      // Download image to local cache
-      const downloadResult = await RNFS.downloadFile({
-        fromUrl: imageUrl,
-        toFile: localFilePath,
-      }).promise;
-      if (downloadResult.statusCode === 200) {
-        // Share the image file
-        const result = await Share.share({
-          message:file,
-          url: `file://${localFilePath}`, // important to include file:// prefix
-        });
-  
-        if (result.action === Share.sharedAction) {
-          console.debug('Image shared successfully');
-        } else if (result.action === Share.dismissedAction) {
-          console.debug('Image sharing dismissed');
+      const result = await Share.share({
+        message: file,
+      });
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.debug(result.activityType);
+        } else {
+          console.debug("Shared successfully");
         }
-      } else {
-        Alert.alert('Download failed', `Status code: ${downloadResult.statusCode}`);
+      } else if (result.action === Share.dismissedAction) {
+        console.debug("Share dismissed");
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(error.message);
     }
   };
 
@@ -90,7 +78,7 @@ const FileModal = ({
               buttonPositive: "OK",
             }
           );
-  
+
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             console.log("Permission granted");
             downloadFile();
@@ -112,7 +100,7 @@ const FileModal = ({
               buttonPositive: "OK",
             }
           );
-  
+
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             console.log("Permission granted");
             downloadFile();
@@ -132,7 +120,7 @@ const FileModal = ({
     }
   };
 
-  const downloadFile = () => {  
+  const downloadFile = () => {
     let date = new Date();
     let FILE_URL = file;
 
@@ -167,8 +155,9 @@ const FileModal = ({
     } else {
       const { config, fs } = RNFetchBlob;
       let RootDir = fs.dirs.DownloadDir;
-
-      let filePath = `${RootDir}/file_${Math.floor(date.getTime())}.${file_ext}`;
+      const ext = "jpg";
+      let filePath = `/storage/emulated/0/Download/image_${Math.floor(date.getTime())}.${ext}`;
+      console.log("filePath======", filePath);
 
       let options = {
         fileCache: true,
@@ -238,7 +227,7 @@ const FileModal = ({
       action: () => onShare(),
     },
   ];
-  const imgMenuItems = [
+  const imgWithTextMenuItems = [
     {
       type: "imgWithText",
       label: "Open",
@@ -257,6 +246,39 @@ const FileModal = ({
         onClose(false);
       },
     },
+    {
+      type: "text",
+      label: "Reply-to",
+      icon: <Vector />,
+      action: () => {
+        handleReplyMessage();
+        onClose();
+      },
+    },
+    {
+      type: "imgWithText",
+      label: "Download",
+      icon: <Download />,
+      action: () => checkPermission(),
+    },
+    {
+      type: "imgWithText",
+      label: "Share",
+      icon: <ShareSvg />,
+      action: () => onShare(),
+    },
+  ];
+  const imgMenuItems = [
+    {
+      type: "imgWithText",
+      label: "Open",
+      icon: <Group />,
+      action: () => {
+        setTableModal(true);
+        onClose(false);
+      },
+    },
+
     {
       type: "text",
       label: "Reply-to",
@@ -342,11 +364,15 @@ const FileModal = ({
     },
   ];
   const menuItems =
-    type === "table" || type === 'tableWithText'
-      ? type === 'tableWithText'? tableTextMenuItems : tableMenuItems
-      : type === "image"
-        ? imgMenuItems
-        : documentMenuItems;
+    type === "tableWithText"
+      ? tableTextMenuItems
+      : type === "table"
+        ? tableMenuItems
+        : type === "imageWithText"
+          ? imgWithTextMenuItems
+          : type === "image"
+            ? imgMenuItems
+            : documentMenuItems;
   return (
     <Modal
       isVisible={visible}

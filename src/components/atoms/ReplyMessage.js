@@ -30,12 +30,6 @@ const ReplyMessage = ({
   };
   console.log(media, "media");
 
-  const MAX_REPLY_LENGTH = reply ? 35 : 45;
-  const truncatedText =
-    replyMessage.length > MAX_REPLY_LENGTH
-      ? replyMessage.slice(0, MAX_REPLY_LENGTH) + "..."
-      : replyMessage;
-
   const getSvgByFormat = (format) => {
     const lowerFormat = format.toLowerCase();
 
@@ -50,8 +44,12 @@ const ReplyMessage = ({
     const SvgIcon = iconMap[lowerFormat];
     return SvgIcon ? <SvgIcon width={48} height={43} /> : null;
   };
-  const { tablePart } = splitMarkdownIntoTableAndText(tableData);
-
+  const { tablePart, textPart } = splitMarkdownIntoTableAndText(replyMessage);
+  const MAX_REPLY_LENGTH = reply ? 35 : 45;
+  const truncatedText =
+  textPart.length > MAX_REPLY_LENGTH
+      ? textPart.slice(0, MAX_REPLY_LENGTH) + "..."
+      : textPart;
   return (
     <View
       testID="reply-container"
@@ -76,10 +74,10 @@ const ReplyMessage = ({
             {" "}
             {replyFrom === "YOU" ? replyFrom : "ELY"}
           </Text>
-          <Text style={styles.replyText}>{truncatedText}</Text>
+          <Text style={media?.image?.length > 0 || tablePart != '' ? styles.replyTextWithDoc : styles.replyText }>{truncatedText}</Text>
         </View>
         <View style={styles.mediaAlign}>
-          {media?.image?.length > 0 && (
+          {media?.image[0]?.mediaUrl[0]?.length > 0 && (
             <Image
               source={{ uri: media?.image[0].mediaUrl[0] }}
               style={styles.halfImage}
@@ -90,11 +88,11 @@ const ReplyMessage = ({
             {getSvgByFormat(media?.document[0].format)}
           </View>
         )} */}
-          {/* {tablePart && tablePart !== "" && (
+          { tablePart !== "" && (
           <View style={styles.halfDocument}>
             <TableBaseBubble apiText={tablePart} reply={true} />
           </View>
-        )} */}
+        )}
         </View>
       </View>
       {reply && (
@@ -153,21 +151,27 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius8,
     overflow: "hidden",
   },
-  // halfDocument: {
-  //   height: 43,
-  //   width: 48,
-  //   marginRight: 30,
-  // },
+  halfDocument: {
+    height: 43,
+    width: 48,
+    marginRight: 30,
+  },
   replyFrom: {
     height:20,
     color: colors.primaryColors.woodSmoke,
     ...fontStyle.bodyMediumBold,
  
   },
+  replyTextWithDoc: {
+    color: colors.darkNeutrals.n600,
+    flexShrink: 1,
+    width:180,
+    whiteSpace: "normal",   /* allows line breaks */
+    wordWrap: "break-word"/* forces breaking long words */
+  },
   replyText: {
     color: colors.darkNeutrals.n600,
     flexShrink: 1,
-    width:200,
     whiteSpace: "normal",   /* allows line breaks */
     wordWrap: "break-word"/* forces breaking long words */
   },

@@ -12,7 +12,10 @@ const chatSlice = createSlice({
       state.messages = action.payload;
     },
     addMessage: (state, action) => {
-      state.messages.push(action.payload);
+      // state.messages.push(action.payload);
+      if (!state.messages.some(msg => msg.messageId === action.payload.messageId)) {
+        state.messages.push(action.payload);
+      }
     },
     clearMessages: (state) => {
       state.messages = [];
@@ -27,12 +30,12 @@ const chatSlice = createSlice({
     addChatHistory: (state, action) => {
       const newMessages = action.payload;
       const existingIds = new Set(state.messages.map((msg) => msg.messageId));
-     newMessages.forEach((msg) => {
+      newMessages.forEach((msg) => {
         const id = String(msg.messageId);
         if (id && !existingIds.has(id)) {
           state.messages.unshift(msg);
           existingIds.add(id); // Update set so that it avoids dupes even within the same batch
-        } 
+        }
       });
     },
     updateMessageStatus: (state, action) => {
@@ -52,6 +55,6 @@ const chatSlice = createSlice({
   },
 });
 
-export const { initializeMessages, addMessage, clearMessages, updateActivity, addChatHistory, updateMessageStatus, markAllMessagesAsRead} =
+export const { initializeMessages, addMessage, clearMessages, updateActivity, addChatHistory, updateMessageStatus, markAllMessagesAsRead } =
   chatSlice.actions;
 export default chatSlice.reducer;

@@ -165,11 +165,11 @@ export const ChatBody = ({
   };
   
   const chatWithSeparators = generateChatDataWithSeparators(messages);
-  console.log("CHAT WITH SEPARATORS", chatWithSeparators);
+  // console.log("CHAT WITH SEPARATORS", chatWithSeparators);
 
   const renderItem = ({ item, index }) => {
     if (item.type === "separator") {
-      console.log(item.date, "checking date");
+      // console.log(item.date, "checking date");
       return <ChatDateSeparator date={item.date} />;
     }
     if (item.type === "banner") {

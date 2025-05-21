@@ -8,11 +8,12 @@ import Dropdown from "../atoms/Dropdown";
 import { useDispatch, useSelector } from "react-redux";
 // import * as Clipboard from "expo-clipboard";
 import { addMessage } from "../../store/reducers/chatSlice";
-import {  hideLoader } from "../../store/reducers/loaderSlice";
-import {  setupDynamicPlaceholder } from "../../common/utils";
+import { hideLoader } from "../../store/reducers/loaderSlice";
+import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
 import { borderWidth, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import uuid from 'react-native-uuid';
+
 
 
 
@@ -35,7 +36,9 @@ export const ChatFooter = ({
   messages,
   copyToClipboard,
   onInputHeightChange,
-  scrollToDown
+  scrollToDown,
+  inactivityTimer,
+  setInactivityTimer,
 }) => {
   ChatFooter.propTypes = {
     copied: PropTypes.bool.isRequired,
@@ -56,7 +59,9 @@ export const ChatFooter = ({
     messages: PropTypes.array,
     copyToClipboard: PropTypes.func,
     onInputHeightChange: PropTypes.func.isRequired,
-    scrollToDown: PropTypes.func
+    scrollToDown: PropTypes.func,
+    inactivityTimer: PropTypes.object,
+    setInactivityTimer: PropTypes.func,
   };
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
@@ -68,7 +73,7 @@ export const ChatFooter = ({
   const isBottomSheetOpen = useSelector(
     (state) => state.bottomSheet.isBottomSheetOpen
   );
-  
+
 
   useEffect(() => {
     const clearPlaceholderInterval = setupDynamicPlaceholder(
@@ -88,48 +93,27 @@ export const ChatFooter = ({
   const handleSend = async () => {
     scrollToDown();
     if (navigationPage == "COACH") if (!value.trim() || isLoading) return;
+    if (isLoading) return;
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
+    if (reconfigApiResponse?.statusFlag === "COACH") {
+      const timer = setTimeout(() => {
+        console.log("Disconnecting socket due to inactivity");
+        socket?.disconnect();
+      }, 3600000);
+      setInactivityTimer(timer);
+    }
     if (navigationPage === "COACH") setnavigationPage("AGENDA");
-    const messageId = uuid.v4();
-    const lastBotMessage = [...messages].reverse().find(msg => msg.messageTo === "user");
-    console.log("lastbotmessage", lastBotMessage);
-    const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
     try {
       setReply(false);
-      const userMessage = {
-        messageId: messageId,
-        messageTo: "bot",
-        dateTime: new Date().toISOString(),
-        activity: null,
-        status: "SENT",
-        replyId: replyMessageId,
-        message: {
-          text: value.trim(),
-          botOption: false,
-          options: [],
-        },
-        media: {
-          video: [],
-          image: [],
-          document: [],
-        },
-      };
-      const message = {
-        emailId: reconfigApiResponse?.userInfo?.email,
-        userId:  reconfigApiResponse?.userInfo?.agentId,
-        messageId: messageId,
-        platform: "MSPACE",
-        sendType: "MESSAGE",
-        messageTo: "BOT",
-        messageType: isInteractiveReply ? "REPLY_TO_INTERACTIVE" : 
-                 (reply && replyMessageId) ? "REPLY_TO_MESSAGE" : "TEXT",
-        text: value.trim(),
-        replyToMessageId: replyMessageId,
-      };
-      dispatch(addMessage(userMessage));
-      
+      const lastBotMessage = [...messages].reverse().find(msg => msg.messageTo === "user");
+      const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
+      const messageType = isInteractiveReply ? "REPLY_TO_INTERACTIVE" : (replyMessageId) ? "REPLY_TO_MESSAGE" : "TEXT"
+      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, replyMessageId, messageType);
+      dispatch(addMessage(message));
       setValue("");
-      console.log("sentmessage", message);
-      socket.emit("user_message", message);
+      socket.emit("user_message", socketPayload);
       setReply(false);
       setReplyMessageId(null);
     } catch (error) {
@@ -148,43 +132,43 @@ export const ChatFooter = ({
       media: replyMessageObject?.media || []
     };
   };
-  let data={};
+  let data = {};
   return (
     <View>
-      {copied && <CopyTextClipboard reply={reply}/>}
+      {copied && <CopyTextClipboard reply={reply} />}
       <View style={styles.containerHead}>
-      {reply && (
-         data =getReplyMessage(),
-        <ReplyMessage
-          replyFrom={
-           data.messageTo.toLowerCase() === "bot" ? "YOU" : "BOT"
-          }
-          replyMessage={data.text}
-          media={data.media}
-          reply={reply}
-          handleClose={handleReplyClose}
-        />
-      )}
-      <View style={styles.container} >
-        <View style={styles.inputContainer}>
-          <DynamicTextInput
-            value={value}
-            onChange={handleChange}
-            placeholder={dynamicPlaceholder}
-            rows={3}
-            fullWidth
-            disabled={isLoading}
-            onInputHeightChange={onInputHeightChange}
+        {reply && (
+          data = getReplyMessage(),
+          <ReplyMessage
+            replyFrom={
+              data.messageTo.toLowerCase() === "bot" ? "YOU" : "BOT"
+            }
+            replyMessage={data.text}
+            media={data.media}
+            reply={reply}
+            handleClose={handleReplyClose}
           />
+        )}
+        <View style={styles.container} >
+          <View style={styles.inputContainer}>
+            <DynamicTextInput
+              value={value}
+              onChange={handleChange}
+              placeholder={dynamicPlaceholder}
+              rows={3}
+              fullWidth
+              disabled={isLoading}
+              onInputHeightChange={onInputHeightChange}
+            />
+          </View>
+          <View style={styles.buttonContainer}>
+            <Button
+              isEnabled={!!value.trim() && !isLoading}
+              onClick={handleSend}
+              reconfigApiResponse={reconfigApiResponse}
+            />
+          </View>
         </View>
-        <View style={styles.buttonContainer}>
-          <Button
-            isEnabled={!!value.trim() && !isLoading}
-            onClick={handleSend}
-            reconfigApiResponse={reconfigApiResponse}
-          />
-        </View>
-      </View>
       </View>
       {isBottomSheetOpen && (
         <Dropdown
@@ -200,7 +184,7 @@ export const ChatFooter = ({
 };
 
 const styles = StyleSheet.create({
-  containerHead:{
+  containerHead: {
     backgroundColor: "#F4F6FA",
     borderTopWidth: borderWidth.borderWidth1,
     borderTopColor: "#e0e0e0",
