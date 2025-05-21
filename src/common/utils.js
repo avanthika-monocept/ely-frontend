@@ -1,4 +1,5 @@
 import { format, isToday, isYesterday, isSameYear, parseISO } from "date-fns";
+import uuid from 'react-native-uuid';
 
 export const getFormattedDividerDate = (dateString) => {
     const date = parseISO(dateString);
@@ -54,7 +55,7 @@ export const getFormattedDividerDate = (dateString) => {
 
   export function splitMarkdownIntoTableAndText(markdown) {
     if (typeof markdown !== 'string') {
-      return '';
+     return { tablePart: '', textPart: '' }
    }
     const lines = markdown?.trim().split('\n');
     const tableLines = [];
@@ -82,3 +83,60 @@ export const getFormattedDividerDate = (dateString) => {
       textPart: textLines?.join('\n').trim()
     };
   }
+
+  export const generateUniqueId = () => {
+    return uuid.v4();
+  };
+
+  export const formatBotMessage = (data) => {
+  return {
+    messageId: data?.messageId,
+    messageTo: "user",
+    dateTime: new Date().toISOString(),
+    activity: null,
+    replyId: null,
+    conversationEnded: data?.conversationEnded,
+    message: {
+      text: data.entry?.message?.text,
+      table: data.entry?.message?.table,
+      botOption: data.entry?.message?.botOption,
+      options: [],
+    },
+    media: data?.entry?.message?.media,
+  };
+};
+
+export const formatUserMessage = (text, reconfigApiResponse, replyMessageId = null,messageType) => {
+  const messageId = generateUniqueId();
+  return {
+     message: {
+      messageId,
+      messageTo: "bot",
+      dateTime: new Date().toISOString(),
+      activity: null,
+      status: "SENT",
+      replyId: replyMessageId,
+      message: {
+        text: text.trim(),
+        botOption: false,
+        options: [],
+      },
+      media: {
+        video: [],
+        image: [],
+         document: [],
+      },
+    },
+    socketPayload: {
+      emailId: reconfigApiResponse?.userInfo?.email,
+      userId: reconfigApiResponse?.userInfo?.agentId,
+      messageId,
+      platform: "MSPACE",
+      sendType: "MESSAGE",
+      messageTo: "BOT",
+      messageType: messageType || "TEXT",
+      text: text.trim(),
+      replyToMessageId: replyMessageId,
+    }
+   };
+};

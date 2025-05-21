@@ -7,7 +7,7 @@ import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 
-export const TimeAndTick = ({ time, status, isBot }) => {
+export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
   const getTickIcon = () => {
     switch (status) {
       case "READ":
@@ -22,8 +22,8 @@ export const TimeAndTick = ({ time, status, isBot }) => {
   };
 
   return (
-    <View style={styles.timeAndTickContainer}>
-      <Text style={styles.time}>{time}</Text>
+    <View style={[styles.timeAndTickContainer, isImageOnly && styles.imageOnlyContainer]}>
+      <Text style={[styles.time, isImageOnly && styles.imageOnlyTime]}>{time}</Text>
       {!isBot && (
         <View style={styles.checkContainer}>{getTickIcon()}</View>
       )}
@@ -35,6 +35,7 @@ TimeAndTick.propTypes = {
   time: PropTypes.string.isRequired,
   status: PropTypes.string,
   isBot: PropTypes.bool.isRequired,
+  isImageOnly: PropTypes.bool,
 };
 
 const styles = StyleSheet.create({
@@ -48,9 +49,21 @@ const styles = StyleSheet.create({
   time: {
     ...fontStyle.bodySmallMedium,
     color: colors.darkNeutrals.n600,
+    fontSize: 10,
   },
   checkContainer: {
     flexDirection: "row",
     alignItems: "center",
+  },
+   imageOnlyContainer: {
+    position: 'absolute',
+    bottom: 3,
+    right: 3,
+  },
+  imageOnlyTime: {
+    color: 'white', // White text for better contrast on images
+    textShadowColor: 'rgba(0, 0, 0, 0.5)', // Optional shadow for better readability
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });

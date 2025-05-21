@@ -20,6 +20,9 @@ import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { spacing } from "../../constants/Dimensions";
+import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
+import { splitMarkdownIntoTableAndText , formatBotMessage } from "../../common/utils";
+
 
 
 export const ChatPage = () => {
@@ -44,6 +47,9 @@ export const ChatPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const messages = useSelector((state) => state.chat.messages);
   const [newMessageCount, setNewMessageCount] = useState(1);
+  const [inactivityTimer, setInactivityTimer] = useState(null);
+const [lastActivityTime, setLastActivityTime] = useState(null);
+  const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || "#FFFFFF";
   let messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
@@ -63,33 +69,64 @@ export const ChatPage = () => {
 
   useEffect(() => {
     const socket = initializeSocket("AGT001");
+    const setupInactivityTimer = () => {
+    if (reconfigApiResponse?.statusFlag === "COACH") {
+      // Clear existing timer if any
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      const timer = setTimeout(() => {
+        console.log("Disconnecting socket due to inactivity");
+        socket.disconnect();
+      }, 3600000);
+      
+      setInactivityTimer(timer);
+      setLastActivityTime(new Date());
+    }
+  };
+  const sendAcknowledgement = (messageId) => {
+    socket.emit("user_message", {
+      messageId: messageId,
+      status:"READ",
+      sendType: "ACKNOWLEDGEMENT",
+      userId: reconfigApiResponse?.userInfo?.agentId,
+      });
+  };
     socket.on("connect", () => {
+      setupInactivityTimer();
       console.log("Socket connected:", socket.id);
   });
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason);
+      if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
     });
     socket.on("connect_error", (err) => {
       console.error("Connection error:", err);
     });
     socket.on("bot_message", (data) => {
+      setupInactivityTimer();
       console.log("Received message:", JSON.stringify(data));
+      sendAcknowledgement(data?.messageId);
+      dispatch(showLoader());
       if(data){
-        const botMessage = {
-          messageId: data?.messageId,
-          messageTo: "user",
-          dateTime: data?.createdAt,
-          activity: null,
-          replyId: null,
-          conversationEnded:data?.conversationEnded,
-          message: {
-            text: data.entry?.message?.text,
-            table: data.entry?.message?.table,
-            botOption: data.entry?.message?.botOption,
-            options: [],
-          },
-          media: data?.entry?.message?.media,
-        };
+        // const botMessage = {
+        //   messageId: data?.messageId,
+        //   messageTo: "user",
+        //   dateTime: new Date().toISOString(),
+        //   activity: null,
+        //   replyId: null,
+        //   conversationEnded:data?.conversationEnded,
+        //   message: {
+        //     text: data.entry?.message?.text,
+        //     table: data.entry?.message?.table,
+        //     botOption: data.entry?.message?.botOption,
+        //     options: [],
+        //   },
+        //   media: data?.entry?.message?.media,
+        // };
+        const botMessage = formatBotMessage(data);
       if (!isAtBottom) {
         setShowFab(false);
         setShowNewMessageAlert(true);
@@ -97,6 +134,8 @@ export const ChatPage = () => {
         console.log("botMessage", botMessage);
         dispatch(markAllMessagesAsRead());
         dispatch(addMessage(botMessage));
+        dispatch(hideLoader());
+
       }
    });
     socket.on("acknowledgement", (data) => {
@@ -116,6 +155,9 @@ export const ChatPage = () => {
       socket.off("connect_error");
       socket.off("bot_message");
       socket.disconnect();
+      if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
     };
   }, []);
 
@@ -158,19 +200,22 @@ export const ChatPage = () => {
     setReply(false);
   };
 
-  const copyToClipboard = async () => {
-    setCopied(true);
-    // await Clipboard.setStringAsync(messageObject?.message?.text);
-    Clipboard.setString(messageObject?.message?.text);
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-      setMessageObjectId(null);
-    }, 1000);
-  };
 
+const copyToClipboard = async () => {
+  setCopied(true);
+  const textToCopy = messageObject?.message?.text ? 
+    splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart : 
+    messageObject?.message?.text;
+  
+  Clipboard.setString(textToCopy);
+  setCopied(true);
+  setTimeout(() => {
+    setCopied(false);
+    setMessageObjectId(null);
+  }, 1000);
+};
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container,{backgroundColor:backgroundColor}]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
       <ChatHeader reconfigApiResponse={reconfigApiResponse} />
       <View style={styles.content} >
@@ -200,7 +245,7 @@ export const ChatPage = () => {
 
       {navigationPage !== "coach" ? (
         <View
-          style={[styles.fabIcon,{ bottom: isBottomSheetOpen  ? bottomSheetHeight + 20 : reply ? 120 : 80 + (inputHeight - 24) },]}>
+          style={[styles.fabIcon,{ bottom: isBottomSheetOpen  ? bottomSheetHeight + 20 : reply ? 130 : 80 + (inputHeight - 24) },]}>
           <FabFloatingButton
             onClick={scrollToDown}
             showFab={showFab}
@@ -231,7 +276,9 @@ export const ChatPage = () => {
         messages={messages}
         copyToClipboard={copyToClipboard}
         onInputHeightChange={setInputHeight}
-          scrollToDown={scrollToDown}
+        scrollToDown={scrollToDown}
+        inactivityTimer={inactivityTimer}
+        setInactivityTimer={setInactivityTimer}
       />
     </SafeAreaView>
   );

@@ -36,6 +36,7 @@ const ImageMessageView = ({
   handleReplyMessage,
   setMessageObjectId,
   messageId,
+  isTextEmpty,
 }) => {
   ImageMessageView.propTypes = {
     images: PropTypes.array,
@@ -45,10 +46,12 @@ const ImageMessageView = ({
     handleReplyMessage: PropTypes.func.isRequired,
     setMessageObjectId: PropTypes.func,
     messageId: PropTypes.number,
+    isTextEmpty: PropTypes.bool,
   };
 
   const MAX_IMAGES = 4;
   const displayImages = images?.slice(0, MAX_IMAGES);
+
   const restCount = images?.length - MAX_IMAGES;
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isGridModalVisible, setIsGridModalVisible] = useState(false); // Grid view modal
@@ -76,80 +79,79 @@ const ImageMessageView = ({
   const downloadImage = async (imageUrl) => {
     try {
       if (Platform.OS === "android") {
-        let granted;
+        const permissionToRequest =
+          Platform.Version >= 33
+            ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+            : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
 
-        if (Platform.Version >= 33) {
-          granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-            {
-              title: "Storage Permission Required",
-              message: "App needs access to your media to download images.",
-            }
-          );
-        } else {
-          granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-            {
-              title: "Storage Permission Required",
-              message: "App needs access to your storage to download images.",
-            }
-          );
-        }
+        const granted = await PermissionsAndroid.request(permissionToRequest, {
+          title: "Storage Permission Required",
+          message: "App needs access to your media to download images.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK",
+        });
 
         console.log("Permission result:", granted);
 
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          // continue download
+          return proceedWithDownload(imageUrl);
         } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
           Alert.alert(
-            "Permission Needed",
-            "You've previously denied the permission. Please enable it manually from app settings.",
+            "Permission Blocked",
+            "You've previously denied this permission and chosen not to be asked again. Please enable it manually from app settings.",
             [
               { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: openAppSettings },
+              { text: "Open Settings", onPress: () => Linking.openSettings() },
             ]
           );
-          return;
         } else {
           Alert.alert("Permission Denied", "Cannot download the image");
-          return;
         }
+      } else {
+        // iOS
+        return proceedWithDownload(imageUrl);
       }
-
-      // Proceed with download if permission granted
-      const { config, fs } = RNFetchBlob;
-      const date = new Date();
-      const ext = "jpg";
-      const dir = fs.dirs.DownloadDir;
-      const path = `${dir}/image_${Math.floor(date.getTime())}.${ext}`;
-
-      const options = {
-        fileCache: true,
-        appendExt: ext,
-        addAndroidDownloads: {
-          useDownloadManager: true,
-          notification: true,
-          path,
-          description: "Image",
-          mime: "image/jpeg",
-        },
-      };
-
-      config(options)
-        .fetch("GET", imageUrl)
-        .then((res) => {
-          Alert.alert("Download Success", `Saved to ${res.path()}`);
-        })
-        .catch((error) => {
-          console.log("Download error:", error);
-          Alert.alert(
-            "Download Failed",
-            "Something went wrong while downloading"
-          );
-        });
     } catch (err) {
       console.log("Permission or download error:", err);
+      Alert.alert("Error", "Something went wrong while downloading.");
     }
+  };
+
+  const proceedWithDownload = async (imageUrl) => {
+    const { config, fs } = RNFetchBlob;
+    const date = new Date();
+    const ext = "jpg";
+    const dir = fs.dirs.DownloadDir;
+    const path = `/storage/emulated/0/Download/image_${Math.floor(date.getTime())}.${ext}`;
+    // const downloadDir = fs.dirs.DownloadDir;
+    // const fileName = `image_${date.getTime()}.${ext}`;
+    // const filePath = `${downloadDir}/${fileName}`;
+    console.log("Download Path:", path);
+    const options = {
+      fileCache: true,
+      appendExt: ext,
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        notification: true,
+        path,
+        description: "Image",
+        mime: "image/jpeg",
+      },
+    };
+
+    config(options)
+      .fetch("GET", imageUrl)
+      .then((res) => {
+        Alert.alert("Download Success", `Saved to ${res.path()}`);
+      })
+      .catch((error) => {
+        console.log("Download error:", error);
+        Alert.alert(
+          "Download Failed",
+          "Something went wrong while downloading"
+        );
+      });
   };
 
   const renderImages = () => {
@@ -159,7 +161,13 @@ const ImageMessageView = ({
     if (count === 1) {
       return (
         <View style={styles.row}>
-          <TouchableOpacity onPress={() => openSingleImageModal(0)}>
+          <TouchableOpacity
+            onPress={() => openSingleImageModal(0)}
+            onLongPress={() => {
+              setIsOpen(true);
+              setMessageObjectId(messageId);
+            }}
+          >
             <View style={styles.imgContainer}>
               <Image
                 source={{ uri: displayImages[0] }}
@@ -167,7 +175,10 @@ const ImageMessageView = ({
               />
               <TouchableOpacity
                 style={styles.iconContainer}
-                onPress={() => {setIsOpen(true); setMessageObjectId(messageId);}}
+                onPress={() => {
+                  setIsOpen(true);
+                  setMessageObjectId(messageId);
+                }}
               >
                 <Ionicons name="ellipsis-vertical" size={18} color="#424752" />
               </TouchableOpacity>
@@ -306,7 +317,7 @@ const ImageMessageView = ({
           <TouchableOpacity
             onPress={() => downloadImage(images[selectedImageIndex])}
           >
-            <Download fill="#FFFFFF"/>
+            <Download fill="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
@@ -387,12 +398,13 @@ const ImageMessageView = ({
       {renderImages()}
       <FileModal
         visible={isOpen}
-        onClose={() => {setIsOpen(false); setMessageObjectId(null);}}
-        type={"image"}
+        onClose={() => {
+          setIsOpen(false);
+          setMessageObjectId(null);
+        }}
+        type={isTextEmpty ? "image" : "imageWithText"}
         setTableModal={setIsModalVisible}
-        file={
-          images[selectedImageIndex]
-         }
+        file={images[selectedImageIndex]}
         copyToClipboard={copyToClipboard}
         handleReplyMessage={handleReplyMessage}
       />

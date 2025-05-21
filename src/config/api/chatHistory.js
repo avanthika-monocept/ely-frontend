@@ -229,14 +229,14 @@ const dummyresponse = {
 export const fetchChatHistory = async (agentId, page = 0, size = 10) => {
   try {
     const response = await apiCall({
-      baseURL: "http://172.16.17.251:9091",
+      baseURL: "http://10.5.50.125:9091",
       // baseURL: "http://localhost:8080",
       url: CHAT_HISTORY,
       method: "POST",
       data: { agentId: agentId, page: page, size: size },
     });
 
-    console.log(JSON.stringify(response) , ' chathistory   response');
+    console.log(JSON.stringify(response), " chathistory   response");
     return response?.data?.content || [];
     // return dummyresponse?.data?.content.slice(0, size) || [];
   } catch (error) {

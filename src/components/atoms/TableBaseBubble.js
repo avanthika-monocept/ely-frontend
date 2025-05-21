@@ -28,7 +28,8 @@ const TableBaseBubble = ({
   messageId,
   type,
   setType,
-  reply
+  reply,
+  isTextEmpty,
 }) => {
   TableBaseBubble.propTypes = {
     apiText: PropTypes.string.isRequired,
@@ -40,7 +41,8 @@ const TableBaseBubble = ({
     setType: PropTypes.func,
     type: PropTypes.string,
     copyToClipboard: PropTypes.func,
-    reply:PropTypes.bool
+    reply:PropTypes.bool,
+    isTextEmpty: PropTypes.bool,
   };
 
   const viewRef = useRef();
@@ -65,9 +67,9 @@ const TableBaseBubble = ({
       Image.getSize(
         imageUri,
         (width, height) => {
-          const scaledHeight = (300 * height) / width; // Maintain aspect ratio
+          const scaledHeight = (260 * height) / width; // Maintain aspect ratio
           if(!reply){
-            setImageSize({ width: 285, height: scaledHeight });
+            setImageSize({ width: isTextEmpty? 250 : "100%", height: scaledHeight });
           }else{
             setImageSize({ width: 48, height: 43 });
           }
@@ -95,6 +97,7 @@ const TableBaseBubble = ({
         setTableModal={setModalVisible}
         handleReplyMessage={handleReplyMessage}
         copyToClipboard={copyToClipboard}
+        file={imageUri}
       />
       {!imageUri && (
         <View
@@ -146,7 +149,8 @@ const TableBaseBubble = ({
 
       {imageUri && (
         <TouchableOpacity
-          onLongPress={() => setIsOpen(true)}
+          onLongPress={() => {setIsOpen(true);setMessageObjectId(messageId);
+              setType("table");}}
           onPress={() => setModalVisible(true)}
         >
           <Image

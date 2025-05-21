@@ -13,7 +13,7 @@ import React from "react";
 import Modal from "react-native-modal";
 import Download from "../../../assets/Download.svg";
 import Vector from "../../../assets/Vector.svg";
-import Upload from "../../../assets/Upload.svg";
+// import Upload from "../../../assets/Upload.svg";
 import ShareSvg from "../../../assets/Share.svg";
 import Group from "../../../assets/Group.svg";
 import Copy from "../../../assets/Copy.svg";
@@ -21,6 +21,7 @@ import RNFetchBlob from "react-native-blob-util";
 import { borderRadius, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
+import RNFS from "react-native-fs";
 
 const FileModal = ({
   visible,
@@ -77,7 +78,7 @@ const FileModal = ({
               buttonPositive: "OK",
             }
           );
-  
+
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             console.log("Permission granted");
             downloadFile();
@@ -99,7 +100,7 @@ const FileModal = ({
               buttonPositive: "OK",
             }
           );
-  
+
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
             console.log("Permission granted");
             downloadFile();
@@ -119,7 +120,7 @@ const FileModal = ({
     }
   };
 
-  const downloadFile = () => {  
+  const downloadFile = () => {
     let date = new Date();
     let FILE_URL = file;
 
@@ -154,8 +155,9 @@ const FileModal = ({
     } else {
       const { config, fs } = RNFetchBlob;
       let RootDir = fs.dirs.DownloadDir;
-
-      let filePath = `${RootDir}/file_${Math.floor(date.getTime())}.${file_ext}`;
+      const ext = "jpg";
+      let filePath = `/storage/emulated/0/Download/image_${Math.floor(date.getTime())}.${ext}`;
+      console.log("filePath======", filePath);
 
       let options = {
         fileCache: true,
@@ -225,7 +227,7 @@ const FileModal = ({
       action: () => onShare(),
     },
   ];
-  const imgMenuItems = [
+  const imgWithTextMenuItems = [
     {
       type: "imgWithText",
       label: "Open",
@@ -244,6 +246,39 @@ const FileModal = ({
         onClose(false);
       },
     },
+    {
+      type: "text",
+      label: "Reply-to",
+      icon: <Vector />,
+      action: () => {
+        handleReplyMessage();
+        onClose();
+      },
+    },
+    {
+      type: "imgWithText",
+      label: "Download",
+      icon: <Download />,
+      action: () => checkPermission(),
+    },
+    {
+      type: "imgWithText",
+      label: "Share",
+      icon: <ShareSvg />,
+      action: () => onShare(),
+    },
+  ];
+  const imgMenuItems = [
+    {
+      type: "imgWithText",
+      label: "Open",
+      icon: <Group />,
+      action: () => {
+        setTableModal(true);
+        onClose(false);
+      },
+    },
+
     {
       type: "text",
       label: "Reply-to",
@@ -329,11 +364,15 @@ const FileModal = ({
     },
   ];
   const menuItems =
-    type === "table" || type === 'tableWithText'
-      ? type === 'tableWithText'? tableTextMenuItems : tableMenuItems
-      : type === "image"
-        ? imgMenuItems
-        : documentMenuItems;
+    type === "tableWithText"
+      ? tableTextMenuItems
+      : type === "table"
+        ? tableMenuItems
+        : type === "imageWithText"
+          ? imgWithTextMenuItems
+          : type === "image"
+            ? imgMenuItems
+            : documentMenuItems;
   return (
     <Modal
       isVisible={visible}

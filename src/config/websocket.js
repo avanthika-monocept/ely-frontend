@@ -1,7 +1,7 @@
 // config/websocket.js
-import io from 'socket.io-client';
+import io from "socket.io-client";
 
-const SOCKET_URL = 'http://172.16.17.251:5050';
+const SOCKET_URL = "http://10.5.50.125:5050";
 
 export const initializeSocket = (userId) => {
   const socket = io(SOCKET_URL, {
@@ -10,8 +10,8 @@ export const initializeSocket = (userId) => {
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     autoConnect: true,
-    transports: ['websocket', 'polling'],
-    forceNew: true
+    transports: ["websocket", "polling"],
+    forceNew: true,
   });
 
   return socket;

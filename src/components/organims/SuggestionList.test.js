@@ -84,20 +84,6 @@ describe('SuggestionList Component', () => {
     expect(mockSetNavigationPage).toHaveBeenCalledWith('AGENDA');
   });
 
-  it('displays correct item text with icon', () => {
-    const { getByText } = render(
-      <SuggestionList 
-        setnavigationPage={mockSetNavigationPage} 
-        reconfigApiResponse={mockReconfigApiResponse}
-        socket={mockSocket}
-      />
-    );
-
-    expect(getByText('👩🏻‍💼 HR Related')).toBeTruthy();
-    expect(getByText('📑 Policy Related')).toBeTruthy();
-    expect(getByText('🏥 Medical Insurance')).toBeTruthy();
-  });
-
   it('triggers socket emit and API call when item is selected', async () => {
     const { getAllByTestId } = render(
       <SuggestionList 

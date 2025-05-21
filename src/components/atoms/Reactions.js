@@ -4,7 +4,7 @@ import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 
-export const Reactions = ({ options, onSelect, messageId, socket }) => {
+export const Reactions = ({ options, onSelect, messageId, socket, agentId }) => {
   const [selected, setSelected] = useState(null);
 
   const handleSelect = (id) => {
@@ -12,10 +12,12 @@ export const Reactions = ({ options, onSelect, messageId, socket }) => {
     onSelect?.(id, messageId);
     const message = {
       emoji: id === "like" ? "U+1F44D" : "U+1F44E",
-      type: "REACTION",
+      sendType: "REACTION",
       action: id === "like" ? "SELECTED" : "DESELECTED",
       messageId: messageId,
+      userId: agentId,
     };
+    console.log("reactionmessage", message);
     socket.emit("user_message", message);
   };
 
@@ -60,6 +62,7 @@ Reactions.propTypes = {
   onSelect: PropTypes.func,
   messageId: PropTypes.string,
   socket: PropTypes.object,
+  agentId: PropTypes.string,
 };
 
 const styles = StyleSheet.create({
@@ -69,6 +72,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: spacing.space_10,
     backgroundColor: "#FFFFFF",
+    borderRadius: borderRadius.borderRadius4,
   },
   option: {
     paddingVertical: spacing.space_s1,

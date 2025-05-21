@@ -8,6 +8,7 @@ import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import uuid from 'react-native-uuid';
+import { formatUserMessage } from "../../common/utils";
 
 export const SuggestionList = ({
   setnavigationPage,
@@ -23,42 +24,13 @@ export const SuggestionList = ({
   const dispatch = useDispatch();
   const data = reconfigApiResponse?.options || [];
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const coachOptionColor = reconfigApiResponse?.theme?.coachOptionColor || colors.primaryColors.white;
 
   const handleTopicSelect = async (topic) => {
     setnavigationPage("AGENDA");
-    const messageId = uuid.v4();
-    const userMessage = {
-      messageId: messageId,
-      status: "SENT",
-      messageTo: "bot",
-      dateTime: new Date().toISOString(),
-      activity: null,
-      replyId: null,
-      message: {
-        text: topic,
-        botOption: true,
-        options: ["Poor", "Bad", "Average", "Good"],
-      },
-      media: {
-        video: [],
-        image: [],
-        document: [],
-      },
-    };
-  
-    dispatch(addMessage(userMessage));
-    const message = {
-      emailId: reconfigApiResponse?.userInfo?.email,
-      userId: reconfigApiResponse?.userInfo?.agentId,
-      platform: "MSPACE",
-      sendType: "MESSAGE",
-      messageTo: "BOT",
-      messageType: "REPLY_TO_LANDING_PAGE",
-      text: topic,
-      replyToMessageId: null,
-      messageId: messageId,
-    };
-    socket.emit("user_message", message);
+    const { message, socketPayload } = formatUserMessage(topic, reconfigApiResponse, null, "REPLY_TO_LANDING_PAGE");
+    dispatch(addMessage(message));
+    socket.emit("user_message", socketPayload);
   };
 
   const renderItem = ({item, index}) => {
@@ -67,19 +39,22 @@ export const SuggestionList = ({
         style={[
           styles.itemContainer,
           {
-            borderColor: selectedItemId === index ? "#0092DB" : "white",
-            borderWidth: 2,
+            backgroundColor: selectedItemId === index ? "#E6F7FF" : "white",
+            borderColor: selectedItemId === index ? "#0092DB" : "#E0E0E0",
           },
         ]}
-        onPressIn={() => setSelectedItemId(item.id)}
+        onPressIn={() => setSelectedItemId(index)}
         onPressOut={() => setSelectedItemId(null)}
         onPress={() => handleTopicSelect(item.icon + item.name)}
         testID={stringConstants.suggested}
       >
+        <View style={styles.item}>
+        <Text style={styles.itemIcon}>
+         {item.icon} </Text>
         <Text style={styles.itemText}>
-          {item.icon} {' '}
           {item.name}
-        </Text>
+       </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -90,9 +65,9 @@ export const SuggestionList = ({
         data={data}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
-        numColumns={2} // This will create a grid-like layout similar to the original
+        horizontal
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={{justifyContent: 'center'}} // Align items in center for each row
       />
     </View>
   );
@@ -100,29 +75,35 @@ export const SuggestionList = ({
 
 const styles = StyleSheet.create({
   mainContainer: {
-    alignSelf: "center",
     width: "100%",
-    marginTop: spacing.space_m3,
+    marginTop: spacing.space_m2,
+    paddingLeft: spacing.space_m2,
   },
   listContainer: {
-    flexDirection: 'column', // FlatList handles the row direction internally
+    paddingVertical: spacing.space_s0,
   },
   itemContainer: {
     backgroundColor: colors.primaryColors.white,
-    borderRadius: borderRadius.borderRadius4,
-    alignItems: "center",
-    paddingHorizontal: spacing.space_m1,
+    borderRadius: borderRadius.borderRadius8,
+    borderWidth: 1,
+    paddingHorizontal: spacing.space_m2,
     paddingVertical: spacing.space_s2,
-    display: "flex",
-    flexDirection: "row",
+    marginRight: spacing.space_base,
     justifyContent: "center",
-    alignSelf: "flex-start",
-    margin: spacing.space_s2,
+    alignItems: "center",
+    height: 80,
+  },
+  itemIcon: {
+    ...fontStyle.bodyMedium,
+    marginBottom: spacing.space_m1,
   },
   itemText: {
     ...fontStyle.bodyMedium,
     color: colors.darkNeutrals.n600,
   },
+  item:{
+    alignItems: "center",
+  }
 });
 
 export default SuggestionList;

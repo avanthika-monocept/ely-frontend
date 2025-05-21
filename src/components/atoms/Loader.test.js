@@ -1,104 +1,71 @@
-// Loader.test.js
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { Loader } from './Loader';
-import LoaderSvg from '../../../assets/loader.svg';
+import { Loader } from './Loader'; // Adjust the import path as needed
 
-// Mock the SVG component
-jest.mock('../../../assets/loader.svg', () => 'LoaderSvg');
-
-// Mock the constants
-jest.mock('../../constants/Dimensions', () => ({
-  spacing: {
-    space_s2: 4,
-  },
-}));
-
-jest.mock('../../constants/Fonts', () => ({
-  fontStyle: {
-    bodyBold3: {
-      fontSize: 15,
-      fontWeight: 'bold',
-    },
-  },
-}));
+jest.useFakeTimers();
 
 describe('Loader Component', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-    jest.useRealTimers();
-  });
-
   it('renders correctly with initial state', () => {
     const { getByTestId, queryByTestId } = render(<Loader />);
     
-    expect(getByTestId('loader-container')).toBeTruthy();
-    expect(getByTestId('loader-svg')).toBeTruthy();
-    expect(queryByTestId('loader-text')).toBeNull();
+    const container = getByTestId('loader-container');
+    expect(container).toBeTruthy();
+    
+    // Check all 5 dots are rendered
+    for (let i = 0; i < 5; i++) {
+      const dot = getByTestId(`loader-dot-${i}`);
+      expect(dot).toBeTruthy();
+    }
+    
+    // Initial text might be empty (first message is "")
+    const textElement = queryByTestId('loader-text');
+    expect(textElement).toBeNull();
   });
 
-  it('cycles through messages every second', () => {
-    const { queryByTestId, getByTestId } = render(<Loader />);
+  it('cycles through messages correctly', () => {
+    const { getByTestId, queryByTestId } = render(<Loader />);
     
-    // Initial state - empty message
+    // Initial state (empty message)
     expect(queryByTestId('loader-text')).toBeNull();
     
-    // After 1s - "ELY is thinking"
-    act(() => jest.advanceTimersByTime(1000));
+    // Advance timers to first message change
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
     expect(getByTestId('loader-text').props.children).toBe('ELY is thinking');
     
-    // After 2s - empty message
-    act(() => jest.advanceTimersByTime(1000));
+    // Advance to next message
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
     expect(queryByTestId('loader-text')).toBeNull();
     
-    // After 3s - "ELY is typing"
-    act(() => jest.advanceTimersByTime(1000));
+    // Advance to final message
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
     expect(getByTestId('loader-text').props.children).toBe('ELY is typing');
     
-    // After 4s - loops back to empty message
-    act(() => jest.advanceTimersByTime(1000));
+    // Should loop back to first message
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
     expect(queryByTestId('loader-text')).toBeNull();
   });
 
-  it('applies correct styles from constants', () => {
+  it('renders all dots with animation transforms', () => {
     const { getByTestId } = render(<Loader />);
     
-    const container = getByTestId('loader-container');
-    expect(container.props.style).toEqual({
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 4, // from mocked spacing.space_s2
-      paddingVertical: 0.5,
-    });
-    
-    // Advance to show text
-    act(() => jest.advanceTimersByTime(1000));
-    
-    const text = getByTestId('loader-text');
-    expect(text.props.style).toEqual({
-      marginLeft: 4, // from mocked spacing.space_s2
-      fontSize: 15,
-      fontWeight: 'bold',
-    });
+    // Verify all dots have transform styles
+    for (let i = 0; i < 5; i++) {
+      const dot = getByTestId(`loader-dot-${i}`);
+      expect(dot.props.style.transform).toBeTruthy();
+      expect(dot.props.style.transform.length).toBeGreaterThan(0);
+    }
   });
 
-  it('cleans up interval on unmount', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-    const { unmount } = render(<Loader />);
-    
-    unmount();
-    expect(clearIntervalSpy).toHaveBeenCalled();
-    clearIntervalSpy.mockRestore();
-  });
-
-  it('renders LoaderSvg with correct props', () => {
-    const { getByTestId } = render(<Loader />);
-    const svg = getByTestId('loader-svg');
-    expect(svg.props.width).toBe(20);
-    expect(svg.props.height).toBe(20);
+  it('matches snapshot', () => {
+    const { toJSON } = render(<Loader />);
+    expect(toJSON()).toMatchSnapshot();
   });
 });

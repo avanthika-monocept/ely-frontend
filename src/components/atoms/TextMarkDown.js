@@ -10,9 +10,11 @@ import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 
 const TextMarkDown = ({ input }) => {
-  TextMarkDown.propTypes = {
-    input: PropTypes.string,
+
+  TextMarkDown.propTypes={
+    input:PropTypes.string,
   }
+
   const markdownStyles = {
     body: {
       color: colors.primaryColors.black,
@@ -71,7 +73,6 @@ const TextMarkDown = ({ input }) => {
 
   const decoded = input.replace(/\\n/g, "\n");
   const lines = decoded.split("\n");
-  console.log("Lines", lines);
   const elements = [];
   let tableLines = [];
   for (let line of lines) {

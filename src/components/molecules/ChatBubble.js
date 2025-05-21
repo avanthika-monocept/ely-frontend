@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { View, StyleSheet, TouchableWithoutFeedback, Text } from "react-native";
 import BotTail from "../../../assets/BotBubbleTail.svg";
 import UserTail from "../../../assets/UserBubbleTail.svg";
 import { TimeAndTick } from "../atoms/TimeAndTick";
@@ -13,20 +13,20 @@ import { openBottomSheet } from "../../store/reducers/bottomSheetSlice";
 import { FeedbackChip } from "../atoms/FeedbackChip";
 import { addMessage, updateActivity } from "../../store/reducers/chatSlice";
 import DocumentFile from "../atoms/DocumentFile";
-import { extractUrl, splitMarkdownIntoTableAndText } from "../../common/utils";
+import { extractUrl, splitMarkdownIntoTableAndText , formatUserMessage } from "../../common/utils";
 import ImageMessageView from "../atoms/ImageMessageView";
 import TableBaseBubble from "../atoms/TableBaseBubble";
 import { borderRadius, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
-import uuid from 'react-native-uuid';
+import uuid from "react-native-uuid";
 import { tableData } from "../atoms/testData";
 import TextMarkDown from "../atoms/TextMarkDown";
+
 
 export const ChatBubble = ({
   isBot,
   options,
   text,
-  table,
   time,
   status,
   media,
@@ -41,7 +41,7 @@ export const ChatBubble = ({
   handleReplyMessage,
   copyToClipboard,
   replyMessageObj,
-  reconfigApiResponse
+  reconfigApiResponse,
 }) => {
   ChatBubble.propTypes = {
     isBot: PropTypes.bool.isRequired,
@@ -70,7 +70,9 @@ export const ChatBubble = ({
   const tailPosition = isBot ? styles.tailLeft : styles.tailRight;
   const [selectedFeedback, setSelectedFeedback] = useState("");
   const [type, setType] = useState("tableWithText");
-
+  const messageColor = isBot
+    ? reconfigApiResponse?.theme?.botMessageColor.trim() || "#CDEAF8"
+    : reconfigApiResponse?.theme?.userMessageColor.trim() || "#f4f6fa";
   const dispatch = useDispatch();
 
   const handleSelection = (id, messageId) => {
@@ -78,23 +80,26 @@ export const ChatBubble = ({
   };
 
   const reactionOptions = [
-    { id: "like", svg: <Like width={16} height={16} /> },
+    {
+      id: "like",
+      svg: <Text>👍</Text>
+    },
     {
       id: "dislike",
-      svg: (
-        <View style={{ transform: [{ rotate: "180deg" }] }}>
-          <Like width={16} height={16} />
-        </View>
-      ),
+      svg: <Text style={{ transform: [{ rotate: '180deg' }] }}>👍</Text>
     },
   ];
 
-  const onLongPressBubble = (value, markdownText, media, table) => {
+  const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
     if (table && table != "") {
       setIsTableOpen(true);
-      setType("tableWithText");
+      if (text != '') {
+        setType("tableWithText");
+      } else {
+        setType("table");
+      }
     } else if (media && media?.image[0]?.mediaUrl?.length > 0) {
       setIsOpen(true);
     } else {
@@ -103,46 +108,11 @@ export const ChatBubble = ({
     }
   };
   const handleFeedbackSelect = (feedback) => {
-    const messageId = uuid.v4();
-    const userMessage = {
-      messageId: messageId,
-      status: "SENT",
-      messageTo: "bot",
-      dateTime: new Date().toISOString(),
-      activity: null,
-      replyId: null,
-      message: {
-        text: feedback,
-        botOption: true,
-        options: [],
-      },
-      media: {
-        video: [],
-        image: [],
-        document: [],
-      },
-    };
     setSelectedFeedback(feedback);
-    dispatch(addMessage(userMessage));
-    const message = {
-      emailId: reconfigApiResponse?.userInfo?.email,
-      userId: reconfigApiResponse?.userInfo?.agentId,
-      platform: "MSPACE",
-      sendType: "MESSAGE",
-      messageTo: "BOT",
-      messageType: "QUICK_REPLY",
-      text: feedback,
-      replyToMessageId: null,
-      messageId: messageId,
-    };
-    socket.emit("user_message", message);
-};
-
-  const dummyImage = [
-    "https://picsum.photos/200",
-    "https://picsum.photos/200",
-    "https://picsum.photos/200",
-  ];
+    const { message, socketPayload } = formatUserMessage(feedback, reconfigApiResponse, null, "QUICK_REPLY" );
+    dispatch(addMessage(message));
+    socket.emit("user_message", socketPayload);
+  };
 
   const apiText = `
 | Band | Fuel (Per Annum) | Car Driver (Per Annum) | Price                       |
@@ -163,22 +133,33 @@ How can I assist you today?
 3. 🧾 Claim Status
 4. 👨‍💼 Talk to Advisor`;
 
-  const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
+
 
   // console.log('TABLE PART:\n', tablePart);
   // console.log('TEXT PART:\n', textPart);
 
   //
 
+  const isImageOnly = isBot && media?.image?.length > 0 && (text === '' || text === undefined || text === null) && (tablePart === "" || tablePart === undefined || tablePart === null);
+
   const exampleInput =
     "Rohan, I understand that you are looking for car lease details specific to your band. Here is a detailed breakdown of the car lease entitlements and benefits for different bands, including your band (5A):\\n\\n| Band | Fuel (Per Annum) | Car Driver (Per Annum) | Car Maintenance (Per Annum) |\\n|------|------------------|------------------------|-----------------------------|\\n| 0/UC | At actual        | At actual              | At actual                   |\\n| 1    | At actual        | At actual              | At actual                   |\\n| 2A   | At actual        | At actual              | At actual                   |\\n| 2    | At actual        | At actual              | At actual                   |\\n| 3B   | 170,000          | 180,000                | 100,000                     |\\n| 3A   | 170,000          | 180,000                | 100,000                     |\\n| 3    | 170,000          | 180,000                | 100,000                     |\\n| 4    | 100,000          | Not applicable         | 80,000                      |\\n| 5    | 75,000           | Not applicable         | 70,000                      |\\n\\nFor your band (5A), the entitlements are as follows:\\n- **Fuel:** \\u20b975,000 per annum\\n- **Car Driver:** Not applicable\\n- **Car Maintenance:** \\u20b970,000 per annum\\n\\nIf you have any further questions or need additional assistance, please feel free to reach out to HR Operations at trishita.rastogi@maxlifeinsurance.com.";
+  const a = "Rohan, I understand that you are looking for car lease details specific to your band. Here is a detailed breakdown of the car lease entitlements and benefits for different bands, including your band (5A):| **Band** | **Fuel (Per Annum)** | **Car Driver (Per Annum)** | **Car Maintenance (Per Annum)** |\n| -------- | -------------------- | -------------------------- | ------------------------------- |\n| 1        | At actual            | At actual                  |                                 |\n| 2A       | At actual            | At actual                  |                                 |\n| 2        | At actual            | At actual                  |                                 |\n| 3B       | ₹170,000             | ₹180,000                   | ₹100,000                        |\n| 3A       | ₹170,000             | ₹180,000                   | ₹100,000                        |\n| 3        | ₹170,000             | ₹180,000                   | ₹100,000                        |\n| 4        | ₹100,000             | Not applicable             | ₹80,000                         |\n| 5        | ₹75,000              | Not applicable             | ₹70,000                         |For your band (5A), the entitlements are as follows:\n\nFuel: ₹75,000 per annum\n\nCar Driver: Not applicable\n\nCar Maintenance: ₹70,000 per annum"
+  const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
 
   return (
     <TouchableWithoutFeedback
-      onLongPress={() => onLongPressBubble(messageId, text, media, tablePart)}
+      onLongPress={() => onLongPressBubble(messageId, text, media, tablePart, textPart)}
       delayLongPress={200}
     >
-      <View style={[styles.chatBubbleContainer, bubbleStyle]}>
+      <View
+        style={[
+          styles.chatBubbleContainer,
+          bubbleStyle,
+          { backgroundColor: messageColor },
+          isImageOnly && styles.imageOnlyBubble,
+        ]}
+      >
         {replyMessage && (
           <ReplyMessage
             replyFrom={replyFrom === "bot" ? "YOU" : "BOT"}
@@ -200,7 +181,7 @@ How can I assist you today?
           </>
         ) : (
           <>
-            {isBot && !isLoader && tablePart && tablePart !== "" && (
+            {isBot && !isLoader && tablePart !== "" && (
               <TableBaseBubble
                 apiText={tablePart}
                 isOpen={isTableOpen}
@@ -212,6 +193,7 @@ How can I assist you today?
                 type={type}
                 setType={setType}
                 reply={false}
+                isTextEmpty={textPart === ""}
               />
             )}
             {/* <TextMarkDown input={text} /> */}
@@ -230,6 +212,7 @@ How can I assist you today?
                       handleReplyMessage={handleReplyMessage}
                       setMessageObjectId={setMessageObjectId}
                       messageId={messageId}
+                      isTextEmpty={text == '' || text === undefined || text === null}
                     />
                   )
               )}
@@ -249,11 +232,12 @@ How can I assist you today?
                   options={options}
                   onSelect={handleFeedbackSelect}
                   selectedFeedback={selectedFeedback}
-                  />
+                  reconfigApiResponse={reconfigApiResponse}
+                />
               </View>
             )}
             <View style={styles.footer}>
-              <TimeAndTick time={time} status={status} isBot={isBot} />
+              <TimeAndTick time={time} status={status} isBot={isBot} isImageOnly={isImageOnly} />
             </View>
             <View style={[styles.tail, tailPosition]}>
               {isBot ? (
@@ -269,6 +253,7 @@ How can I assist you today?
                   onSelect={handleSelection}
                   messageId={messageId}
                   socket={socket}
+                  agentId={reconfigApiResponse?.userInfo?.agentId}
                 />
               </View>
             )}
@@ -309,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    marginRight: spacing.space_s3,
+    // marginRight: spacing.space_s3,
     marginBottom: spacing.space_s2,
     marginTop: spacing.space_s0,
     paddingTop: spacing.space_s0,
@@ -328,6 +313,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: spacing.space_s2,
     right: spacing.space_s3,
+  },
+  imageOnlyBubble: {
+    paddingBottom: spacing.space_base,
   },
 });
 

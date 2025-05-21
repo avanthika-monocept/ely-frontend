@@ -165,11 +165,11 @@ export const ChatBody = ({
   };
   
   const chatWithSeparators = generateChatDataWithSeparators(messages);
-  console.log("CHAT WITH SEPARATORS", chatWithSeparators);
+  // console.log("CHAT WITH SEPARATORS", chatWithSeparators);
 
   const renderItem = ({ item, index }) => {
     if (item.type === "separator") {
-      console.log(item.date, "checking date");
+      // console.log(item.date, "checking date");
       return <ChatDateSeparator date={item.date} />;
     }
     if (item.type === "banner") {
@@ -196,7 +196,6 @@ export const ChatBody = ({
       >
         <ChatBubble
           text={item?.message?.text || item?.text}
-          table={item?.message?.table?.replace(/^`|`$/g, "")}
           isBot={isBot}
           time={formatTime(item?.dateTime || item?.createdAt)}
           status={item?.status}
@@ -231,7 +230,7 @@ export const ChatBody = ({
       showsVerticalScrollIndicator={true}
       inverted={true}
       onScroll={handleScroll}
-      onEndReachedThreshold={0.1} // This controls how early it triggers
+      onEndReachedThreshold={1.0} // This controls how early it triggers
       onEndReached={() =>
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 10)
       }

@@ -11,7 +11,7 @@ export const tableData = `Rohan, I understand that you are looking for car lease
 | 4        | ₹100,000             | Not applicable             | ₹80,000                         |
 | 5        | ₹75,000              | Not applicable             | ₹70,000                         |
 
-For your band (5A), the entitlements are as follows:
+For your band (5A), the entitlements are as followed:
 
 Fuel: ₹75,000 per annum
 

@@ -9,16 +9,23 @@ const mockOptions = [
 ];
 
 describe('Reactions Component', () => {
-  const mockSocket = {
-    emit: jest.fn()
-  };
+  let mockSocket;
+  const agentId = 'AGT001';
+
+  beforeEach(() => {
+    mockSocket = {
+      emit: jest.fn()
+    };
+    jest.clearAllMocks();
+  });
 
   it('renders all reaction options', () => {
     const { getByTestId } = render(
       <Reactions 
         options={mockOptions} 
         messageId="m1" 
-        socket={mockSocket} 
+        socket={mockSocket}
+        agentId={agentId}
       />
     );
 
@@ -27,51 +34,123 @@ describe('Reactions Component', () => {
     expect(getByTestId('reaction-laugh')).toBeTruthy();
   });
 
-  it('calls onSelect and socket.emit when an option is pressed', () => {
+  it('handles like reaction correctly', () => {
     const onSelectMock = jest.fn();
-
     const { getByTestId } = render(
       <Reactions
         options={mockOptions}
         onSelect={onSelectMock}
         messageId="msg123"
         socket={mockSocket}
+        agentId={agentId}
       />
     );
 
-    fireEvent.press(getByTestId('reaction-love'));
+    const likeButton = getByTestId('reaction-like');
 
-    expect(onSelectMock).toHaveBeenCalledWith('love', 'msg123');
+    // First press (select like)
+    fireEvent.press(likeButton);
+    expect(onSelectMock).toHaveBeenCalledWith('like', 'msg123');
     expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
-      emoji: 'U+1F44E',
-      type: 'REACTION',
-      action: 'DESELECTED',
-      messageId: 'msg123'
+      emoji: 'U+1F44D',
+      sendType: 'REACTION',
+      action: 'SELECTED',
+      messageId: 'msg123',
+      userId: agentId
+    });
+
+    // Clear mocks for second press
+    onSelectMock.mockClear();
+    mockSocket.emit.mockClear();
+
+    // Second press (deselect like)
+    fireEvent.press(likeButton);
+    expect(onSelectMock).toHaveBeenCalledWith('like', 'msg123');
+    expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
+      emoji: 'U+1F44D',
+      sendType: 'REACTION',
+      action: 'SELECTED', // Note: Component always sends SELECTED for like
+      messageId: 'msg123',
+      userId: agentId
     });
   });
 
-  it('toggles the selected reaction and emits correct socket events', () => {
+  it('handles non-like reactions correctly', () => {
     const onSelectMock = jest.fn();
-
     const { getByTestId } = render(
       <Reactions
         options={mockOptions}
         onSelect={onSelectMock}
-        messageId="msg999"
+        messageId="msg456"
         socket={mockSocket}
+        agentId={agentId}
       />
     );
 
-    const laughButton = getByTestId('reaction-laugh');
+    const loveButton = getByTestId('reaction-love');
 
-    // First press (select)
-    fireEvent.press(laughButton);
-    expect(onSelectMock).toHaveBeenCalledWith('laugh', 'msg999');
+    // First press (select love)
+    fireEvent.press(loveButton);
+    expect(onSelectMock).toHaveBeenCalledWith('love', 'msg456');
     expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
       emoji: 'U+1F44E',
-      type: 'REACTION',
+      sendType: 'REACTION',
       action: 'DESELECTED',
-      messageId: 'msg999'
+      messageId: 'msg456',
+      userId: agentId
     });
-});
+
+    // Second press (deselect love)
+    fireEvent.press(loveButton);
+    expect(onSelectMock).toHaveBeenCalledWith('love', 'msg456');
+    expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
+      emoji: 'U+1F44E',
+      sendType: 'REACTION',
+      action: 'DESELECTED',
+      messageId: 'msg456',
+      userId: agentId
+    });
+  });
+
+  it('handles switching between different reactions', () => {
+    const onSelectMock = jest.fn();
+    const { getByTestId } = render(
+      <Reactions
+        options={mockOptions}
+        onSelect={onSelectMock}
+        messageId="msg789"
+        socket={mockSocket}
+        agentId={agentId}
+      />
+    );
+
+    const likeButton = getByTestId('reaction-like');
+    const loveButton = getByTestId('reaction-love');
+
+    // Select like first
+    fireEvent.press(likeButton);
+    expect(onSelectMock).toHaveBeenCalledWith('like', 'msg789');
+    expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
+      emoji: 'U+1F44D',
+      sendType: 'REACTION',
+      action: 'SELECTED',
+      messageId: 'msg789',
+      userId: agentId
+    });
+
+    // Then select love
+    fireEvent.press(loveButton);
+    expect(onSelectMock).toHaveBeenCalledWith('love', 'msg789');
+    expect(mockSocket.emit).toHaveBeenCalledWith('user_message', {
+      emoji: 'U+1F44E',
+      sendType: 'REACTION',
+      action: 'DESELECTED',
+      messageId: 'msg789',
+      userId: agentId
+    });
+  });
+
+  it('does not emit socket message when socket is not provided', () => {
+    const onSelectMock = jest.fn();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});});
 });
