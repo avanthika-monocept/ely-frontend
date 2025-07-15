@@ -1,0 +1,14 @@
+export const env = "uat";
+// export const env = "prod";
+const uatBaseUrl = "https://uatapi.maxlifeinsurance.com/hris";
+const prodBaseUrl = "";
+const COGNITO_BASE_URL_UAT = 'https://nonprodservice.auth.ap-south-1.amazoncognito.com';
+const COGNITO_BASE_URL_PROD = '';
+const CLIENT_ID_UAT = '42tukg87arpovg7egqa3r5hmdc';
+const CLIENT_SECRET_UAT = '13evm1c9e4p4gtaoiaga6s10921uc6q5q4jn4kpim9oknk7jdagf';
+const CLIENT_ID_PROD = '';
+const CLIENT_SECRET_PROD = '';
+export const baseUrl = env === "uat" ? uatBaseUrl : prodBaseUrl;
+export const COGNITO_BASE_URL= env === "uat" ? COGNITO_BASE_URL_UAT : COGNITO_BASE_URL_PROD;
+export const CLIENT_ID = env === "uat" ? CLIENT_ID_UAT : CLIENT_ID_PROD;
+export const CLIENT_SECRET = env === "uat" ? CLIENT_SECRET_UAT : CLIENT_SECRET_PROD;

@@ -1,285 +1,485 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, StyleSheet, StatusBar } from "react-native";
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  AppState,
+} from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
 import { ChatFooter } from "../organims/ChatFooter";
 import { ChatBody } from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
-import LandingPage from "../organims/LandingPage";
+import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addChatHistory,
-  clearMessages,
-  addMessage,
-  updateMessageStatus,
-  markAllMessagesAsRead,
-} from "../../store/reducers/chatSlice";
+import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
+import { hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { initializeSocket } from "../../config/websocket";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { spacing } from "../../constants/Dimensions";
-import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
-import { splitMarkdownIntoTableAndText , formatBotMessage } from "../../common/utils";
+import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/utils";
+import { stringConstants } from "../../constants/StringConstants";
+import VideoLoader from "../atoms/VideoLoader";
+import { getCognitoToken } from "../../config/api/getToken";
 
-
-
+const WEBSOCKET_URL = 'wss://rb0rtd86jb.execute-api.ap-south-1.amazonaws.com/uat/?userId=hom5750';
 export const ChatPage = () => {
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
-  const socketRef = useRef(null);
-  const { isBottomSheetOpen, bottomSheetHeight } = useSelector(
-    (state) => state.bottomSheet
-  );
+
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
   const [navigationPage, setnavigationPage] = useState("COACH");
   const [reply, setReply] = useState(false);
+
+  const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
-  const [inputHeight, setInputHeight] = useState(24); 
+  const [inputHeight, setInputHeight] = useState(24);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const messages = useSelector((state) => state.chat.messages);
-  const [newMessageCount, setNewMessageCount] = useState(1);
+  const [newMessageCount, setNewMessageCount] = useState(1); // will be updated after socket connection
   const [inactivityTimer, setInactivityTimer] = useState(null);
-const [lastActivityTime, setLastActivityTime] = useState(null);
-  const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || "#FFFFFF";
-  let messageObject = messages.find(
-    (msg) => msg?.messageId === messageObjectId
-  );
-
-  const handleScroll = (event) => {
-    const { contentOffset } = event.nativeEvent;
-    const isAtBottom = contentOffset.y <= 50;
-    setShowFab(!isAtBottom);
-    setIsAtBottom(isAtBottom);
-  };
-
-
-  const scrollToDown = () => {
-    setShowFab(false);
-    scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
-
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [token, settoken] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [responseTimeout, setResponseTimeout] = useState(null);
+  const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const messages = useSelector((state) => state.chat.messages);
+  const ws = useRef(null);
+  const backgroundColor =
+    reconfigApiResponse?.theme?.backgroundColor || "#F4F6FA";
+  const isSharing = useSelector((state) => state.shareLoader.isSharing);
   useEffect(() => {
-    const socket = initializeSocket("AGT001");
-    const setupInactivityTimer = () => {
-    if (reconfigApiResponse?.statusFlag === "COACH") {
-      // Clear existing timer if any
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (e) => {
+        setKeyboardOffset(e.endCoordinates.height - 30);
       }
-      const timer = setTimeout(() => {
-        console.log("Disconnecting socket due to inactivity");
-        socket.disconnect();
-      }, 3600000);
-      
-      setInactivityTimer(timer);
-      setLastActivityTime(new Date());
-    }
-  };
-  const sendAcknowledgement = (messageId) => {
-    socket.emit("user_message", {
-      messageId: messageId,
-      status:"READ",
-      sendType: "ACKNOWLEDGEMENT",
-      userId: reconfigApiResponse?.userInfo?.agentId,
-      });
-  };
-    socket.on("connect", () => {
-      setupInactivityTimer();
-      console.log("Socket connected:", socket.id);
-  });
-    socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
-      if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-    });
-    socket.on("connect_error", (err) => {
-      console.error("Connection error:", err);
-    });
-    socket.on("bot_message", (data) => {
-      setupInactivityTimer();
-      console.log("Received message:", JSON.stringify(data));
-      sendAcknowledgement(data?.messageId);
-      dispatch(showLoader());
-      if(data){
-        // const botMessage = {
-        //   messageId: data?.messageId,
-        //   messageTo: "user",
-        //   dateTime: new Date().toISOString(),
-        //   activity: null,
-        //   replyId: null,
-        //   conversationEnded:data?.conversationEnded,
-        //   message: {
-        //     text: data.entry?.message?.text,
-        //     table: data.entry?.message?.table,
-        //     botOption: data.entry?.message?.botOption,
-        //     options: [],
-        //   },
-        //   media: data?.entry?.message?.media,
-        // };
-        const botMessage = formatBotMessage(data);
-      if (!isAtBottom) {
-        setShowFab(false);
-        setShowNewMessageAlert(true);
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardOffset(0);
       }
-        console.log("botMessage", botMessage);
-        dispatch(markAllMessagesAsRead());
-        dispatch(addMessage(botMessage));
-        dispatch(hideLoader());
-
-      }
-   });
-    socket.on("acknowledgement", (data) => {
-      console.log("Received acknowledgement:", JSON.stringify(data));
-    if (data.data.acknowledgement === "DELIVERED") {
-      dispatch(updateMessageStatus({
-        messageId: data.data.messageId,
-        status: "DELIVERED"
-      }));
-    }
-    });
-    socketRef.current = socket;
-
+    );
     return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("connect_error");
-      socket.off("bot_message");
-      socket.disconnect();
-      if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 
-  const loadChatHistory = async (agentId, page, message) => {
-    // return false;
-    // eslint-disable-next-line no-unreachable
-    setHasMore(true); //added for eslint , need to remove later
+  const messageObject = messages.find(
+    (msg) => msg?.messageId === messageObjectId
+  );
+  const startResponseTimeout = () => {
+    // Clear any existing timeout
+    if (responseTimeout) {
+      clearTimeout(responseTimeout);
+    }
+
+    // Set new timeout
+    const timeoutId = setTimeout(() => {
+      dispatch(hideLoader());
+      console.log("Loader hidden after 1 minute with no response");
+    }, 60000); // 1 minute
+
+    setResponseTimeout(timeoutId);
+  };
+  const clearResponseTimeout = () => {
+    if (responseTimeout) {
+      clearTimeout(responseTimeout);
+      setResponseTimeout(null);
+    }
+  };
+  const fetchToken = async () => {
+
+    try {
+      const response = await getCognitoToken();
+
+      if (response && response.access_token) {
+        settoken(response.access_token);
+      }
+      return response.access_token;
+
+
+    } catch (err) {
+      console.error('Token fetch failed:', err);
+    }
+  };
+  const handleScroll = (event) => {
+    const { contentOffset } = event.nativeEvent;
+    const isBottom = contentOffset.y <= 50;
+    setShowFab(!isBottom);
+    setIsAtBottom(isBottom);
+    if (isBottom) {
+      setShowNewMessageAlert(false);
+    }
+  };
+  const handleReplyMessage = () => {
+    if (messageObjectId) {
+      setReplyMessageId(messageObjectId);
+      setReply(true);
+    }
+  };
+
+  const scrollToDown = () => {
+    setShowFab(false);
+    setShowNewMessageAlert(false);
+
+    scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const loadChatHistory = async (agentId, page, message, newToken) => {
+    console.log("checking loadChatHistory", agentId, page, message, newToken);
+    setHasMore(true);
     if (!hasMore) return;
     try {
-      const newMessages = await fetchChatHistory(agentId, page, message);
-      dispatch(addChatHistory(newMessages)); // reverse to show old at top
+      const newMessages = await fetchChatHistory(agentId, page, message, newToken);
+      dispatch(addChatHistory(newMessages));
       setPage((prev) => prev + 1);
     } catch (err) {
-      console.error("Failed to load chat history:", err);
+      console.error(stringConstants.failToLoad, err);
+    }
+  };
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const newToken = await fetchToken();
+        dispatch(
+          getData({
+            token: newToken,
+            agentId: "hom5750",
+            platform: "MSPACE",
+            callback: (response) => {
+              setnavigationPage(response.statusFlag);
+              setReconfigApiResponse(response);
+              dispatch(clearMessages());
+              if (response.statusFlag.toLowerCase() === "agenda") {
+                console.log("newtoken", newToken);
+                loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+              }
+            },
+          })
+        );
+      } catch (error) {
+        console.error("Initialization failed:", error);
+        // Handle error case (maybe use fallback data)
+      }
+    };
+
+    initialize();
+  }, [dispatch]);
+
+  const connectWebSocket = () => {
+    ws.current = new WebSocket(WEBSOCKET_URL);
+
+    ws.current.onopen = () => {
+      console.log('✅ WebSocket connected');
+      setConnectionStatus('connected');
+    };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('📨 Message:', data);
+
+      // Handle disconnect action
+      if (data.action === 'disconnect' && data.userId === 'hom5750') {
+        console.log('🔌 Received disconnect request - closing connection');
+        ws.current.close(1000, 'Disconnect requested by server');
+        setConnectionStatus('disconnected');
+        return;
+      }
+
+      if (data.type === 'BOT_RESPONSE') {
+        handleBotMessage(data);
+      } else if (data.type === 'ACKNOWLEDGEMENT') {
+        handleAcknowledgement(data);
+      }
+    };
+
+    ws.current.onerror = (error) => {
+      console.error('❌ WebSocket error:', error.message || error);
+      setConnectionStatus('disconnected');
+      clearResponseTimeout();
+    };
+
+    ws.current.onclose = (e) => {
+      console.log('🔌 WebSocket closed:', e.code, e.reason);
+      setConnectionStatus('disconnected');
+      clearResponseTimeout();
+    };
+  };
+
+  const cleanupWebSocket = (sendDisconnect = false) => {
+    // Add null check first
+    if (!ws.current) {
+      console.log('WebSocket already cleaned up');
+      return;
+    }
+
+    try {
+      if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
+        const disconnectPayload = {
+          action: "disconnect",
+          userId: "hom5750"
+        };
+        ws.current.send(JSON.stringify(disconnectPayload));
+        console.log('Disconnect message sent');
+      }
+
+      // Only try to close if socket exists and isn't already closing/closed
+      if ([WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.current.readyState)) {
+        ws.current.close(1000, 'Normal closure');
+      }
+    } catch (error) {
+      console.error('Error during WebSocket cleanup:', error);
+    } finally {
+      // Always clean up references
+      ws.current = null;
     }
   };
 
   useEffect(() => {
-    dispatch(
-      getData({
-        callback: (response) => {
-          setnavigationPage(response.statusFlag);
-          setReconfigApiResponse(response);
-          dispatch(clearMessages());
-          // eslint-disable-next-line no-constant-condition
-          if (response.statusFlag.toLowerCase() === "agenda") {
-            loadChatHistory(response.userInfo.agentId, page, 10);
-          }
-        },
-      })
-    );
-  }, [dispatch]);
+    let currentAppState = AppState.currentState;
+    let isMounted = true; // Track mounted state
 
-  const handleReplyMessage = () => {
-    setReplyMessageId(messageObjectId);
-    setReply(true);
+    const handleAppStateChange = (nextAppState) => {
+      if (!isMounted) return;
+
+      if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+        console.log('App going to background - closing WebSocket');
+        cleanupWebSocket(true); // Send disconnect message
+        clearResponseTimeout();
+        dispatch(hideLoader())
+      }
+
+      if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('App returning to foreground');
+        if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+          connectWebSocket();
+        }
+      }
+
+      currentAppState = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+      cleanupWebSocket(true); // Graceful disconnect on unmount
+      clearResponseTimeout();
+    };
+  }, []);
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      clearResponseTimeout();
+      cleanupWebSocket();
+    };
+  }, []);
+
+  // will be used after websoket is updated in the backend 
+  const handleBotMessage = (data) => {
+    clearResponseTimeout();
+    dispatch(hideLoader());
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+    }
+    setInactivityTimer(setTimeout(() => {
+      console.log("Disconnecting due to inactivity");
+      cleanupWebSocket(true);
+    }, 3600000));
+    sendAcknowledgement(data?.messageId);
+
+    const botMessage = formatBotMessage(data);
+    if (!isAtBottom) {
+      setShowFab(false);
+      setShowNewMessageAlert(true);
+    }
+
+    dispatch(markAllMessagesAsRead());
+    dispatch(addMessage(botMessage));
+
   };
+  const handleAcknowledgement = (data) => {
+    console.log("Received acknowledgement:", JSON.stringify(data));
+    if (data.acknowledgement === "RECEIVED") {
+      dispatch(updateMessageStatus({
+        messageId: data.messageId,
+        status: "RECEIVED"
+      }));
+    }
+  };
+
+  const sendAcknowledgement = (messageId) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const payload = {
+        action: 'acknowledgement',
+        messageId: messageId,
+        status: "READ",
+        sendType: "ACKNOWLEDGEMENT",
+        userId: reconfigApiResponse?.userInfo?.agentId,
+      };
+      ws.current.send(JSON.stringify(payload));
+    }
+  };
+
   const handleReplyClose = () => {
+    setReplyIndex(0);
     setReplyMessageId(null);
     setReply(false);
   };
+  const copyToClipboard = async () => {
+    const androidVersion = parseInt(Platform.Version, 10);
+    const textToCopy = messageObject?.message?.text
+      ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
+      : messageObject?.message?.text;
 
+    Clipboard.setString(textToCopy);
 
-const copyToClipboard = async () => {
-  setCopied(true);
-  const textToCopy = messageObject?.message?.text ? 
-    splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart : 
-    messageObject?.message?.text;
-  
-  Clipboard.setString(textToCopy);
-  setCopied(true);
-  setTimeout(() => {
-    setCopied(false);
-    setMessageObjectId(null);
-  }, 1000);
-};
+    if (androidVersion < 33 || Platform.OS === "ios") {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        setMessageObjectId(null);
+      }, 1000);
+    } else {
+      setMessageObjectId(null);
+    }
+  };
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (messages.length > prevMessagesLength) {
+      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom) {
+        setShowNewMessageAlert(true);
+      }
+      setPrevMessagesLength(messages.length);
+    }
+  }, [messages, isAtBottom, prevMessagesLength]);
+
   return (
-    <SafeAreaView style={[styles.container,{backgroundColor:backgroundColor}]}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
-      <ChatHeader reconfigApiResponse={reconfigApiResponse} />
-      <View style={styles.content} >
-        {navigationPage === "COACH" ? (
-          <LandingPage
-            socket={socketRef.current}
-            setnavigationPage={setnavigationPage}
-            reconfigApiResponse={reconfigApiResponse}
-          />
-        ) : (
-          <ChatBody
-            scrollViewRef={scrollViewRef}
-            handleScroll={handleScroll}
-            setDropDownType={setDropDownType}
-            setMessageObjectId={setMessageObjectId}
-            showFab={showFab}
-            showNewMessage={showNewMessageAlert}
-            handleReplyMessage={handleReplyMessage}
-            loadChatHistory={loadChatHistory}
-            page={page}
-            reconfigApiResponse={reconfigApiResponse}
-            socket={socketRef.current}
-            copyToClipboard={copyToClipboard}
-          />
-        )}
-      </View>
-
-      {navigationPage !== "coach" ? (
-        <View
-          style={[styles.fabIcon,{ bottom: isBottomSheetOpen  ? bottomSheetHeight + 20 : reply ? 130 : 80 + (inputHeight - 24) },]}>
-          <FabFloatingButton
-            onClick={scrollToDown}
-            showFab={showFab}
-            showNewMessageAlert={showNewMessageAlert}
-            count={newMessageCount}
-            reply={reply}
-          />
-        </View>
-      ) : null}
-
-      <ChatFooter
-        copied={copied}
-        setCopied={setCopied}
-        setDropDownType={setDropDownType}
-        dropDownType={dropDownType}
-        messageObjectId={messageObjectId}
+      <ChatHeader
+        reconfigApiResponse={reconfigApiResponse}
         setnavigationPage={setnavigationPage}
         navigationPage={navigationPage}
-        setMessageObjectId={setMessageObjectId}
-        setReplyMessageId={setReplyMessageId}
-        replyMessageId={replyMessageId}
-        socket={socketRef.current}
-        setReply={setReply}
-        reply={reply}
-        handleReplyClose={handleReplyClose}
-        handleReplyMessage={handleReplyMessage}
-        reconfigApiResponse={reconfigApiResponse}
-        messages={messages}
-        copyToClipboard={copyToClipboard}
-        onInputHeightChange={setInputHeight}
-        scrollToDown={scrollToDown}
-        inactivityTimer={inactivityTimer}
-        setInactivityTimer={setInactivityTimer}
       />
+      {isSharing && (
+        <View style={styles.loaderContainer}>
+          <VideoLoader />
+        </View>
+      )}
+      <TouchableWithoutFeedback
+        onPress={() => {
+          setKeyboardOffset(0);
+          Keyboard.dismiss();
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.content}>
+            {navigationPage === stringConstants.coach ? (
+              <LandingPage
+                socket={ws.current}
+                setnavigationPage={setnavigationPage}
+                reconfigApiResponse={reconfigApiResponse}
+                startResponseTimeout={startResponseTimeout}
+              />
+            ) : (
+              <ChatBody
+                scrollViewRef={scrollViewRef}
+                isAtBottom={isAtBottom}
+                handleScroll={handleScroll}
+                setDropDownType={setDropDownType}
+                setMessageObjectId={setMessageObjectId}
+                showFab={showFab}
+                showNewMessage={showNewMessageAlert}
+                handleReplyMessage={handleReplyMessage}
+                setReplyIndex={setReplyIndex}
+                replyIndex={replyIndex}
+                loadChatHistory={loadChatHistory}
+                page={page}
+                reconfigApiResponse={reconfigApiResponse}
+                socket={ws.current}
+                copyToClipboard={copyToClipboard}
+                setCopied={setCopied}
+                token={token}
+              />
+            )}
+          </View>
+
+          {navigationPage !== stringConstants.coach && showFab && (
+            <View
+              style={[
+                styles.fabIcon,
+                {
+                  bottom:
+                    (Platform.OS === "ios" ? keyboardOffset : 0) +
+                    (reply ? 130 : 80 + (inputHeight - 24)),
+                },
+              ]}
+            >
+              <FabFloatingButton
+                onClick={scrollToDown}
+                showFab={showFab}
+                showNewMessageAlert={showNewMessageAlert}
+                count={newMessageCount}
+                reply={reply}
+              />
+            </View>
+          )}
+
+          <ChatFooter
+            copied={copied}
+            setCopied={setCopied}
+            setDropDownType={setDropDownType}
+            dropDownType={dropDownType}
+            messageObjectId={messageObjectId}
+            setnavigationPage={setnavigationPage}
+            navigationPage={navigationPage}
+            setMessageObjectId={setMessageObjectId}
+            setReplyMessageId={setReplyMessageId}
+            replyMessageId={replyMessageId}
+            socket={ws.current}
+            setReply={setReply}
+            replyIndex={replyIndex}
+            reply={reply}
+            handleReplyClose={handleReplyClose}
+            handleReplyMessage={handleReplyMessage}
+            reconfigApiResponse={reconfigApiResponse}
+            messages={messages}
+            copyToClipboard={copyToClipboard}
+            onInputHeightChange={setInputHeight}
+            scrollToDown={scrollToDown}
+            inactivityTimer={inactivityTimer}
+            setInactivityTimer={setInactivityTimer}
+            setShowNewMessageAlert={setShowNewMessageAlert}
+            isAtBottom={isAtBottom}
+            cleanupWebSocket={cleanupWebSocket}
+            startResponseTimeout={startResponseTimeout}
+            clearResponseTimeout={clearResponseTimeout}
+          />
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+
     </SafeAreaView>
   );
 };
@@ -298,5 +498,16 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     flexDirection: "row",
     justifyContent: "flex-end",
+  },
+  loaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    backgroundColor: 'rgba(181, 178, 178, 0.5)',
   },
 });

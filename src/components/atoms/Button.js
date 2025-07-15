@@ -7,7 +7,7 @@ import { spacing } from "../../constants/Dimensions";
 
 const Button = ({ isEnabled, onClick, reconfigApiResponse }) => {
   const buttonColor = reconfigApiResponse?.theme?.buttonColor || "#97144D";
-  
+
   return (
     <TouchableOpacity
       onPress={onClick}
@@ -26,8 +26,8 @@ const SendButtonImage = ({ isEnabled, buttonColor }) => {
     backgroundColor: isEnabled ? buttonColor : "#EEEEEF",
     borderRadius: 50,
     padding: 10,
-    width: 35,
-    height: 35,
+    width: 41,
+    height: 41,
     alignItems: "center",
     justifyContent: "center",
     paddingLeft: 12,
@@ -36,7 +36,7 @@ const SendButtonImage = ({ isEnabled, buttonColor }) => {
   const iconProps = {
     width: 15,
     height: 15,
-    testID: "send-icon"
+    testID: "send-icon",
   };
 
   return (
@@ -60,8 +60,8 @@ Button.propTypes = {
   onClick: PropTypes.func.isRequired,
   reconfigApiResponse: PropTypes.shape({
     theme: PropTypes.shape({
-      buttonColor: PropTypes.string
-    })
+      buttonColor: PropTypes.string,
+    }),
   }),
 };
 

@@ -12,7 +12,6 @@ const chatSlice = createSlice({
       state.messages = action.payload;
     },
     addMessage: (state, action) => {
-      // state.messages.push(action.payload);
       if (!state.messages.some(msg => msg.messageId === action.payload.messageId)) {
         state.messages.push(action.payload);
       }
@@ -45,6 +44,7 @@ const chatSlice = createSlice({
         message.status = status;
       }
     },
+  
     markAllMessagesAsRead: (state) => {
       state.messages.forEach(msg => {
         if (msg.messageTo === "bot") {

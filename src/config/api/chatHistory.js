@@ -1,5 +1,6 @@
 import apiCall from "../axiosRequest";
 import { CHAT_HISTORY } from "../apiUrls";
+import { baseUrl } from "../../constants/constants";
 
 const dummyresponse = {
   status: "success",
@@ -226,22 +227,26 @@ const dummyresponse = {
   },
 };
 
-export const fetchChatHistory = async (agentId, page = 0, size = 10) => {
+export const fetchChatHistory = async (agentId, page = 0, size = 10,token) => {
+
   try {
     const response = await apiCall({
-      baseURL: "http://10.5.50.125:9091",
-      // baseURL: "http://localhost:8080",
+      baseURL: baseUrl,
       url: CHAT_HISTORY,
       method: "POST",
+      headers: {
+         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-api-key':'4iNbPS8RzT4G9q7tBp3QZ36FwFBd5GhX6Lrl4oVK'
+      },
       data: { agentId: agentId, page: page, size: size },
     });
 
     console.log(JSON.stringify(response), " chathistory   response");
     return response?.data?.content || [];
-    // return dummyresponse?.data?.content.slice(0, size) || [];
+    
   } catch (error) {
     console.error("Error fetching chat history:", error);
-    // return dummyresponse?.data?.content.slice(0, page) || [];
-    // throw error;
+    
   }
 };

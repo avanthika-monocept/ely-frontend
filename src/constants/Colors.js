@@ -15,7 +15,8 @@ const colors = {
     darkBlue: "#143A72",
     borderBlue: "#0092DB",
     red: "#ff0000",
-    lightSurface:'#F4F6FA',
+    lightSurface: "#F4F6FA",
+    borderTop: "#e0e0e0",
   },
   secondaryColors: {
     summerSky: "#3597EC",
@@ -74,7 +75,13 @@ const colors = {
         "rgba(73, 122, 248, 0.24)",
       ],
       expandedCard: ["rgba(255, 255, 255, 0.00)", "rgba(235, 245, 253, 0.50)"],
-
+      elyBubble: ["#E8EBF1", "#E8EBF1", "#F4F6FA"],
+      landingPageGradient: [
+        "#FFF",
+        "rgba(223, 234, 247, 0.2)",
+        "rgba(102, 199, 247, 0.2)",
+        "rgba(71, 186, 243, 0.2)",
+      ],
       //below colors are named randomly, below need to be named acc to glide
       incentiveCard: ["#046FCC", "#3597EC"],
       incentiveCardgreen: ["#06733A", "#9FCE85"],
@@ -165,6 +172,10 @@ const colors = {
       mb300: "#B9C4D5",
       mb200: "#D0D8E3",
       mb100: "#E8EBF1",
+    },
+    otherColor: {
+      color1: "#E6F7FF",
+      color2: "#E0E0E0",
     },
   },
   Gradient: {

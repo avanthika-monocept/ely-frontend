@@ -6,23 +6,19 @@ import ReplyMessage from "../atoms/ReplyMessage";
 import CopyTextClipboard from "../atoms/CopyTextClipboard";
 import Dropdown from "../atoms/Dropdown";
 import { useDispatch, useSelector } from "react-redux";
-// import * as Clipboard from "expo-clipboard";
 import { addMessage } from "../../store/reducers/chatSlice";
-import { hideLoader } from "../../store/reducers/loaderSlice";
+import { hideLoader, showLoader } from "../../store/reducers/loaderSlice";
 import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
 import { borderWidth, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
-import uuid from 'react-native-uuid';
-
+import { stringConstants } from "../../constants/StringConstants";
+import colors from "../../constants/Colors";
 
 
 
 export const ChatFooter = ({
   copied,
-  setCopied,
   dropDownType,
-  messageObjectId,
-  setMessageObjectId,
   replyMessageId,
   setReplyMessageId,
   navigationPage,
@@ -39,13 +35,15 @@ export const ChatFooter = ({
   scrollToDown,
   inactivityTimer,
   setInactivityTimer,
+setCopied,
+ replyIndex,
+ cleanupWebSocket,
+startResponseTimeout,
+clearResponseTimeout,
 }) => {
   ChatFooter.propTypes = {
     copied: PropTypes.bool.isRequired,
-    setCopied: PropTypes.func.isRequired,
     dropDownType: PropTypes.string.isRequired,
-    messageObjectId: PropTypes.string,
-    setMessageObjectId: PropTypes.func.isRequired,
     setReplyMessageId: PropTypes.func.isRequired,
     replyMessageId: PropTypes.string,
     navigationPage: PropTypes.string.isRequired,
@@ -62,25 +60,29 @@ export const ChatFooter = ({
     scrollToDown: PropTypes.func,
     inactivityTimer: PropTypes.object,
     setInactivityTimer: PropTypes.func,
+    replyIndex: PropTypes.number,
+    setCopied: PropTypes.func,
+    cleanupWebSocket: PropTypes.func,
+    startResponseTimeout: PropTypes.func,
+    clearResponseTimeout:PropTypes.func,
   };
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
-  const [count, setCount] = useState(0);
-  const [dynamicPlaceholder, setDynamicPlaceholder] =
-    useState("Type a message...");
+  const [dynamicPlaceholder, setDynamicPlaceholder] = useState(
+    stringConstants.typeMessage
+  );
   const isLoading = useSelector((state) => state.loader.isLoading);
 
   const isBottomSheetOpen = useSelector(
     (state) => state.bottomSheet.isBottomSheetOpen
   );
 
-
   useEffect(() => {
     const clearPlaceholderInterval = setupDynamicPlaceholder(
       reconfigApiResponse.placeHolders || [],
       setDynamicPlaceholder,
       3000,
-      isLoading, // Pass loading state
+      isLoading,
       reply
     );
 
@@ -92,33 +94,45 @@ export const ChatFooter = ({
 
   const handleSend = async () => {
     scrollToDown();
-    if (navigationPage == "COACH") if (!value.trim() || isLoading) return;
+    if (navigationPage == stringConstants.coach)
+      if (!value.trim() || isLoading) return;
     if (isLoading) return;
     if (inactivityTimer) {
       clearTimeout(inactivityTimer);
     }
-    if (reconfigApiResponse?.statusFlag === "COACH") {
+    if (reconfigApiResponse?.statusFlag === stringConstants.coach) {
       const timer = setTimeout(() => {
-        console.log("Disconnecting socket due to inactivity");
-        socket?.disconnect();
+        cleanupWebSocket(true);
       }, 3600000);
       setInactivityTimer(timer);
     }
-    if (navigationPage === "COACH") setnavigationPage("AGENDA");
+    if (navigationPage === stringConstants.coach)
+      setnavigationPage(stringConstants.agendaCaps);
+  
+  const lastBotMessage = [...messages].reverse().find((msg) => msg.messageTo === stringConstants.user);
+    const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
     try {
       setReply(false);
-      const lastBotMessage = [...messages].reverse().find(msg => msg.messageTo === "user");
-      const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
-      const messageType = isInteractiveReply ? "REPLY_TO_INTERACTIVE" : (replyMessageId) ? "REPLY_TO_MESSAGE" : "TEXT"
-      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, replyMessageId, messageType);
+  let messageType;
+if (isInteractiveReply) {
+  messageType = "REPLY_TO_INTERACTIVE";
+} else if (reply && replyMessageId) {
+  messageType = "REPLY_TO_MESSAGE";
+} else {
+  messageType = "TEXT";
+}
+const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, replyMessageId,replyIndex);
       dispatch(addMessage(message));
       setValue("");
-      socket.emit("user_message", socketPayload);
+      socket.send(JSON.stringify(socketPayload));
+      dispatch(showLoader());
+      startResponseTimeout();
       setReply(false);
       setReplyMessageId(null);
     } catch (error) {
       console.error("Error in message handling:", error);
       dispatch(hideLoader());
+      clearResponseTimeout();
     }
   };
 
@@ -129,7 +143,7 @@ export const ChatFooter = ({
     return {
       text: replyMessageObject?.message?.text || replyMessageObject?.text || "",
       messageTo: replyMessageObject?.messageTo,
-      media: replyMessageObject?.media || []
+      media: replyMessageObject?.media || [],
     };
   };
   let data = {};
@@ -137,19 +151,22 @@ export const ChatFooter = ({
     <View>
       {copied && <CopyTextClipboard reply={reply} />}
       <View style={styles.containerHead}>
-        {reply && (
-          data = getReplyMessage(),
-          <ReplyMessage
-            replyFrom={
-              data.messageTo.toLowerCase() === "bot" ? "YOU" : "BOT"
-            }
-            replyMessage={data.text}
-            media={data.media}
-            reply={reply}
-            handleClose={handleReplyClose}
-          />
-        )}
-        <View style={styles.container} >
+        {reply &&
+          ((data = getReplyMessage()),
+          (
+            <ReplyMessage
+              replyFrom={
+                data?.messageTo?.toLowerCase() === "bot" ? "YOU" : "BOT"
+              }
+              replyMessage={data.text}
+              media={data.media}
+              reply={reply}
+              handleClose={handleReplyClose}
+            
+              replyIndex={replyIndex}
+            />
+          ))}
+        <View style={styles.container}>
           <View style={styles.inputContainer}>
             <DynamicTextInput
               value={value}
@@ -176,6 +193,7 @@ export const ChatFooter = ({
           dropDownType={dropDownType}
           copyToClipboard={copyToClipboard}
           handleReplyMessage={handleReplyMessage}
+          setCopied={setCopied}
           testID="dropdown-component"
         />
       )}
@@ -185,9 +203,9 @@ export const ChatFooter = ({
 
 const styles = StyleSheet.create({
   containerHead: {
-    backgroundColor: "#F4F6FA",
+    backgroundColor: colors.primaryColors.lightSurface,
     borderTopWidth: borderWidth.borderWidth1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: colors.primaryColors.borderTop,
   },
   container: {
     flexDirection: "row",
@@ -201,6 +219,5 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     justifyContent: "flex-end",
-    paddingBottom: spacing.space_s2,
   },
 });

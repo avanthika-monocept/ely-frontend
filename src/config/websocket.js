@@ -1,8 +1,8 @@
 // config/websocket.js
 import io from "socket.io-client";
 
-const SOCKET_URL = "http://10.5.50.125:5050";
-
+const SOCKET_URL = "http://192.168.1.100:5050";
+//will be used after websocket integration
 export const initializeSocket = (userId) => {
   const socket = io(SOCKET_URL, {
     query: { userId },

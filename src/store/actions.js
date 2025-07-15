@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import apiCall from "../config/axiosRequest";
 import { USER_CONFIG } from "../config/apiUrls";
+import { baseUrl } from "../constants/constants";
 
 const fallbackResponse = {
   userInfo: {
@@ -17,7 +18,7 @@ const fallbackResponse = {
   statusFlag: "COACH",
   placeHolders: [
     {
-      name: "Ask about medical insurance",
+      name: "Ask about medical insurance options",
       icon: "\ud83c\udfa5",
     },
     {
@@ -78,20 +79,26 @@ const fallbackResponse = {
 };
 
 export const getData = createAsyncThunk("getData", async (data) => {
-  const { callback = () => {} } = data;
+  const { callback = () => {},token, agentId, platform } = data;
 
   let response;
   try {
     const apiResponse = await apiCall({
-      baseURL: "http://10.5.50.125:9091",
-      // baseURL: "http://localhost:8080",
+      baseURL: baseUrl,
       url: USER_CONFIG,
       method: "POST",
-      data: { agentId: "AGT001", platform: "MSPACE" },
+       headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-api-key':'4iNbPS8RzT4G9q7tBp3QZ36FwFBd5GhX6Lrl4oVK'
+      },
+      data: { agentId: "hom5750", platform: "MSPACE" },
     });
-    response = apiResponse.data;
+   
+  console.log("configAPIResponse:", apiResponse);
+    response = apiResponse?.data;
     if (response?.error) throw new Error("API Error");
   } catch (error) {
+    
     console.warn("Using fallback response due to error:", error.message);
     response = fallbackResponse;
   }

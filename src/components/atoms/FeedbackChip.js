@@ -1,10 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import {
-  borderRadius,
-  sizeWithoutScale,
-  spacing,
-} from "../../constants/Dimensions";
+import {borderRadius,spacing,} from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
@@ -17,15 +13,16 @@ export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiR
     reconfigApiResponse: PropTypes.object.isRequired,
   };
   const botOptionColor = reconfigApiResponse?.theme?.botOptionColor || colors.primaryColors.white;
+  
   return (
     <View style={styles.feedbackChipContainer}>
       {options.map((option, index) => (
         <TouchableOpacity
           testID={`feedback-button-${index}`}
-          key={index}
+          key={option}
           style={[
             styles.feedbackButton,
-            selectedFeedback === option && styles.selected,
+            { backgroundColor: selectedFeedback === option ? colors.Extended_Palette.midnightBlue.mb200: botOptionColor}
           ]}
           onPress={() => onSelect(option)}
           disabled={!!selectedFeedback}
@@ -44,32 +41,25 @@ export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiR
 
 const styles = StyleSheet.create({
   feedbackChipContainer: {
-    display: "flex",
+    flexDirection: "column", 
     justifyContent: "center",
-    width: "100%",
-    alignItems: "center",
+    alignItems: "center", 
+    width: "100%", 
     marginVertical: spacing.space_s2,
   },
   feedbackButton: {
-    width: "100%",
     backgroundColor: colors.primaryColors.white,
     borderRadius: borderRadius.borderRadius2,
     paddingVertical: spacing.space_s3,
     paddingHorizontal: spacing.space_m1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: spacing.space_s3,
-    shadowColor: colors.primaryColors.black,
-    shadowOffset: { width: sizeWithoutScale.width0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    alignSelf: "stretch", // Make the button take full width
+    marginVertical: spacing.space_s2,
+
   },
   buttonText: {
     color: colors.primaryColors.black,
+    textAlign: "center", // Ensure text is centered
     ...fontStyle.bodyMedium,
   },
-  selected: {
-    backgroundColor: colors.Extended_Palette.midnightBlue.mb200,
-  },
 });
+

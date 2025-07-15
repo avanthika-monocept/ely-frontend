@@ -1,151 +1,196 @@
-import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
-import FileModal from "./FileModal";
-import { Share, PermissionsAndroid, Platform } from "react-native";
-import RNFetchBlob from "react-native-blob-util";
+import React from 'react';
+import { render, fireEvent, act } from '@testing-library/react-native';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import FileModal from './FileModal';
+import { Platform } from 'react-native';
 
-// Mock modules
-jest.mock("react-native-blob-util", () => ({
+// Mock all external dependencies
+jest.mock('react-native-blob-util', () => ({
   config: jest.fn(() => ({
-    fetch: jest.fn(() =>
-      Promise.resolve({
-        path: jest.fn(() => "/mock/file/path"),
-      })
-    ),
-    progress: jest.fn(),
+    fetch: jest.fn(() => ({
+      progress: jest.fn(() => ({
+        then: jest.fn(() => Promise.resolve({ path: () => '/mock/path' }))
+      }))
+    }))
   })),
   fs: {
     dirs: {
-      DownloadDir: "/test/download/dir",
+      CacheDir: '/cache',
+      DownloadDir: '/downloads',
     },
-  },
-  ios: {
-    openDocument: jest.fn(),
-  },
-  android: {
-    actionViewIntent: jest.fn(),
+    exists: jest.fn(() => Promise.resolve(false)),
+    unlink: jest.fn(() => Promise.resolve()),
+    scanFile: jest.fn(() => Promise.resolve()),
   },
 }));
 
-jest.mock("react-native/Libraries/Share/Share", () => ({
-  share: jest.fn(() =>
-    Promise.resolve({ action: "shared", activityType: null })
-  ),
+jest.mock('@react-native-camera-roll/camera-roll', () => ({
+  save: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock(
-  "react-native/Libraries/PermissionsAndroid/PermissionsAndroid",
-  () => ({
-    request: jest.fn(),
-    RESULTS: {
-      GRANTED: "granted",
-      DENIED: "denied",
+jest.mock('react-native-permissions', () => ({
+  check: jest.fn(() => Promise.resolve('granted')),
+  request: jest.fn(() => Promise.resolve('granted')),
+  PERMISSIONS: {
+    IOS: {
+      PHOTO_LIBRARY_ADD_ONLY: 'ios-permission',
     },
-    PERMISSIONS: {
-      WRITE_EXTERNAL_STORAGE: "android.permission.WRITE_EXTERNAL_STORAGE",
-      READ_MEDIA_IMAGES: "android.permission.READ_MEDIA_IMAGES",
-    },
-  })
-);
+  },
+  RESULTS: {
+    GRANTED: 'granted',
+  },
+}));
 
-describe("FileModal", () => {
-  const mockOnClose = jest.fn();
-  const mockPdfModalChildren = jest.fn();
-  const mockHandleReplyMessage = jest.fn();
-  const mockSetTableModal = jest.fn();
+jest.mock('react-native-share', () => ({
+  open: jest.fn(() => Promise.resolve()),
+}));
 
-  const defaultProps = {
+jest.mock('react-redux', () => ({
+  ...jest.requireActual('react-redux'),
+  useDispatch: jest.fn(() => jest.fn()),
+}));
+
+jest.mock('../../../assets/Download.svg', () => 'DownloadIcon');
+jest.mock('../../../assets/Vector.svg', () => 'VectorIcon');
+jest.mock('../../../assets/shareIcon.svg', () => 'ShareIcon');
+jest.mock('../../../assets/Group.svg', () => 'GroupIcon');
+jest.mock('../../../assets/Copy.svg', () => 'CopyIcon');
+
+// Mock console.log to prevent test output clutter
+jest.spyOn(console, 'log').mockImplementation(() => {});
+
+// Create a mock store
+const mockStore = configureStore([]);
+const store = mockStore({});
+
+describe('FileModal', () => {
+  const mockProps = {
     visible: true,
-    onClose: mockOnClose,
-    file: "https://example.com/sample.pdf",
-    PdfModalChildren: mockPdfModalChildren,
-    handleReplyMessage: mockHandleReplyMessage,
-    type: "document",
-    setTableModal: mockSetTableModal,
+    onClose: jest.fn(),
+    file: 'https://example.com/image.jpg',
+    PdfModalChildren: jest.fn(),
+    handleReplyMessage: jest.fn(),
+    type: 'image',
+    copyToClipboard: jest.fn(),
+    isMediaOpened: false,
+    isMultipleMedia: false,
+    files: [],
+    text: 'Test message',
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    Platform.OS = "android";
-    Platform.Version = 31;
+    Platform.OS = 'android'; // Default to android for tests
   });
 
-  // Basic rendering tests
-  it("renders the modal and shows document menu items", () => {
-    const { getByText } = render(<FileModal {...defaultProps} />);
-    expect(getByText("Preview")).toBeTruthy();
-    expect(getByText("Reply-to")).toBeTruthy();
-    expect(getByText("Download")).toBeTruthy();
-    expect(getByText("Share")).toBeTruthy();
+  const renderWithRedux = (component) => {
+    return render(<Provider store={store}>{component}</Provider>);
+  };
+
+  it('renders without crashing', () => {
+    const { getByTestId } = renderWithRedux(<FileModal {...mockProps} />);
+    expect(getByTestId('modal')).toBeTruthy();
   });
 
-  it("executes Preview action", () => {
-    const { getByText } = render(<FileModal {...defaultProps} />);
-    fireEvent.press(getByText("Preview"));
-    expect(mockPdfModalChildren).toHaveBeenCalledWith(true);
+  it('displays correct menu items for image type', () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} type="image" />);
+    expect(getByText('Reply-to')).toBeTruthy();
+    expect(getByText('Download')).toBeTruthy();
+    expect(getByText('Share')).toBeTruthy();
   });
 
-  it("executes Reply-to action", () => {
-    const { getByText } = render(<FileModal {...defaultProps} />);
-    fireEvent.press(getByText("Reply-to"));
-    expect(mockHandleReplyMessage).toHaveBeenCalled();
-    expect(mockOnClose).toHaveBeenCalledWith(false);
+  it('displays correct menu items for imageWithText type', () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} type="imageWithText" />);
+    expect(getByText('Copy Text')).toBeTruthy();
+    expect(getByText('Reply-to')).toBeTruthy();
+    expect(getByText('Download')).toBeTruthy();
+    expect(getByText('Share')).toBeTruthy();
   });
 
-  it("renders image menu items when type is 'image'", () => {
-    const { getByText } = render(<FileModal {...defaultProps} type="image" />);
-    expect(getByText("Open")).toBeTruthy();
-    expect(getByText("Copy Text")).toBeTruthy();
-    expect(getByText("Reply-to")).toBeTruthy();
-    expect(getByText("Download")).toBeTruthy();
-    expect(getByText("Share")).toBeTruthy();
+  it('calls onClose when backdrop is pressed', () => {
+    const { getByTestId } = renderWithRedux(<FileModal {...mockProps} />);
+    fireEvent(getByTestId('modal'), 'backdropPress');
+    expect(mockProps.onClose).toHaveBeenCalled();
   });
 
-  it("renders table menu items when type is 'table'", () => {
-    const { getByText } = render(<FileModal {...defaultProps} type="table" />);
-    expect(getByText("Open")).toBeTruthy();
-    expect(getByText("Reply-to")).toBeTruthy();
-    expect(getByText("Share")).toBeTruthy();
+  it('handles reply functionality', () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} />);
+    fireEvent.press(getByText('Reply-to'));
+    expect(mockProps.handleReplyMessage).toHaveBeenCalled();
+    expect(mockProps.onClose).toHaveBeenCalled();
   });
 
-  it("closes modal on backdrop press", () => {
-    const { getByTestId } = render(<FileModal {...defaultProps} />);
-    fireEvent(getByTestId("modal"), "onBackdropPress");
-    expect(mockOnClose).toHaveBeenCalled();
+  it('handles copy text functionality for imageWithText type', () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} type="imageWithText" />);
+    fireEvent.press(getByText('Copy Text'));
+    expect(mockProps.copyToClipboard).toHaveBeenCalled();
+    expect(mockProps.onClose).toHaveBeenCalledWith(false);
   });
 
-  // Download functionality tests
-  describe("Download functionality", () => {
-    beforeEach(() => {
-      RNFetchBlob.config.mockClear();
-      PermissionsAndroid.request.mockClear();
+  it('handles download functionality on Android', async () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} />);
+    
+    await act(async () => {
+      fireEvent.press(getByText('Download'));
     });
-
-    it("closes modal after download action", async () => {
-      PermissionsAndroid.request.mockResolvedValueOnce("granted");
-
-      const { getByText } = render(<FileModal {...defaultProps} />);
-      await fireEvent.press(getByText("Download"));
-    });
-
-   
-
-    it("handles permission denied on Android", async () => {
-      PermissionsAndroid.request.mockResolvedValueOnce("denied");
-
-      const { getByText } = render(<FileModal {...defaultProps} />);
-      await fireEvent.press(getByText("Download"));
-
-      expect(RNFetchBlob.config).not.toHaveBeenCalled();
-    });
+    
+    const RNFetchBlob = require('react-native-blob-util');
+    expect(RNFetchBlob.config).toHaveBeenCalled();
+    expect(mockProps.onClose).toHaveBeenCalled();
   });
 
-// Edge cases
-  it("handles undefined file type", () => {
-    const { queryByText } = render(
-      <FileModal {...defaultProps} type="unknown" />
+  it('handles share functionality', async () => {
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} />);
+    
+    await act(async () => {
+      fireEvent.press(getByText('Share'));
+    });
+    
+    const Share = require('react-native-share');
+    expect(Share.open).toHaveBeenCalled();
+    expect(mockProps.onClose).toHaveBeenCalled();
+  });
+
+  it('handles iOS permissions for download', async () => {
+    Platform.OS = 'ios';
+    const { getByText } = renderWithRedux(<FileModal {...mockProps} />);
+    
+    await act(async () => {
+      fireEvent.press(getByText('Download'));
+    });
+    
+    const { check } = require('react-native-permissions');
+    expect(check).toHaveBeenCalled();
+  });
+
+  it('handles video share functionality', async () => {
+    const { getByText, rerender } = renderWithRedux(
+      <FileModal {...mockProps} file="https://example.com/video.mp4" />
     );
-    // Should default to document menu items
-    expect(queryByText("Preview")).toBeTruthy();
+    
+    await act(async () => {
+      fireEvent.press(getByText('Share'));
+    });
+    
+    const Share = require('react-native-share');
+    expect(Share.open).toHaveBeenCalled();
+  });
+
+  it('handles multiple files share', async () => {
+    const files = [
+      { type: 'image', url: 'https://example.com/image1.jpg' },
+      { type: 'image', url: 'https://example.com/image2.jpg' }
+    ];
+    const { getByText } = renderWithRedux(
+      <FileModal {...mockProps} isMultipleMedia={true} files={files} />
+    );
+    
+    await act(async () => {
+      fireEvent.press(getByText('Share'));
+    });
+    
+    const Share = require('react-native-share');
+    expect(Share.open).toHaveBeenCalled();
   });
 });

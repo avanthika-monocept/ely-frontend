@@ -14,7 +14,7 @@ export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
         return <DoubleTickRead testID="double-tick-read" />;
       case "SENT":
         return <SingleTick  testID="single-tick" />;
-      case "DELIVERED":
+      case "RECEIVED":
         return <DoubleTickDelivered testID="double-tick-delivered" />;
       default:
         return <SingleTick  testID="single-tick" />;
@@ -47,9 +47,10 @@ const styles = StyleSheet.create({
     padding:0,
   },
   time: {
+    
     ...fontStyle.bodySmallMedium,
+    fontSize:10,
     color: colors.darkNeutrals.n600,
-    fontSize: 10,
   },
   checkContainer: {
     flexDirection: "row",
@@ -57,8 +58,8 @@ const styles = StyleSheet.create({
   },
    imageOnlyContainer: {
     position: 'absolute',
-    bottom: 3,
-    right: 3,
+    bottom: 7,
+    right: 10,
   },
   imageOnlyTime: {
     color: 'white', // White text for better contrast on images

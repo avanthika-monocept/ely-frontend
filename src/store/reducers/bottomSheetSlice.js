@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   isBottomSheetOpen: false,
   bottomSheetHeight: 0,
+  bottomSheetURL: "",
 };
 
 const bottomSheetSlice = createSlice({
@@ -21,6 +22,9 @@ const bottomSheetSlice = createSlice({
     setBottomSheetHeight: (state, action) => {
       state.bottomSheetHeight = action.payload;
     },
+    setBottomSheetURL: (state, action) => {
+      state.bottomSheetURL = action.payload;
+    }
   },
 });
 
@@ -29,5 +33,6 @@ export const {
   closeBottomSheet,
   toggleBottomSheet,
   setBottomSheetHeight,
+  setBottomSheetURL,
 } = bottomSheetSlice.actions;
 export default bottomSheetSlice.reducer;

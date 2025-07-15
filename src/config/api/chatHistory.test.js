@@ -45,7 +45,7 @@ describe("fetchChatHistory", () => {
     const result = await fetchChatHistory(agentId, 0, 10);
 
     expect(apiCall).toHaveBeenCalledWith({
-      baseURL: "http://10.5.50.125:9091",
+      baseURL: "http://192.168.1.100:9091",
       url: "api/chatbot/chathistory",
       method: "POST",
       data: { agentId: agentId, page: 0, size: 10 },
@@ -85,7 +85,7 @@ describe("fetchChatHistory", () => {
 
     expect(apiCall).toHaveBeenCalledWith(
       expect.objectContaining({
-        baseURL: "http://10.5.50.125:9091",
+        baseURL: "http://192.168.1.100:9091",
       })
     );
 

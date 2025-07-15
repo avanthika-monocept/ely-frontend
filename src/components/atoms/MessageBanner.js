@@ -18,7 +18,6 @@ const MessageBanner = ({ text = "info", icon }) => {
 
 MessageBanner.propTypes = {
   text: PropTypes.string.isRequired,
-  status: PropTypes.oneOf(["info", "success", "error", "warning"]), // Optional status variants
   icon: PropTypes.element, // An SVG or JSX element
 };
 

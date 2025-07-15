@@ -2,107 +2,175 @@ import React from "react";
 import { render, fireEvent, act } from "@testing-library/react-native";
 import { ChatFooter } from "./ChatFooter";
 import { useDispatch, useSelector } from "react-redux";
-import { addMessage, clearMessages } from "../../store/reducers/chatSlice";
-import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 
-// Mock child components
-jest.mock("../atoms/DynamicTextInput", () => (props) => (
-  <input
-    testID="dynamic-text-input"
-    value={props.value}
-    onChange={(e) => props.onChange(e.target.value)}
-    placeholder={props.placeholder}
-  />
-));
-jest.mock("../atoms/Button", () => (props) => (
-  <button
-    testID="send-button"
-    onClick={props.onClick}
-    disabled={!props.isEnabled}
-  >
-    Send
-  </button>
-));
+// Mock DynamicTextInput as React Native TextInput
+jest.mock("../atoms/DynamicTextInput", () => (props) => {
+  const { View, TextInput } = require("react-native");
+  return (
+    <View>
+      <TextInput
+        testID="dynamic-text-input"
+        value={props.value}
+        onChangeText={props.onChange}
+        placeholder={props.placeholder}
+      />
+    </View>
+  );
+});
+
+// Mock Button as TouchableOpacity
+jest.mock("../atoms/Button", () => (props) => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return (
+    <TouchableOpacity
+      testID="send-button"
+      onPress={props.onClick}
+      accessibilityState={{ disabled: !props.isEnabled }}
+    >
+      <Text>Send</Text>
+    </TouchableOpacity>
+  );
+});
+
 jest.mock("../atoms/ReplyMessage", () => (props) => (
   <div testID="reply-message">{props.replyMessage}</div>
 ));
+
 jest.mock("../atoms/CopyTextClipboard", () => () => (
   <div testID="copy-text-clipboard">Copied</div>
 ));
+
 jest.mock("../atoms/Dropdown", () => () => (
   <div testID="dropdown">Dropdown</div>
 ));
 
-// Mock Redux hooks
 jest.mock("react-redux", () => ({
   useDispatch: jest.fn(),
   useSelector: jest.fn(),
 }));
 
-// Mock expo-clipboard
 jest.mock("@react-native-clipboard/clipboard", () => ({
   setStringAsync: jest.fn(),
 }));
 
-// Mock utility functions
 jest.mock("../../common/utils", () => ({
   extractUrl: jest.fn(() => ["https://example.com"]),
-  setupDynamicPlaceholder: jest.fn(() => jest.fn()),
+  setupDynamicPlaceholder: jest.fn(() => jest.fn()), // returns clear interval function
 }));
 
+jest.mock("react-native-uuid", () => ({
+  v4: () => "test-uuid",
+}));
+
+const mockDispatch = jest.fn();
+const mockSetReply = jest.fn();
+const mockSetCopied = jest.fn();
+const mockScrollToDown = jest.fn();
+
+const baseProps = {
+  copied: false,
+  setCopied: mockSetCopied,
+  dropDownType: "message",
+  messageObjectId: null,
+  setMessageObjectId: jest.fn(),
+  replyMessageId: null,
+  setReplyMessageId: jest.fn(),
+  navigationPage: "COACH",
+  setnavigationPage: jest.fn(),
+  setReply: mockSetReply,
+  reply: false,
+  handleReplyClose: jest.fn(),
+  handleReplyMessage: jest.fn(),
+  reconfigApiResponse: {
+    placeHolders: ["Type here...", "Ask a question"],
+    userInfo: { email: "test@example.com", agentId: "123" },
+    statusFlag: "COACH",
+  },
+  socket: { disconnect: jest.fn() },
+  messages: [],
+  copyToClipboard: jest.fn(),
+  onInputHeightChange: jest.fn(),
+  scrollToDown: mockScrollToDown,
+  inactivityTimer: null,
+  setInactivityTimer: jest.fn(),
+  replyMedia: {},
+  isAtBottom: true,
+  setShowNewMessageAlert: jest.fn(),
+};
+
 describe("ChatFooter Component", () => {
-  const mockDispatch = jest.fn();
-  const mockAddNewMessage = jest.fn();
-  const mockSetReply = jest.fn();
-  const mockSetCopied = jest.fn();
-
-  const mockProps = {
-    copied: false,
-    setCopied: mockSetCopied,
-    dropDownType: "message",
-    messageObjectId: null,
-    setMessageObjectId: jest.fn(),
-    replyMessageId: null,
-    navigationPage: "chat",
-    setnavigationPage: jest.fn(),
-    addNewMessage: mockAddNewMessage,
-    setReply: mockSetReply,
-    reply: false,
-    handleReplyClose: jest.fn(),
-    handleReplyMessage: jest.fn(),
-    reconfigApiResponse: {
-      placeholderMessage: ["Type a message...", "Ask me anything..."],
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     useDispatch.mockReturnValue(mockDispatch);
     useSelector.mockImplementation((selector) => {
-      if (selector.toString().includes("state.chat.messages")) {
-        return [];
-      }
-      if (selector.toString().includes("state.loader.isLoading")) {
+      if (selector.toString().includes("state.loader.isLoading")) return false;
+      if (selector.toString().includes("state.bottomSheet.isBottomSheetOpen"))
         return false;
-      }
-      if (selector.toString().includes("state.bottomSheet.isBottomSheetOpen")) {
-        return false;
-      }
-      return null;
+      return [];
     });
   });
 
-  it("renders the ChatFooter component", () => {
-    const { getByTestId } = render(<ChatFooter {...mockProps} />);
+  it("renders input and send button", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} />);
     expect(getByTestId("dynamic-text-input")).toBeTruthy();
     expect(getByTestId("send-button")).toBeTruthy();
   });
 
-  it("shows copied notification when text is copied", () => {
-    useSelector.mockReturnValueOnce({
-      message: { text: "Copied text" },
+  it("does not allow sending message if input is empty", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} />);
+    const sendButton = getByTestId("send-button");
+    expect(sendButton.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it("allows sending a message when input is filled", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} />);
+    const input = getByTestId("dynamic-text-input");
+
+    act(() => {
+      fireEvent.changeText(input, "Hello");
     });
-    const { getByTestId } = render(<ChatFooter {...mockProps} copied={true} />);
+
+    const sendButton = getByTestId("send-button");
+    expect(sendButton.props.accessibilityState.disabled).toBe(false);
+  });
+
+  it("calls scrollToDown and dispatches when send is clicked", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} />);
+    const input = getByTestId("dynamic-text-input");
+
+    act(() => {
+      fireEvent.changeText(input, "Hello");
+    });
+
+    const sendButton = getByTestId("send-button");
+
+    act(() => {
+      fireEvent.press(sendButton);
+    });
+
+    expect(mockScrollToDown).toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalled(); // addMessage dispatched
+  });
+
+  it("sets reply to false after sending message", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} />);
+    const input = getByTestId("dynamic-text-input");
+
+    act(() => {
+      fireEvent.changeText(input, "test message");
+    });
+
+    const button = getByTestId("send-button");
+
+    act(() => {
+      fireEvent.press(button);
+    });
+
+    expect(mockSetReply).toHaveBeenCalledWith(false);
+  });
+
+  it("shows copied UI when copied is true", () => {
+    const { getByTestId } = render(<ChatFooter {...baseProps} copied={true} />);
     expect(getByTestId("copy-text-clipboard")).toBeTruthy();
   });
 });

@@ -1,11 +1,11 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import Chevron from "../../../assets/Chevron.svg"; // Ensure the path is correct
+import ChevronDown from "../../../assets/ChevronDown.svg"; // Ensure the path is correct
 import {
   borderRadius,
   borderWidth,
   imageSize,
-  size,
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
@@ -18,7 +18,7 @@ const FabFloatingButton = ({
   onClick,
   showFab,
   showNewMessageAlert,
-  reply
+  reply,
 }) => {
   FabFloatingButton.propTypes = {
     count: PropTypes.number,
@@ -31,12 +31,14 @@ const FabFloatingButton = ({
     <View>
       {showNewMessageAlert && (
         <TouchableOpacity
-          style={[styles.fab, styles.extendedFab, reply && styles.replyMargin,]}
+          style={[styles.fab, styles.extendedFab, reply && styles.replyMargin]}
           onPress={onClick}
           accessibilityRole="button"
         >
-          <Chevron width={20} height={20} stroke="white" />
-          <Text style={styles.newMessageText}>{count} new message</Text>
+          <ChevronDown width={12} height={12}/>
+          <Text style={styles.newMessageText}>
+            {count} new message{count !== 1 ? "s" : ""}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -70,17 +72,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.space_10,
   },
   roundedFab: {
-    width: size.width40,
-    height: size.height36,
+    width: 40,
+    height: 40,
     backgroundColor: colors.primaryColors.white,
     borderRadius: borderRadius.borderRadius50,
     borderColor: colors.lightNeutrals.n100,
     borderWidth: borderWidth.borderWidth1,
-
   },
   newMessageText: {
     color: colors.primaryColors.white,
-    padding:'8px',
+    padding: "8px",
     marginLeft: spacing.space_s3,
     ...fontStyle.bodySmallMedium,
   },

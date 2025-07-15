@@ -12,31 +12,53 @@ import {
   spacingVerticalScale,
 } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
+import { stringConstants } from "../../constants/StringConstants";
 
-export const ChatHeader = memo(({ reconfigApiResponse }) => {
-  ChatHeader.propTypes = {
-    reconfigApiResponse: PropTypes.shape({
-      botName: PropTypes.string,
-    }),
-  };
-  const navigation = useNavigation();
+export const ChatHeader = memo(
+  ({
+    reconfigApiResponse,
+    headerColour,
+    navigationPage,
+    setnavigationPage,
+  }) => {
+    ChatHeader.propTypes = {
+      reconfigApiResponse: PropTypes.shape({
+        botName: PropTypes.string,
+     
+      }),
+         headerColour: PropTypes.string,
+        navigationPage: PropTypes.string,
+        setnavigationPage: PropTypes.func,
+    };
+    const navigation = useNavigation();
 
-  return (
-    <View style={styles.headerContainer} testID="chat-header">
-      <TouchableOpacity
-        style={styles.backIcon}
-        onPress={() => navigation.goBack()}
+    return (
+      <View
+        style={[
+          styles.headerContainer,
+          { backgroundColor: headerColour || colors.primaryColors.darkBlue },
+        ]}
+        testID="chat-header"
       >
-        <Ionicons
-          name="arrow-back"
-          size={spacing.space_m4}
-          color={colors.primaryColors.white}
-        />
-      </TouchableOpacity>
-      <Avatar botName={reconfigApiResponse?.botName} />
-    </View>
-  );
-});
+        <TouchableOpacity
+          style={styles.backIcon}
+          onPress={
+            navigationPage === stringConstants.coach
+              ? () => navigation.goBack()
+              : () => setnavigationPage(stringConstants.coach)
+          }
+        >
+          <Ionicons
+            name="arrow-back"
+            size={spacing.space_m4}
+            color={colors.primaryColors.white}
+          />
+        </TouchableOpacity>
+        <Avatar botName={reconfigApiResponse?.botName} />
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   headerContainer: {
@@ -46,7 +68,6 @@ const styles = StyleSheet.create({
     position: "relative",
     paddingVertical: spacing.space_10,
     paddingHorizontal: size.width_16,
-    backgroundColor: colors.primaryColors.darkBlue,
     shadowColor: colors.primaryColors.white,
     shadowOffset: {
       width: sizeWithoutScale.width0,

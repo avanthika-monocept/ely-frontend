@@ -1,70 +1,58 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { render, screen, fireEvent } from '@testing-library/react-native';
-import { FeedbackChip } from './FeedbackChip';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { render, screen, fireEvent } from "@testing-library/react-native";
+import { FeedbackChip } from "./FeedbackChip";
+import { spacing } from "../../constants/Dimensions";
 
-describe('FeedbackChip Component', () => {
-  const mockOptions = ['Helpful', 'Not Helpful'];
+describe("FeedbackChip Component", () => {
+  const mockOptions = ["Helpful", "Not Helpful"];
   const mockOnSelect = jest.fn();
+
+  const renderComponent = (props = {}) =>
+    render(
+      <FeedbackChip
+        options={mockOptions}
+        onSelect={mockOnSelect}
+        selectedFeedback={null}
+        reconfigApiResponse={{}} // default empty object
+        {...props}
+      />
+    );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders all options correctly', () => {
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={null}
-      />
-    );
-
-    mockOptions.forEach(option => {
+  it("renders all options correctly", () => {
+    renderComponent();
+    mockOptions.forEach((option) => {
       expect(screen.getByText(option)).toBeTruthy();
     });
   });
 
-  it('calls onSelect with correct option when pressed', () => {
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={null}
-      />
-    );
-
-    const firstOption = screen.getByText(mockOptions[0]);
-    fireEvent.press(firstOption);
+  it("calls onSelect with correct option when pressed", () => {
+    renderComponent();
+    fireEvent.press(screen.getByText(mockOptions[0]));
     expect(mockOnSelect).toHaveBeenCalledWith(mockOptions[0]);
   });
 
-  it('applies selected style when option is selected', () => {
+  it("applies selected style when option is selected", () => {
     const selectedOption = mockOptions[1];
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={selectedOption}
-      />
+    renderComponent({ selectedFeedback: selectedOption });
+
+    const selectedButton = screen.getByTestId(
+      `feedback-button-${mockOptions.indexOf(selectedOption)}`
     );
 
-    const selectedButton = screen.getByTestId(`feedback-button-${mockOptions.indexOf(selectedOption)}`);
-    const buttonStyle = Array.isArray(selectedButton.props.style) 
+    const buttonStyle = Array.isArray(selectedButton.props.style)
       ? StyleSheet.flatten(selectedButton.props.style)
       : selectedButton.props.style;
-    
-    expect(buttonStyle.backgroundColor).toBe('#D0D8E3');
+
+    expect(buttonStyle.backgroundColor).toBe("#D0D8E3"); // matches selected color
   });
 
-  it('disables all buttons when an option is selected', () => {
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={mockOptions[0]}
-      />
-    );
+  it("disables all buttons when an option is selected", () => {
+    renderComponent({ selectedFeedback: mockOptions[0] });
 
     mockOptions.forEach((_, index) => {
       const button = screen.getByTestId(`feedback-button-${index}`);
@@ -72,42 +60,61 @@ describe('FeedbackChip Component', () => {
     });
   });
 
-  it('does not call onSelect when an option is already selected', () => {
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={mockOptions[0]}
-      />
-    );
+  it("does not call onSelect when an option is already selected", () => {
+    renderComponent({ selectedFeedback: mockOptions[0] });
 
-    const secondOption = screen.getByText(mockOptions[1]);
-    fireEvent.press(secondOption);
+    fireEvent.press(screen.getByText(mockOptions[1]));
     expect(mockOnSelect).not.toHaveBeenCalled();
   });
 
-  it('applies correct styles to buttons', () => {
-    render(
-      <FeedbackChip 
-        options={mockOptions} 
-        onSelect={mockOnSelect} 
-        selectedFeedback={null}
-      />
-    );
+  it("applies correct styles to buttons", () => {
+    renderComponent();
 
-    const firstButton = screen.getByTestId('feedback-button-0');
-    const buttonStyle = Array.isArray(firstButton.props.style) 
-      ? StyleSheet.flatten(firstButton.props.style)
-      : firstButton.props.style;
-    
+    const button = screen.getByTestId("feedback-button-0");
+    const buttonStyle = Array.isArray(button.props.style)
+      ? StyleSheet.flatten(button.props.style)
+      : button.props.style;
+
     expect(buttonStyle).toMatchObject({
-      backgroundColor: '#FFFFFF',
+      backgroundColor: "#FFFFFF",
       borderRadius: 2,
       paddingVertical: 6,
       paddingHorizontal: 12,
-      marginVertical: 6,
+      marginVertical: spacing.space_s2,
     });
   });
 
- 
+  it("applies fallback style if reconfigApiResponse is empty", () => {
+    renderComponent();
+    const button = screen.getByTestId("feedback-button-0");
+    const buttonStyle = Array.isArray(button.props.style)
+      ? StyleSheet.flatten(button.props.style)
+      : button.props.style;
+
+    expect(buttonStyle.backgroundColor).toBe("#FFFFFF"); // default fallback
+  });
+
+  it("renders correctly when reconfigApiResponse has custom botOptionColor", () => {
+    renderComponent({
+      reconfigApiResponse: { theme: { botOptionColor: "#FAFAFA" } },
+    });
+
+    const button = screen.getByTestId("feedback-button-0");
+    const text = screen.getByTestId("feedback-button-text-0");
+
+    expect(button).toBeTruthy();
+    expect(text.props.children).toBe(mockOptions[0]);
+  });
+
+  it("disables is false when selectedFeedback is null", () => {
+    renderComponent({ selectedFeedback: null });
+
+    const button = screen.getByTestId("feedback-button-0");
+    expect(button.props.disabled).toBeFalsy();
+  });
+
+  it("matches snapshot", () => {
+    const { toJSON } = renderComponent();
+    expect(toJSON()).toMatchSnapshot();
+  });
 });

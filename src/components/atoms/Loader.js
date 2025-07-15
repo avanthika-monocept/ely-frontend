@@ -3,17 +3,23 @@ import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import { spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 
+export const TEXT_CYCLE_INTERVAL = 1300; // Exported for reuse in tests
+
 export const Loader = () => {
   const messages = ["", "ELY is thinking", "", "ELY is typing"];
   const [step, setStep] = useState(0);
   const dotCount = 5;
-  const dots = useRef(Array(dotCount).fill().map(() => new Animated.Value(0))).current;
+  const dots = useRef(
+    Array(dotCount)
+      .fill()
+      .map(() => new Animated.Value(0))
+  ).current;
 
   // Text cycling effect
   useEffect(() => {
     const interval = setInterval(
       () => setStep((prev) => (prev + 1) % messages.length),
-      2000
+      TEXT_CYCLE_INTERVAL
     );
     return () => clearInterval(interval);
   }, []);
@@ -39,15 +45,13 @@ export const Loader = () => {
         ]);
       });
 
-      Animated.loop(
-        Animated.stagger(200, animations)
-      ).start();
+      Animated.loop(Animated.stagger(200, animations)).start();
     };
 
     createWaveAnimation();
 
     return () => {
-      dots.forEach(dot => dot.stopAnimation());
+      dots.forEach((dot) => dot.stopAnimation());
     };
   }, []);
 

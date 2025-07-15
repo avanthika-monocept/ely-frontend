@@ -1,12 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { scale } from "react-native-size-matters";
-import AvatarLogo from "../../../assets/botImage.svg";
 import { spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-
+import ElyUpdatedLogo from "../../../assets/ElyUpdatedLogo.svg";
 const Avatar = ({ botName }) => {
   Avatar.propTypes = {
     botName: PropTypes.string,
@@ -18,9 +17,10 @@ const Avatar = ({ botName }) => {
     <View style={styles.avatarContainer}>
       <View style={styles.avatarWrapper}>
         <View style={styles.imageContainer}>
-          <AvatarLogo
-            width={scale(29)}
-            height={scale(29)}
+          <ElyUpdatedLogo
+            testID="avatar-logo"
+            width={scale(32)}
+            height={scale(32)}
             style={styles.avatarImage}
           />
         </View>
@@ -43,14 +43,12 @@ const styles = StyleSheet.create({
   avatarContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 5,
   },
   avatarWrapper: {
     position: "relative",
     width: scale(30),
     height: scale(30),
-    borderRadius: scale(15),
-    backgroundColor: "#F4F6FA",
   },
   imageContainer: {
     flex: 1,
@@ -63,10 +61,10 @@ const styles = StyleSheet.create({
   },
   statusDot: {
     position: "absolute",
-    top: spacing.space_s0,
-    right: spacing.space_s0,
-    width: scale(9),
-    height: scale(9),
+    top: spacing.space_s1,
+    right: spacing.space_s1,
+    width: scale(8),
+    height: scale(8),
     borderRadius: scale(4.5),
   },
   online: {

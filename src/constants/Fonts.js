@@ -1,7 +1,7 @@
 import { scale } from "react-native-size-matters";
 import { StyleSheet, Dimensions } from "react-native";
 import { RFValue } from "react-native-responsive-fontsize";
-import { spacing } from "./Dimensions";
+
 
 const standardScreenHeight = Dimensions.get("window").height;
 export const fontType = {

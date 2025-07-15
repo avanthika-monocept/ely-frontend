@@ -7,13 +7,15 @@ import {
   Animated,
   Modal,
   Pressable,
+  Platform,
+  Linking,
 } from "react-native";
 import Download from "../../../assets/Download.svg";
 import Vector from "../../../assets/Vector.svg";
 import Upload from "../../../assets/Upload.svg";
 import Group from "../../../assets/Group.svg";
 import Copy from "../../../assets/Copy.svg";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   closeBottomSheet,
   setBottomSheetHeight,
@@ -26,25 +28,30 @@ import {
 } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
+import Clipboard from "@react-native-clipboard/clipboard";
+
+
 
 const Dropdown = ({
   isOpen,
   copyToClipboard,
   dropDownType,
   handleReplyMessage,
+  setCopied,
 }) => {
   Dropdown.propTypes = {
     isOpen: PropTypes.bool,
     copyToClipboard: PropTypes.func,
     dropDownType: PropTypes.string,
     handleReplyMessage: PropTypes.func,
+    setCopied: PropTypes.func,
   };
 
   const dispatch = useDispatch();
   const [slideAnim] = useState(new Animated.Value(0));
-
+   
   const dropdownRef = useRef(null);
-
+ const url= useSelector((state) => state.bottomSheet.bottomSheetURL);
   const onLayout = (event) => {
     const { height } = event.nativeEvent.layout;
     dispatch(setBottomSheetHeight(height));
@@ -69,7 +76,18 @@ const Dropdown = ({
   const handleClose = () => {
     dispatch(closeBottomSheet());
   };
+const handleCopyURL = () => {
+  const androidVersion = parseInt(Platform.Version, 10);
+    Clipboard.setString(url);
+    if((androidVersion < 33 || Platform.OS === "ios")) {
+    setCopied(true);
+    }
+    setTimeout(() => setCopied(false), 1000);
+  };
+const handleOpenURL = () => {
+   Linking.openURL(url);
 
+    }
   const menuItems = [
     {
       type: "imageWithText",
@@ -82,6 +100,60 @@ const Dropdown = ({
       label: "Preview",
       icon: <Group />,
       action: handleClose,
+    },
+     {
+      type: "url",
+      label: "Open URL",
+      icon: <Vector />,
+      action: () => {
+        handleOpenURL();
+        handleClose();
+      },
+    },
+      {
+      type: "url",
+      label: "Copy URL",
+      icon: <Copy />,
+      action: () => {
+        handleCopyURL();
+        handleClose();
+      },
+    },
+      {
+      type: "email",
+      label: "Open Email",
+      icon: <Vector />,
+      action: () => {
+        handleOpenURL();
+        handleClose();
+      },
+    },
+      {
+      type: "email",
+      label: "Copy Email",
+      icon: <Copy />,
+      action: () => {
+        handleCopyURL();
+        handleClose();
+      },
+    },
+     {
+      type: "phone",
+      label: "Call Number",
+      icon: <Vector />,
+      action: () => {
+        handleOpenURL();
+        handleClose();
+      },
+    },
+      {
+      type: "phone",
+      label: "Copy Number",
+      icon: <Copy />,
+      action: () => {
+        handleCopyURL();
+        handleClose();
+      },
     },
     {
       type: "text",
@@ -121,6 +193,14 @@ const Dropdown = ({
         return item.type === "text" || item.type === "textwithlink";
       } else if ("text" === type) {
         return item.type === "text";
+        } else if ("url" === type) {
+        return item.type === "url";
+        }
+        else if ("email" === type) {
+        return item.type === "email";
+        }
+          else if ("phone" === type) {
+        return item.type === "phone";
       } else {
         return false;
       }
@@ -139,8 +219,13 @@ const Dropdown = ({
       backdropTransitionInTiming={0}
       backdropTransitionOutTiming={0}
     >
-      <Pressable style={styles.overlay} onPress={handleClose}>
+      <Pressable
+        style={styles.overlay}
+        onPress={handleClose}
+        testID="dropdown-overlay"
+      >
         <Animated.View
+          testID="dropdown-container"
           ref={dropdownRef}
           style={[
             styles.dropdown,
@@ -158,9 +243,9 @@ const Dropdown = ({
           onLayout={onLayout}
         >
           <View style={styles.list}>
-            {getFilteredMenuItems(dropDownType).map((item, index) => (
+            {getFilteredMenuItems(dropDownType).map((item) => (
               <TouchableOpacity
-                key={index}
+                key={item.label}
                 style={styles.listItem}
                 onPress={item.action}
               >
@@ -196,14 +281,19 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.space_m2,
     left: spacing.space_m1,
+    paddingVertical: spacing.space_m2, 
+    paddingHorizontal: spacing.space_m1,
   },
   listItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.space_10,
+   
   },
   iconContainer: {
     marginRight: spacing.space_10,
+      width: 24,
+    alignItems: 'left',
   },
   label: {
     ...fontStyle.bodyMedium,

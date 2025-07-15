@@ -5,11 +5,28 @@ export const ApiResponseConstant = {
   success: "success",
   fail: "fail",
 };
+export const platformName = {
+  android: "android",
+  ios: "ios",
+};
 export const stringConstants = {
   suggested: "Suggested",
   hiThere: "Hi",
-  hiName:"!👋",
+  hiName: "!👋",
   gotQuestion: "Got any questions?",
   hereToHelp: "I'm here to help!",
   copyClipboard: "Copied to Clipboard",
+  user: "user",
+  Today: "Today",
+  Yesterday: "Yesterday",
+  conversationClosed: "This conversation has been closed",
+  banner: "banner",
+  separator: "separator",
+  assistText: "Hello there! How can I assist you today?",
+  noAnswer: "Sorry, I don't have an answer for that.",
+  failToLoad: "Failed to load chat history:",
+  agenda: "agenda",
+  coach: "COACH",
+  typeMessage: "Type a message...",
+  agendaCaps: "AGENDA",
 };

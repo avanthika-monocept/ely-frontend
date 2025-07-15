@@ -18,39 +18,48 @@
       "eslint --fix"
     ]
   },
-  "jest": {
-    "preset": "jest-expo",
-    "collectCoverage": true,
-    "collectCoverageFrom": [
-      "src/**/*.{js,jsx}",
-      "app/**/*.{js,jsx}"
-    ],
-    "coverageReporters": [
-      "lcov"
-    ],
-    "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?!rn-fetch-blob|react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|call-filled)"
-    ],
-    "transform": {
-      "^.+\\.[t|j]sx?$": "babel-jest"
-    },
-    "moduleNameMapper": {
-      "\\.svg$": "<rootDir>/__mocks__/svgMock.js",
-      "^@react-native-async-storage/async-storage$": "<rootDir>/__mocks__/@react-native-async-storage/async-storage.js"
-    },
-    "setupFiles": [
-      "<rootDir>/jest.setup.js"
-    ]
+"jest": {
+  "preset": "jest-expo",
+  "collectCoverage": true,
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx}",
+    "app/**/*.{js,jsx}"
+  ],
+  "coverageReporters": [
+    "lcov"
+  ],
+  "transformIgnorePatterns": [
+    "node_modules/(?!(jest-)?rn-fetch-blob|react-redux|react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|call-filled)"
+  ],
+  "transform": {
+    "^.+\\.[t|j]sx?$": "babel-jest"
   },
+  "moduleNameMapper": {
+    "\\.svg$": "<rootDir>/__mocks__/svgMock.js",
+    "^@react-native-async-storage/async-storage$": "<rootDir>/__mocks__/@react-native-async-storage/async-storage.js",
+    "^react-native-blob-util$": "<rootDir>/__mocks__/react-native-blob-util.js",
+    "^react-native-fs$": "<rootDir>/__mocks__/react-native-fs.js",
+    "^@react-native-camera-roll/camera-roll$": "<rootDir>/__mocks__/@react-native-camera-roll/camera-roll.js",
+    "^react-native-permissions$": "<rootDir>/__mocks__/react-native-permissions.js",
+    "^react-native-share$": "<rootDir>/__mocks__/react-native-share.js",
+    "^@react-native-clipboard/clipboard$": "<rootDir>/__mocks__/@react-native-clipboard/clipboard.js"
+  },
+  "setupFiles": [
+    "<rootDir>/jest.setup.js"
+  ]
+},
+
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-camera-roll/camera-roll": "^7.10.0",
     "@react-native-clipboard/clipboard": "^1.16.2",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-navigation/native": "^7.0.19",
     "@react-navigation/stack": "^7.2.3",
     "@reduxjs/toolkit": "^2.6.1",
     "axios": "^1.8.4",
+    "buffer": "^6.0.3",
     "date-fns": "^4.1.0",
     "expo": "~52.0.41",
     "expo-status-bar": "~2.0.1",
@@ -71,15 +80,18 @@
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-paper": "^5.13.1",
     "react-native-pdf": "^6.7.7",
+    "react-native-permissions": "^5.4.0",
     "react-native-reanimated": "^3.17.1",
     "react-native-responsive-fontsize": "^0.5.1",
     "react-native-safe-area-context": "^5.3.0",
     "react-native-screens": "^4.10.0",
+    "react-native-share": "^12.0.11",
     "react-native-size-matters": "^0.4.2",
     "react-native-svg": "^15.11.2",
     "react-native-svg-transformer": "^1.5.0",
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-video": "^6.14.1",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.13.5",

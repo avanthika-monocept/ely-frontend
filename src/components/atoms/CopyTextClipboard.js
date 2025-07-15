@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Text, StyleSheet, Animated } from "react-native";
 import CopyClip from "../../../assets/CopyClip.svg";
 import { fontStyle, fontType } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
-import { stringConstants } from "../../constants/StringConstants";
 import {
   borderRadius,
   imageSize,
@@ -13,14 +12,37 @@ import {
 import PropTypes from "prop-types";
 
 const CopyTextClipboard = ({ reply }) => {
-  CopyTextClipboard.propTypes = {
-    reply: PropTypes.bool,
-  };
+  const [visible, setVisible] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animate in
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    // Auto-dismiss after 5 seconds
+    const timeout = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 10000,
+        useNativeDriver: true,
+      }).start(() => setVisible(false));
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (!visible) return null;
+
   return (
-    <View
+    <Animated.View
+      testID="copy-toast-container"
       style={[
         styles.copiedMessage,
-        { bottom: reply ? 135 : 80 },
+        { bottom: reply ? 135 : 80, opacity: fadeAnim },
       ]}
     >
       <CopyClip
@@ -28,9 +50,13 @@ const CopyTextClipboard = ({ reply }) => {
         height={imageSize.height15}
         testID="copy-icon"
       />
-      <Text style={styles.text}>{stringConstants.copyClipboard}</Text>
-    </View>
+      <Text style={styles.text}>Copied to Clipboard</Text>
+    </Animated.View>
   );
+};
+
+CopyTextClipboard.propTypes = {
+  reply: PropTypes.bool,
 };
 
 const styles = StyleSheet.create({
@@ -39,10 +65,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.color333,
+    backgroundColor: colors.primaryColors.woodSmoke,
     padding: spacing.space_10,
-    borderRadius: borderRadius.borderRadius5,
-    width: "224",
+    borderRadius: borderRadius.borderRadius8,
+    width: 224,
     height: size.height36,
     alignSelf: "center",
   },

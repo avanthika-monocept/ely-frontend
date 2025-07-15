@@ -1,18 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import Video from "react-native-video";
 import CloseIcon from "../../../assets/Close.svg";
 import colors from "../../constants/Colors";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-import PdfSvg from "../../../assets/Pdf.svg";
-import XlsSvg from "../../../assets/Xls.svg";
-import PptSvg from "../../../assets/Ppt.svg";
-import DocSvg from "../../../assets/Doc.svg";
-import ZipSvg from "../../../assets/Zip.svg";
 import TableBaseBubble from "./TableBaseBubble";
 import { splitMarkdownIntoTableAndText } from "../../common/utils";
-import { tableData } from "./testData";
 
 const ReplyMessage = ({
   replyFrom,
@@ -20,79 +15,96 @@ const ReplyMessage = ({
   handleClose,
   reply,
   media,
+
+  replyIndex,
 }) => {
   ReplyMessage.propTypes = {
     replyFrom: PropTypes.string,
     replyMessage: PropTypes.string,
     handleClose: PropTypes.func,
     reply: PropTypes.bool,
-    media: PropTypes.array,
+    media: PropTypes.object,
+   
+    replyIndex: PropTypes.number,
   };
-  console.log(media, "media");
 
-  const getSvgByFormat = (format) => {
-    const lowerFormat = format.toLowerCase();
-
-    const iconMap = {
-      pdf: PdfSvg,
-      xls: XlsSvg,
-      ppt: PptSvg,
-      doc: DocSvg,
-      zip: ZipSvg,
-    };
-
-    const SvgIcon = iconMap[lowerFormat];
-    return SvgIcon ? <SvgIcon width={48} height={43} /> : null;
-  };
   const { tablePart, textPart } = splitMarkdownIntoTableAndText(replyMessage);
-  const MAX_REPLY_LENGTH = reply ? 35 : 45;
+  const MAX_REPLY_LENGTH = reply ? 35 : 42;
   const truncatedText =
-  textPart.length > MAX_REPLY_LENGTH
+    textPart.length > MAX_REPLY_LENGTH
       ? textPart.slice(0, MAX_REPLY_LENGTH) + "..."
       : textPart;
+
+  
+  const hasImage =
+ 
+       media?.image?.length > 0 && media?.image[0]?.mediaUrl?.length > 0;
+  const hasVideo =
+  
+      media?.video?.length > 0 && media?.video[0]?.mediaUrl?.length > 0;
+  const hasMedia = hasImage || hasVideo;
+  const hasTable = tablePart !== "";
+
+let mediaUrl = null;
+
+if (hasImage) {
+  mediaUrl = media?.image[0]?.mediaUrl[replyIndex];
+} else if (hasVideo) {
+  mediaUrl = media?.video[0]?.mediaUrl[replyIndex];
+}
+const backgroundColor = reply
+  ? colors.primaryColors.lightSurface
+  : replyFrom === "YOU"
+  ? colors.primaryColors.white
+  : "#E3F2FD";
+  const borderLeftColor =
+  replyFrom === "YOU"
+    ? colors.Extended_Palette.midnightBlue.midnightBlue
+    : "#007BFF";
   return (
     <View
       testID="reply-container"
       style={[
         reply ? styles.containerInput : styles.containerBubble,
         {
-          backgroundColor: reply
-            ? colors.primaryColors.lightSurface
-            : replyFrom === "YOU"
-              ? colors.primaryColors.white
-              : "#E3F2FD",
-          borderLeftColor:
-            replyFrom === "YOU"
-              ? colors.Extended_Palette.midnightBlue.midnightBlue
-              : "#007BFF",
+          backgroundColor: backgroundColor,
+          borderLeftColor: borderLeftColor,
         },
       ]}
     >
       <View style={styles.textWithData}>
         <View>
           <Text style={styles.replyFrom}>
-            {" "}
             {replyFrom === "YOU" ? replyFrom : "ELY"}
           </Text>
-          <Text style={media?.image?.length > 0 || tablePart != '' ? styles.replyTextWithDoc : styles.replyText }>{truncatedText}</Text>
+          <Text
+            style={
+              hasMedia || hasTable ? styles.replyTextWithDoc : styles.replyText
+            }
+          >
+            {truncatedText}
+          </Text>
         </View>
+
         <View style={styles.mediaAlign}>
-          {media?.image[0]?.mediaUrl[0]?.length > 0 && (
-            <Image
-              source={{ uri: media?.image[0].mediaUrl[0] }}
-              style={styles.halfImage}
-            />
+          {hasImage && hasMedia && media?.image[0]?.mediaUrl?.length > 0 && (
+            <Image source={{ uri: mediaUrl }} style={styles.mediaPreview} />
           )}
-          {/* {media?.document?.length > 0 && (
-          <View style={styles.halfDocument}>
-            {getSvgByFormat(media?.document[0].format)}
-          </View>
-        )} */}
-          { tablePart !== "" && (
-          <View style={styles.halfDocument}>
-            <TableBaseBubble apiText={tablePart} reply={true} />
-          </View>
-        )}
+          {hasVideo && hasMedia && media?.video[0]?.mediaUrl?.length > 0 && (
+            <View style={styles.videoContainer}>
+              <Video
+                source={{ uri: mediaUrl }}
+                style={styles.mediaPreview}
+                paused={true}
+                resizeMode="cover"
+              />
+            </View>
+          )}
+          {hasTable && (
+            <View style={styles.halfDocument}>
+              <TableBaseBubble apiText={tablePart} reply={true} />
+            </View>
+          )}
         </View>
       </View>
       {reply && (
@@ -141,10 +153,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  mediaAlign:{
-    width:100
+  mediaAlign: {
+    width: 100,
   },
-  halfImage: {
+  mediaPreview: {
     height: 43,
     width: 48,
     marginRight: 30,
@@ -157,28 +169,35 @@ const styles = StyleSheet.create({
     marginRight: 30,
   },
   replyFrom: {
-    height:20,
+    height: 20,
     color: colors.primaryColors.woodSmoke,
     ...fontStyle.bodyMediumBold,
- 
   },
   replyTextWithDoc: {
     color: colors.darkNeutrals.n600,
     flexShrink: 1,
-    width:180,
-    whiteSpace: "normal",   /* allows line breaks */
-    wordWrap: "break-word"/* forces breaking long words */
+    width: 170,
+    whiteSpace: "normal" /* allows line breaks */,
+    wordWrap: "break-word" /* forces breaking long words */,
   },
   replyText: {
     color: colors.darkNeutrals.n600,
     flexShrink: 1,
-    whiteSpace: "normal",   /* allows line breaks */
-    wordWrap: "break-word"/* forces breaking long words */
+    whiteSpace: "normal" /* allows line breaks */,
+    wordWrap: "break-word" /* forces breaking long words */,
   },
   closeButton: {
     position: "absolute",
     top: spacing.space_s3,
     right: spacing.space_10,
+  },
+  videoContainer: {
+    position: "relative",
+    height: 43,
+    width: 48,
+    marginRight: 30,
+    borderRadius: borderRadius.borderRadius8,
+    overflow: "hidden",
   },
 });
 

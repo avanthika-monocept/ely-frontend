@@ -4,7 +4,13 @@ import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 
-export const Reactions = ({ options, onSelect, messageId, socket, agentId }) => {
+export const Reactions = ({
+  options,
+  onSelect,
+  messageId,
+  agentId,
+  socket,
+}) => {
   const [selected, setSelected] = useState(null);
 
   const handleSelect = (id) => {
@@ -18,35 +24,41 @@ export const Reactions = ({ options, onSelect, messageId, socket, agentId }) => 
       userId: agentId,
     };
     console.log("reactionmessage", message);
-    socket.emit("user_message", message);
+    socket.send(JSON.stringify(message));
   };
 
   return (
     <View style={styles.container}>
       {options.map(({ id, svg }) => (
-        <TouchableOpacity
+        <View
           key={id}
-          testID={`reaction-${id}`}
-          style={[
-            styles.option,
-            {
-              borderColor: selected === id ? "#0092DB" : "#E8EBF1",
-              backgroundColor:
-                selected === id
-                  ? `linear-gradient(
+          backgroundColor="#FFF"
+          borderRadius={borderRadius.borderRadius4}
+        >
+          <TouchableOpacity
+            key={id}
+            testID={`reaction-${id}`}
+            style={[
+              styles.option,
+              {
+                borderColor: selected === id ? "#0092DB" : "#E8EBF1",
+                backgroundColor:
+                  selected === id
+                    ? `linear-gradient(
     180deg,
     rgba(51, 159, 226, 0.08) 0%,
     rgba(255, 255, 255, 0.08) 100%
   ),
   #FFFFFF`
-                  : "#FFF",
-              borderWidth: 1,
-            },
-          ]}
-          onPress={() => handleSelect(id)}
-        >
-          <View>{svg}</View>
-        </TouchableOpacity>
+                    : "#FFF",
+                borderWidth: 1,
+              },
+            ]}
+            onPress={() => handleSelect(id)}
+          >
+            <View>{svg}</View>
+          </TouchableOpacity>
+        </View>
       ))}
     </View>
   );
@@ -61,8 +73,8 @@ Reactions.propTypes = {
   ).isRequired,
   onSelect: PropTypes.func,
   messageId: PropTypes.string,
-  socket: PropTypes.object,
   agentId: PropTypes.string,
+  socket: PropTypes.object.isRequired,
 };
 
 const styles = StyleSheet.create({
@@ -71,7 +83,7 @@ const styles = StyleSheet.create({
     gap: 5,
     position: "absolute",
     right: spacing.space_10,
-    backgroundColor: "#FFFFFF",
+    // backgroundColor: "#FFFFFF",
     borderRadius: borderRadius.borderRadius4,
   },
   option: {

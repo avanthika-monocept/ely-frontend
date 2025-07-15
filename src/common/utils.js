@@ -1,5 +1,5 @@
 import { format, isToday, isYesterday, isSameYear, parseISO } from "date-fns";
-import uuid from 'react-native-uuid';
+import uuid from "react-native-uuid"
 
 export const getFormattedDividerDate = (dateString) => {
     const date = parseISO(dateString);
@@ -22,23 +22,23 @@ export const getFormattedDividerDate = (dateString) => {
   ) => {
     // If loading, set static placeholder and don't start interval
     if (isLoading || reply) {
-      updatePlaceholder("Type here...");
+      updatePlaceholder("Type here");
       return () => {}; // Return empty cleanup function
     }
   
     // Handle case where placeholders might be undefined or empty
     if (!placeholders || placeholders.length === 0) {
-      updatePlaceholder("Type here...");
+      updatePlaceholder("Type here");
       return () => {};
     }
   
     // Normal dynamic placeholder logic
     let index = 0;
-    updatePlaceholder(placeholders[index]?.name || "Type here...");
+    updatePlaceholder(placeholders[index]?.name || "Type here");
     index++;
   
     const interval = setInterval(() => {
-      updatePlaceholder(placeholders[index]?.name || "Type here...");
+      updatePlaceholder(placeholders[index]?.name || "Type here");
       index = (index + 1) % placeholders.length;
     }, intervalTime);
   
@@ -83,12 +83,11 @@ export const getFormattedDividerDate = (dateString) => {
       textPart: textLines?.join('\n').trim()
     };
   }
-
-  export const generateUniqueId = () => {
+   export const generateUniqueId = () => {
     return uuid.v4();
   };
-
-  export const formatBotMessage = (data) => {
+  //will be used after websocket integration
+    export const formatBotMessage = (data) => {
   return {
     messageId: data?.messageId,
     messageTo: "user",
@@ -106,7 +105,7 @@ export const getFormattedDividerDate = (dateString) => {
   };
 };
 
-export const formatUserMessage = (text, reconfigApiResponse, replyMessageId = null,messageType) => {
+export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMessageId = null,replyIndex=0) => {
   const messageId = generateUniqueId();
   return {
      message: {
@@ -116,6 +115,7 @@ export const formatUserMessage = (text, reconfigApiResponse, replyMessageId = nu
       activity: null,
       status: "SENT",
       replyId: replyMessageId,
+      replyIndex: replyIndex,
       message: {
         text: text.trim(),
         botOption: false,
@@ -128,6 +128,8 @@ export const formatUserMessage = (text, reconfigApiResponse, replyMessageId = nu
       },
     },
     socketPayload: {
+      action: "api/chatbot/message-proxy",
+      message: {
       emailId: reconfigApiResponse?.userInfo?.email,
       userId: reconfigApiResponse?.userInfo?.agentId,
       messageId,
@@ -137,6 +139,7 @@ export const formatUserMessage = (text, reconfigApiResponse, replyMessageId = nu
       messageType: messageType || "TEXT",
       text: text.trim(),
       replyToMessageId: replyMessageId,
+      }
     }
    };
 };
