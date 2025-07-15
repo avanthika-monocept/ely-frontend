@@ -1,79 +1,69 @@
 {
-  "name": "mlielychatbot",
-  "version": "1.0.0",
+  "name": "amlielychatbot",
+  "version": "1.0.137",
+  "description": "A React Native Expo Bare Workflow chatbot component library",
   "main": "index.js",
-  "scripts": {
-    "start": "expo start --dev-client",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "lint": "eslint '**/*.js'",
-    "lint:fix": "eslint . --fix",
-    "test": "jest --coverage",
-    "sonar": "sonar-scanner",
-    "prepare": "husky"
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
   },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
-    ]
-  },
-"jest": {
-  "preset": "jest-expo",
-  "collectCoverage": true,
-  "collectCoverageFrom": [
-    "src/**/*.{js,jsx}",
-    "app/**/*.{js,jsx}"
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "App.js",
+    "src",
+    "assets"
   ],
-  "coverageReporters": [
-    "lcov"
+  "keywords": [
+    "react-native",
+    "expo",
+    "chatbot",
+    "component",
+    "bare-workflow",
+    "mliely",
+    "mlielychatbot"
   ],
-  "transformIgnorePatterns": [
-    "node_modules/(?!(jest-)?rn-fetch-blob|react-redux|react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|call-filled)"
-  ],
-  "transform": {
-    "^.+\\.[t|j]sx?$": "babel-jest"
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/mlielychatbot"
   },
-  "moduleNameMapper": {
-    "\\.svg$": "<rootDir>/__mocks__/svgMock.js",
-    "^@react-native-async-storage/async-storage$": "<rootDir>/__mocks__/@react-native-async-storage/async-storage.js",
-    "^react-native-blob-util$": "<rootDir>/__mocks__/react-native-blob-util.js",
-    "^react-native-fs$": "<rootDir>/__mocks__/react-native-fs.js",
-    "^@react-native-camera-roll/camera-roll$": "<rootDir>/__mocks__/@react-native-camera-roll/camera-roll.js",
-    "^react-native-permissions$": "<rootDir>/__mocks__/react-native-permissions.js",
-    "^react-native-share$": "<rootDir>/__mocks__/react-native-share.js",
-    "^@react-native-clipboard/clipboard$": "<rootDir>/__mocks__/@react-native-clipboard/clipboard.js"
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "@react-navigation/native": "^7.0.19",
+    "@react-navigation/stack": "^7.2.3",
+    "react-native-gesture-handler": "^2.24.0",
+    "react-native-reanimated": "^3.17.1",
+    "react-native-screens": "^4.10.0",
+    "react-native-safe-area-context": "^5.3.0",
+    "react-native-vector-icons": "^10.2.0",
+    "react-native-svg": "^15.11.2",
+    "react-native-paper": "^5.13.1"
   },
-  "setupFiles": [
-    "<rootDir>/jest.setup.js"
-  ]
-},
-
   "dependencies": {
+    "expo": "~52.0.41",
+    "expo-status-bar": "~2.0.1",
+    "expo-updates": "~0.27.4",
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-camera-roll/camera-roll": "^7.10.0",
     "@react-native-clipboard/clipboard": "^1.16.2",
+    "react-native-fs": "^2.20.0",
     "@react-native-masked-view/masked-view": "^0.3.2",
-    "@react-navigation/native": "^7.0.19",
-    "@react-navigation/stack": "^7.2.3",
     "@reduxjs/toolkit": "^2.6.1",
     "axios": "^1.8.4",
-    "buffer": "^6.0.3",
     "date-fns": "^4.1.0",
-    "expo": "~52.0.41",
-    "expo-status-bar": "~2.0.1",
-    "expo-updates": "~0.27.4",
+    "expo-clipboard": "~7.0.1",
     "html-entities": "^2.6.0",
     "markdown-it": "^14.1.0",
     "prop-types": "^15.8.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.7",
-    "react-native-blob-util": "^0.21.2",
-    "react-native-file-viewer": "^2.1.5",
-    "react-native-fs": "^2.20.0",
-    "react-native-gesture-handler": "^2.24.0",
     "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-markdown-display": "^7.0.2",
@@ -83,50 +73,18 @@
     "react-native-permissions": "^5.4.0",
     "react-native-reanimated": "^3.17.1",
     "react-native-responsive-fontsize": "^0.5.1",
-    "react-native-safe-area-context": "^5.3.0",
     "react-native-screens": "^4.10.0",
     "react-native-share": "^12.0.11",
     "react-native-size-matters": "^0.4.2",
-    "react-native-svg": "^15.11.2",
     "react-native-svg-transformer": "^1.5.0",
     "react-native-uuid": "^2.0.3",
-    "react-native-vector-icons": "^10.2.0",
-    "react-native-video": "^6.14.1",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.13.5",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
-    "socket.io-client": "^4.8.1"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "@babel/eslint-parser": "^7.27.0",
-    "@babel/preset-react": "^7.26.3",
-    "@react-native-community/eslint-config": "^3.2.0",
-    "@testing-library/react-native": "^13.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
-    "axios-mock-adapter": "^2.1.0",
-    "babel-preset-expo": "^12.0.11",
-    "eslint": "^8.57.1",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-no-secrets": "^2.2.1",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-native": "^5.0.0",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-sonarjs": "^3.0.2",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "husky": "^9.1.7",
-    "jest": "^29.7.0",
-    "jest-expo": "^52.0.6",
-    "lint-staged": "^15.5.0",
-    "metro-react-native-babel-preset": "^0.77.0",
-    "react-test-renderer": "^18.2.0",
-    "redux-mock-store": "^1.5.5",
-    "redux-thunk": "^3.1.0"
-  },
-  "private": true
+    "socket.io-client": "^4.8.1",
+    "react-native-blob-util": "^0.21.2",
+    "react-native-video": "^6.14.1"
+  }
 }
