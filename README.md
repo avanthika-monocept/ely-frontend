@@ -9,13 +9,13 @@
 Install the library using either Yarn:
 
 ```sh
-yarn add mlielychatbot
+yarn add amlielychatbot
 ```
 
 or npm:
 
 ```sh
-npm install mlielychatbot
+npm install amlielychatbot
 ```
 
 ## 📂 Required Peer Dependencies
