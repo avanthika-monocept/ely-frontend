@@ -17,7 +17,7 @@ import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector } from "react-redux";
 import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
-import { hideLoader } from "../../store/reducers/loaderSlice";
+import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
@@ -39,8 +39,9 @@ export const ChatPage = () => {
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
-  const [navigationPage, setnavigationPage] = useState("COACH");
+  const [navigationPage, setnavigationPage] = useState("");
   const [reply, setReply] = useState(false);
+const [isInitializing, setIsInitializing] = useState(true);
 
   const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -152,7 +153,6 @@ export const ChatPage = () => {
       console.error(stringConstants.failToLoad, err);
     }
   };
-  useEffect(() => {
     const initialize = async () => {
       try {
         const newToken = await fetchToken();
@@ -169,17 +169,26 @@ export const ChatPage = () => {
                 console.log("newtoken", newToken);
                 loadChatHistory(response.userInfo.agentId, page, 10, newToken);
               }
+              setIsInitializing(false);
             },
           })
         );
+        connectWebSocket();
       } catch (error) {
         console.error("Initialization failed:", error);
+        setIsInitializing(false);
         // Handle error case (maybe use fallback data)
       }
     };
 
-    initialize();
-  }, [dispatch]);
+  useEffect(() => {
+      initialize();
+      return () => {
+        console.log("Cleaning up WebSocket and timeouts");
+        cleanupWebSocket(true); 
+        clearResponseTimeout();
+      }
+  }, []);
 
   const connectWebSocket = () => {
     ws.current = new WebSocket(WEBSOCKET_URL);
@@ -193,13 +202,7 @@ export const ChatPage = () => {
       const data = JSON.parse(event.data);
       console.log('📨 Message:', data);
 
-      // Handle disconnect action
-      if (data.action === 'disconnect' && data.userId === 'hom5750') {
-        console.log('🔌 Received disconnect request - closing connection');
-        ws.current.close(1000, 'Disconnect requested by server');
-        setConnectionStatus('disconnected');
-        return;
-      }
+    
 
       if (data.type === 'BOT_RESPONSE') {
         handleBotMessage(data);
@@ -238,14 +241,9 @@ export const ChatPage = () => {
         console.log('Disconnect message sent');
       }
 
-      // Only try to close if socket exists and isn't already closing/closed
-      if ([WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.current.readyState)) {
-        ws.current.close(1000, 'Normal closure');
-      }
     } catch (error) {
       console.error('Error during WebSocket cleanup:', error);
     } finally {
-      // Always clean up references
       ws.current = null;
     }
   };
@@ -267,7 +265,7 @@ export const ChatPage = () => {
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App returning to foreground');
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          connectWebSocket();
+          initialize(); // Reinitialize WebSocket connection
         }
       }
 
@@ -283,14 +281,14 @@ export const ChatPage = () => {
       clearResponseTimeout();
     };
   }, []);
-  useEffect(() => {
-    connectWebSocket();
+  // useEffect(() => {
+  //   connectWebSocket();
 
-    return () => {
-      clearResponseTimeout();
-      cleanupWebSocket();
-    };
-  }, []);
+  //   return () => {
+  //     clearResponseTimeout();
+  //     cleanupWebSocket();
+  //   };
+  // }, []);
 
   // will be used after websoket is updated in the backend 
   const handleBotMessage = (data) => {
@@ -305,7 +303,10 @@ export const ChatPage = () => {
     }, 3600000));
     sendAcknowledgement(data?.messageId);
 
+
+
     const botMessage = formatBotMessage(data);
+    
     if (!isAtBottom) {
       setShowFab(false);
       setShowNewMessageAlert(true);
@@ -314,9 +315,13 @@ export const ChatPage = () => {
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
 
+
   };
   const handleAcknowledgement = (data) => {
     console.log("Received acknowledgement:", JSON.stringify(data));
+    dispatch(showLoader());
+    console.log("Acknowledgement received for messageId:", !data.messageId);
+    startResponseTimeout();
     if (data.acknowledgement === "RECEIVED") {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
@@ -327,12 +332,19 @@ export const ChatPage = () => {
 
   const sendAcknowledgement = (messageId) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      console.log("Sending acknowledgement for messageId:", reconfigApiResponse?.userInfo?.agentId,reconfigApiResponse?.userInfo?.email);
       const payload = {
-        action: 'acknowledgement',
+        
+        action: "api/chatbot/message-proxy",
+        token: token,
+        message: {
         messageId: messageId,
         status: "READ",
         sendType: "ACKNOWLEDGEMENT",
         userId: reconfigApiResponse?.userInfo?.agentId,
+        emailId: reconfigApiResponse?.userInfo?.email,
+        platform: "MSPACE",
+        }
       };
       ws.current.send(JSON.stringify(payload));
     }
@@ -392,18 +404,20 @@ export const ChatPage = () => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined }
           style={{ flex: 1 }}
         >
           <View style={styles.content}>
-            {navigationPage === stringConstants.coach ? (
+            { !isInitializing && navigationPage === stringConstants.coach && (
               <LandingPage
                 socket={ws.current}
                 setnavigationPage={setnavigationPage}
                 reconfigApiResponse={reconfigApiResponse}
                 startResponseTimeout={startResponseTimeout}
+                token={token}
               />
-            ) : (
+            )}
+            {!isInitializing && navigationPage !== stringConstants.coach && (
               <ChatBody
                 scrollViewRef={scrollViewRef}
                 isAtBottom={isAtBottom}
@@ -476,6 +490,7 @@ export const ChatPage = () => {
             cleanupWebSocket={cleanupWebSocket}
             startResponseTimeout={startResponseTimeout}
             clearResponseTimeout={clearResponseTimeout}
+            token={token}
           />
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>

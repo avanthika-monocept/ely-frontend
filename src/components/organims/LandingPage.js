@@ -22,6 +22,7 @@ export const LandingPage = ({
   reconfigApiResponse,
   socket,
   startResponseTimeout,
+  token,
 }) => {
   let scrollViewRef = null;
   return (
@@ -52,7 +53,7 @@ export const LandingPage = ({
             <View style={styles.textContainer}>
               <Text style={styles.hiTextStyle}>
                 {stringConstants.hiThere}{" "}
-                {reconfigApiResponse?.userInfo?.firstName}
+                {reconfigApiResponse?.userInfo?.userName}
                 {stringConstants.hiName}
               </Text>
               <View style={{ marginTop: spacing.space_base }}>
@@ -74,6 +75,7 @@ export const LandingPage = ({
                 setnavigationPage={setnavigationPage}
                 reconfigApiResponse={reconfigApiResponse}
                 startResponseTimeout={startResponseTimeout}
+                token={token}
               />
             </View>
           </ScrollView>
@@ -87,7 +89,8 @@ LandingPage.propTypes = {
   setnavigationPage: PropTypes.func.isRequired,
   reconfigApiResponse: PropTypes.object.isRequired,
   socket: PropTypes.object.isRequired,
-  startResponseTimeout: PropTypes.func
+  startResponseTimeout: PropTypes.func,
+  token: PropTypes.string,
 };
  
 const styles = StyleSheet.create({

@@ -99,13 +99,13 @@ export const getFormattedDividerDate = (dateString) => {
       text: data.entry?.message?.text,
       table: data.entry?.message?.table,
       botOption: data.entry?.message?.botOption,
-      options: [],
+      options: data.entry?.message?.options,
     },
     media: data?.entry?.message?.media,
   };
 };
 
-export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMessageId = null,replyIndex=0) => {
+export const formatUserMessage = (text, reconfigApiResponse, messageType,token,replyMessageId = null,replyIndex=0) => {
   const messageId = generateUniqueId();
   return {
      message: {
@@ -129,6 +129,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMe
     },
     socketPayload: {
       action: "api/chatbot/message-proxy",
+      token:token,
       message: {
       emailId: reconfigApiResponse?.userInfo?.email,
       userId: reconfigApiResponse?.userInfo?.agentId,

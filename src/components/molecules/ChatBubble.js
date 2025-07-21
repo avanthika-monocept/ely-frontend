@@ -44,7 +44,7 @@ export const ChatBubble = ({
   replyFrom,
   socket,
   handleReplyMessage,
-
+  token,
   copyToClipboard,
   replyMessageObj,
   reconfigApiResponse,
@@ -72,7 +72,7 @@ export const ChatBubble = ({
     replyMessageObj: PropTypes.object,
     reconfigApiResponse: PropTypes.object,
     setCopied: PropTypes.func,
-
+    token: PropTypes.string,
     setReplyIndex: PropTypes.func,
     replyIndex: PropTypes.number,
   };
@@ -123,8 +123,11 @@ export const ChatBubble = ({
     const { message, socketPayload } = formatUserMessage(
       feedback,
       reconfigApiResponse,
+      "QUICK_REPLY",
+      token,
       null,
-      "QUICK_REPLY"
+      0,
+      
     );
     dispatch(addMessage(message));
     socket.send(JSON.stringify(socketPayload));
@@ -288,6 +291,7 @@ export const ChatBubble = ({
               messageId={messageId}
               socket={socket}
               agentId={reconfigApiResponse?.userInfo?.agentId}
+              token={token}
             />
           </View>
         )}

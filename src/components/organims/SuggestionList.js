@@ -22,12 +22,14 @@ export const SuggestionList = ({
   reconfigApiResponse,
   socket,
   startResponseTimeout,
+  token,
 }) => {
   SuggestionList.propTypes = {
     setnavigationPage: PropTypes.func.isRequired,
     reconfigApiResponse: PropTypes.object.isRequired,
     socket: PropTypes.object.isRequired,
-    startResponseTimeout: PropTypes.func
+    startResponseTimeout: PropTypes.func,
+    token: PropTypes.string,
   };
 
   const dispatch = useDispatch();
@@ -39,12 +41,12 @@ export const SuggestionList = ({
     const { message, socketPayload } = formatUserMessage(
       topic,
       reconfigApiResponse,
+      "REPLY_TO_LANDING_PAGE",
+      token,
       null,
-      "REPLY_TO_LANDING_PAGE"
+      0
     );
     dispatch(addMessage(message));
-    dispatch(showLoader());
-    startResponseTimeout();
     socket.send(JSON.stringify(socketPayload));
   };
 
@@ -81,7 +83,7 @@ export const SuggestionList = ({
       <FlatList
         data={data}
         renderItem={renderItem}
-        keyExtractor={(index) => index.toString()}
+        keyExtractor={(item) => `${item.name}`}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}

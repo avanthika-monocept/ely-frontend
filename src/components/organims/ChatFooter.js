@@ -40,6 +40,7 @@ setCopied,
  cleanupWebSocket,
 startResponseTimeout,
 clearResponseTimeout,
+token,
 }) => {
   ChatFooter.propTypes = {
     copied: PropTypes.bool.isRequired,
@@ -65,6 +66,7 @@ clearResponseTimeout,
     cleanupWebSocket: PropTypes.func,
     startResponseTimeout: PropTypes.func,
     clearResponseTimeout:PropTypes.func,
+    token: PropTypes.string,
   };
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
@@ -121,12 +123,10 @@ if (isInteractiveReply) {
 } else {
   messageType = "TEXT";
 }
-const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, replyMessageId,replyIndex);
+const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType,token ,replyMessageId,replyIndex);
       dispatch(addMessage(message));
       setValue("");
       socket.send(JSON.stringify(socketPayload));
-      dispatch(showLoader());
-      startResponseTimeout();
       setReply(false);
       setReplyMessageId(null);
     } catch (error) {

@@ -56,7 +56,7 @@ export const ChatBody = ({
 
   useEffect(() => {
     messages.forEach((message) => {
-      const isBot = message.messageTo.toLowerCase() === stringConstants.user;
+      const isBot = message?.messageTo?.toLowerCase() === stringConstants.user;
       if (!animatedValues[message.messageId]) {
         const startValue = isBot ? -100 : Dimensions.get("window").width;
         animatedValues[message.messageId] = new Animated.Value(startValue);
@@ -147,8 +147,9 @@ export const ChatBody = ({
       result.push({ ...msg, type: "message" });
 
       if (msg?.conversationEnded) {
+        console.log("conversationended",msg?.conversationEnded)
         result.push({
-          id: "banner-conversation-ended",
+          id: `banner-conversation-ended-${msg.messageId}`,
           type: "banner",
           content: {
             text: stringConstants.conversationClosed,
@@ -221,7 +222,7 @@ export const ChatBody = ({
           setMessageObjectId={setMessageObjectId}
           messageId={item.messageId}
           handleReplyMessage={handleReplyMessage}
-       
+          token={token}
           replyIndex={item.replyIndex || 0}
           setReplyIndex={setReplyIndex}
           copyToClipboard={copyToClipboard}

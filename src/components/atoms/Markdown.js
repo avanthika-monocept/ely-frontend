@@ -93,7 +93,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       <Text style={markdownStyles.link}>{children}</Text>
     </TouchableWithoutFeedback>
   );
-
+const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
   return (
     <View style={{ paddingHorizontal: spacing.space_s2 }}>
       <Markdown
@@ -104,7 +104,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
             renderCustomLink(children, node.attributes.href),
         }}
       >
-        {markdownText}
+     {sanitizedText}
       </Markdown>
     </View>
   );

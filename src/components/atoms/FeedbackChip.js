@@ -12,7 +12,8 @@ export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiR
     selectedFeedback: PropTypes.string,
     reconfigApiResponse: PropTypes.object.isRequired,
   };
-  const botOptionColor = reconfigApiResponse?.theme?.botOptionColor || colors.primaryColors.white;
+  const botOptionColor =  reconfigApiResponse?.theme?.botOptionColor || colors.primaryColors.white;
+  
   
   return (
     <View style={styles.feedbackChipContainer}>

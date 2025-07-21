@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
@@ -10,6 +10,7 @@ export const Reactions = ({
   messageId,
   agentId,
   socket,
+  token,
 }) => {
   const [selected, setSelected] = useState(null);
 
@@ -17,11 +18,16 @@ export const Reactions = ({
     setSelected(selected === id ? null : id);
     onSelect?.(id, messageId);
     const message = {
+      action: "api/chatbot/message-proxy",
+      token: token,
+      message:{
       emoji: id === "like" ? "U+1F44D" : "U+1F44E",
       sendType: "REACTION",
       action: id === "like" ? "SELECTED" : "DESELECTED",
+      platform:"MSPACE",
       messageId: messageId,
       userId: agentId,
+      }
     };
     console.log("reactionmessage", message);
     socket.send(JSON.stringify(message));
@@ -75,6 +81,7 @@ Reactions.propTypes = {
   messageId: PropTypes.string,
   agentId: PropTypes.string,
   socket: PropTypes.object.isRequired,
+  token: PropTypes.string,
 };
 
 const styles = StyleSheet.create({

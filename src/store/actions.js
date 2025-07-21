@@ -100,7 +100,7 @@ export const getData = createAsyncThunk("getData", async (data) => {
   } catch (error) {
     
     console.warn("Using fallback response due to error:", error.message);
-    response = fallbackResponse;
+    // response = fallbackResponse;
   }
   callback(response);
   return response;
