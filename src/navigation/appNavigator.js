@@ -11,7 +11,7 @@ const AppNavigator = (props) => {
  
   return (
     <Provider store={store}>
-      <NavigationContainer>
+      <NavigationContainer independent={true} >
         <Stack.Navigator>
           <Stack.Screen
             name={"header"}
