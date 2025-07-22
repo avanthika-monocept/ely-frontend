@@ -91,7 +91,7 @@ export const getData = createAsyncThunk("getData", async (data) => {
         'Authorization': `Bearer ${token}`,
         'x-api-key':'4iNbPS8RzT4G9q7tBp3QZ36FwFBd5GhX6Lrl4oVK'
       },
-      data: { agentId: "hom5750", platform: "MSPACE" },
+      data: { agentId: agentId, platform: platform },
     });
    
   console.log("configAPIResponse:", apiResponse);
