@@ -134,7 +134,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
       emailId: reconfigApiResponse?.userInfo?.email,
       userId: reconfigApiResponse?.userInfo?.agentId,
       messageId,
-      platform: "MSPACE",
+      platform: reconfigApiResponse?.theme?.platform,
       sendType: "MESSAGE",
       messageTo: "BOT",
       messageType: messageType || "TEXT",

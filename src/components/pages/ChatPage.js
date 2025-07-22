@@ -27,8 +27,9 @@ import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/ut
 import { stringConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
+import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 
-const WEBSOCKET_URL = 'wss://rb0rtd86jb.execute-api.ap-south-1.amazonaws.com/uat/?userId=hom5750';
+
 export const ChatPage = () => {
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
@@ -53,7 +54,7 @@ const [isInitializing, setIsInitializing] = useState(true);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [token, settoken] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [userId, setuserId] = useState("")
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messages = useSelector((state) => state.chat.messages);
@@ -164,6 +165,7 @@ const [isInitializing, setIsInitializing] = useState(true);
             callback: (response) => {
               setnavigationPage(response.statusFlag);
               setReconfigApiResponse(response);
+              setuserId(response.userInfo.agentId);
               dispatch(clearMessages());
               if (response.statusFlag.toLowerCase() === "agenda") {
                 console.log("newtoken", newToken);
@@ -191,12 +193,12 @@ const [isInitializing, setIsInitializing] = useState(true);
   }, []);
 
   const connectWebSocket = () => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${userId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
 
     ws.current.onopen = () => {
       console.log('✅ WebSocket connected');
-      setConnectionStatus('connected');
-    };
+      };
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -213,13 +215,13 @@ const [isInitializing, setIsInitializing] = useState(true);
 
     ws.current.onerror = (error) => {
       console.error('❌ WebSocket error:', error.message || error);
-      setConnectionStatus('disconnected');
+     
       clearResponseTimeout();
     };
 
     ws.current.onclose = (e) => {
       console.log('🔌 WebSocket closed:', e.code, e.reason);
-      setConnectionStatus('disconnected');
+     
       clearResponseTimeout();
     };
   };
@@ -341,9 +343,9 @@ const [isInitializing, setIsInitializing] = useState(true);
         messageId: messageId,
         status: "READ",
         sendType: "ACKNOWLEDGEMENT",
-        userId: reconfigApiResponse?.userInfo?.agentId,
+        userId: userId,
         emailId: reconfigApiResponse?.userInfo?.email,
-        platform: "MSPACE",
+        platform: reconfigApiResponse?.theme?.platform,
         }
       };
       ws.current.send(JSON.stringify(payload));

@@ -291,6 +291,7 @@ export const ChatBubble = ({
               messageId={messageId}
               socket={socket}
               agentId={reconfigApiResponse?.userInfo?.agentId}
+              platform={reconfigApiResponse?.theme?.platform}
               token={token}
             />
           </View>

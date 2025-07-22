@@ -9,6 +9,7 @@ export const Reactions = ({
   onSelect,
   messageId,
   agentId,
+  platform,
   socket,
   token,
 }) => {
@@ -24,7 +25,7 @@ export const Reactions = ({
       emoji: id === "like" ? "U+1F44D" : "U+1F44E",
       sendType: "REACTION",
       action: id === "like" ? "SELECTED" : "DESELECTED",
-      platform:"MSPACE",
+      platform:platform,
       messageId: messageId,
       userId: agentId,
       }
@@ -82,6 +83,7 @@ Reactions.propTypes = {
   agentId: PropTypes.string,
   socket: PropTypes.object.isRequired,
   token: PropTypes.string,
+  platform: PropTypes.string,
 };
 
 const styles = StyleSheet.create({
