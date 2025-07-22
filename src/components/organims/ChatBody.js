@@ -15,6 +15,7 @@ import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
 import { stringConstants } from "../../constants/StringConstants";
 import { fontStyle } from "../../constants/Fonts";
+import { type } from "@testing-library/react-native/build/user-event/type";
 
 export const ChatBody = ({
   scrollViewRef,
@@ -71,9 +72,22 @@ export const ChatBody = ({
   }, [messages]);
 
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  let date;
+  if (typeof dateTime === "string") {
+    date = new Date(dateTime);
+  }
+  else if (typeof dateTime === "number") {
+    date = new Date(dateTime * 1000); 
+  }
+  else {
+    return "Invalid Time";
+  }
+  if (isNaN(date.getTime())) {
+    return "Invalid Time";
+  }
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
 
   const formatSeparatorDate = (dateObj) => {
     const today = new Date();
