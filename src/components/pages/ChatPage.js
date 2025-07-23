@@ -55,7 +55,6 @@ const [isInitializing, setIsInitializing] = useState(true);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [token, settoken] = useState("");
-  const [userId, setuserId] = useState("")
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messages = useSelector((state) => state.chat.messages);
@@ -155,10 +154,10 @@ const [isInitializing, setIsInitializing] = useState(true);
       console.error(stringConstants.failToLoad, err);
     }
   };
-    const connectWebSocket = () => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${userId}`;
+    const connectWebSocket = (agentId) => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
-
+console.log("Connecting to WebSocket:", WEBSOCKET_URL);
     ws.current.onopen = () => {
       console.log('✅ WebSocket connected');
       };
@@ -240,17 +239,17 @@ const [isInitializing, setIsInitializing] = useState(true);
           callback: (response) => {
             setnavigationPage(response.statusFlag);
             setReconfigApiResponse(response);
-            setuserId(response.userInfo.agentId);
             dispatch(clearMessages());
             if (response.statusFlag.toLowerCase() === "agenda") {
               loadChatHistory(response.userInfo.agentId, page, 10, newToken);
             }
+            connectWebSocket(response.userInfo.agentId);
             setIsInitializing(false);
           },
         })
       );
 
-      connectWebSocket();
+    
     // } else {
     //   console.warn("Token validation failed. Initialization aborted.");
     //   setIsInitializing(false);
@@ -357,7 +356,7 @@ const [isInitializing, setIsInitializing] = useState(true);
         messageId: messageId,
         status: "READ",
         sendType: "ACKNOWLEDGEMENT",
-        userId: userId,
+        userId: reconfigApiResponse?.userInfo?.agentId,
         emailId: reconfigApiResponse?.userInfo?.email,
         platform: reconfigApiResponse?.theme?.platform,
         }
