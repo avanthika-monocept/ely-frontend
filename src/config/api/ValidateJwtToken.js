@@ -1,8 +1,7 @@
 import apiCall from "../axiosRequest";
 import { baseUrl, X_API_KEY } from "../../constants/constants";
 import {VALIDATE_JWT_TOKEN_URL} from "../apiUrls";
-
-
+import { encNewPayload, decResPayload } from "../../common/utils";
 
 export const validateJwtToken = async (
   bearerToken,
@@ -12,6 +11,14 @@ export const validateJwtToken = async (
   userInfo = {}
 ) => {
   try {
+    const rawPayload = {
+      jwtToken: jwtToken,
+      cogToken: cogToken,
+      platform: platform,
+      userInfo: userInfo,
+    };
+    const encryptedPayload = encNewPayload(rawPayload);
+
     const response = await apiCall({
       baseURL: baseUrl,
       url: VALIDATE_JWT_TOKEN_URL,
@@ -21,17 +28,20 @@ export const validateJwtToken = async (
         "Authorization": `Bearer ${bearerToken}`,
         "x-api-key": X_API_KEY,
       },
-      data: {
-        jwtToken: jwtToken,
-        cogToken: cogToken,
-        platform: platform,
-        userInfo : userInfo,
-      },
+      data: encryptedPayload,
     });
 
-    console.log(JSON.stringify(response), "validateJwtToken response");
-    return response?.data;
+    console.log("Encrypted validation response:", response);
+    
+    if (response?.data?.payload) {
+      const decryptedData = decResPayload(response.data.payload);
+      console.log("Decrypted validation response:", decryptedData);
+      return decryptedData;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error validating JWT token:", error);
+    throw error;
   }
 };
