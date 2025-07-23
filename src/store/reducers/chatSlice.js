@@ -26,14 +26,21 @@ const chatSlice = createSlice({
         message.activity = activity;
       }
     },
+
     addChatHistory: (state, action) => {
-      const newMessages = action.payload;
+      const newMessages = action.payload.map(msg => {
+       return {
+          ...msg,
+          status: 'READ', 
+          
+        };
+      });
       const existingIds = new Set(state.messages.map((msg) => msg.messageId));
       newMessages.forEach((msg) => {
         const id = String(msg.messageId);
         if (id && !existingIds.has(id)) {
           state.messages.unshift(msg);
-          existingIds.add(id); // Update set so that it avoids dupes even within the same batch
+          existingIds.add(id);
         }
       });
     },
@@ -44,7 +51,7 @@ const chatSlice = createSlice({
         message.status = status;
       }
     },
-  
+
     markAllMessagesAsRead: (state) => {
       state.messages.forEach(msg => {
         if (msg.messageTo === "bot") {

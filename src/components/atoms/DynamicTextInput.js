@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { TextInput, StyleSheet, View, Text, Platform } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  TextInput,
+  StyleSheet,
+  View,
+  Text,
+  Platform,
+  TouchableWithoutFeedback,
+} from "react-native";
 import PropTypes from "prop-types";
 import {
   borderRadius,
@@ -23,10 +30,14 @@ const DynamicTextInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [inputHeight, setInputHeight] = useState(DEFAULT_HEIGHT);
+  const inputRef = useRef(null);
 
   const handleContentSizeChange = (event) => {
     const { contentSize } = event.nativeEvent;
-    const newHeight = Math.max(DEFAULT_HEIGHT, Math.min(contentSize.height, 24 * rows));
+    const newHeight = Math.max(
+      DEFAULT_HEIGHT,
+      Math.min(contentSize.height, 24 * rows)
+    );
     setInputHeight(newHeight);
     if (onInputHeightChange) {
       onInputHeightChange(newHeight);
@@ -40,34 +51,39 @@ const DynamicTextInput = ({
   }, [value]);
 
   return (
-    <View
-      testID="dynamic-text-input-container"
-      style={[
-        styles.container,
-        fullWidth && styles.fullWidth,
-        isFocused && styles.focusedContainer,
-      ]}
-    >
-      {/* Custom placeholder (only shown when input is empty and not focused) */}
-      {!value && !isFocused && (
-        <Text style={styles.placeholderText}>{placeholder}</Text>
-      )}
+    <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
+      <View
+        testID="dynamic-text-input-container"
+        style={[
+          styles.container,
+          fullWidth && styles.fullWidth,
+          isFocused && styles.focusedContainer,
+        ]}
+      >
+        {!value && !isFocused && (
+          <Text style={styles.placeholderText} pointerEvents="none" numberOfLines={1}
+            ellipsizeMode="tail">
+            {placeholder}
+          </Text>
+        )}
 
-      <TextInput
-        testID="dynamic-text-input"
-        style={[styles.input, { height: inputHeight, maxHeight: 24 * rows }]}
-        value={value}
-        onChangeText={onChange}
-        editable={!disabled}
-        multiline
-        onContentSizeChange={handleContentSizeChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        scrollEnabled
-        textAlignVertical="center"
-        underlineColorAndroid="transparent"
-      />
-    </View>
+        <TextInput
+          ref={inputRef}
+          testID="dynamic-text-input"
+          style={[styles.input, { height: inputHeight, maxHeight: 24 * rows }]}
+          value={value}
+          onChangeText={onChange}
+          editable={!disabled}
+          multiline
+          onContentSizeChange={handleContentSizeChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          scrollEnabled
+          textAlignVertical="center"
+          underlineColorAndroid="transparent"
+        />
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 

@@ -15,6 +15,7 @@ import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
 import { stringConstants } from "../../constants/StringConstants";
 import { fontStyle } from "../../constants/Fonts";
+import { type } from "@testing-library/react-native/build/user-event/type";
 
 export const ChatBody = ({
   scrollViewRef,
@@ -56,7 +57,7 @@ export const ChatBody = ({
 
   useEffect(() => {
     messages.forEach((message) => {
-      const isBot = message.messageTo.toLowerCase() === stringConstants.user;
+      const isBot = message?.messageTo?.toLowerCase() === stringConstants.user;
       if (!animatedValues[message.messageId]) {
         const startValue = isBot ? -100 : Dimensions.get("window").width;
         animatedValues[message.messageId] = new Animated.Value(startValue);
@@ -71,9 +72,22 @@ export const ChatBody = ({
   }, [messages]);
 
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  let date;
+  if (typeof dateTime === "string") {
+    date = new Date(dateTime);
+  }
+  else if (typeof dateTime === "number") {
+    date = new Date(dateTime * 1000); 
+  }
+  else {
+    return "Invalid Time";
+  }
+  if (isNaN(date.getTime())) {
+    return "Invalid Time";
+  }
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
 
   const formatSeparatorDate = (dateObj) => {
     const today = new Date();
@@ -147,8 +161,9 @@ export const ChatBody = ({
       result.push({ ...msg, type: "message" });
 
       if (msg?.conversationEnded) {
+        console.log("conversationended",msg?.conversationEnded)
         result.push({
-          id: "banner-conversation-ended",
+          id: `banner-conversation-ended-${msg.messageId}`,
           type: "banner",
           content: {
             text: stringConstants.conversationClosed,
@@ -221,7 +236,7 @@ export const ChatBody = ({
           setMessageObjectId={setMessageObjectId}
           messageId={item.messageId}
           handleReplyMessage={handleReplyMessage}
-       
+          token={token}
           replyIndex={item.replyIndex || 0}
           setReplyIndex={setReplyIndex}
           copyToClipboard={copyToClipboard}

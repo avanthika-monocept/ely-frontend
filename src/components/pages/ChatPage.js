@@ -17,7 +17,7 @@ import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector } from "react-redux";
 import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
-import { hideLoader } from "../../store/reducers/loaderSlice";
+import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
@@ -27,8 +27,10 @@ import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/ut
 import { stringConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
+import { validateJwtToken } from "../../config/api/ValidateJwtToken";
+import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 
-const WEBSOCKET_URL = 'wss://rb0rtd86jb.execute-api.ap-south-1.amazonaws.com/uat/?userId=hom5750';
+
 export const ChatPage = () => {
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
@@ -39,9 +41,10 @@ export const ChatPage = () => {
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
-  const [navigationPage, setnavigationPage] = useState("COACH");
+  const [navigationPage, setnavigationPage] = useState("");
   const [reply, setReply] = useState(false);
-
+const [isInitializing, setIsInitializing] = useState(true);
+  const [userId, setuserId] = useState("");
   const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
@@ -52,7 +55,6 @@ export const ChatPage = () => {
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [token, settoken] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messages = useSelector((state) => state.chat.messages);
@@ -152,54 +154,18 @@ export const ChatPage = () => {
       console.error(stringConstants.failToLoad, err);
     }
   };
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        const newToken = await fetchToken();
-        dispatch(
-          getData({
-            token: newToken,
-            agentId: "hom5750",
-            platform: "MSPACE",
-            callback: (response) => {
-              setnavigationPage(response.statusFlag);
-              setReconfigApiResponse(response);
-              dispatch(clearMessages());
-              if (response.statusFlag.toLowerCase() === "agenda") {
-                console.log("newtoken", newToken);
-                loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-              }
-            },
-          })
-        );
-      } catch (error) {
-        console.error("Initialization failed:", error);
-        // Handle error case (maybe use fallback data)
-      }
-    };
-
-    initialize();
-  }, [dispatch]);
-
-  const connectWebSocket = () => {
+    const connectWebSocket = (agentId) => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
-
     ws.current.onopen = () => {
       console.log('✅ WebSocket connected');
-      setConnectionStatus('connected');
-    };
+      };
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log('📨 Message:', data);
 
-      // Handle disconnect action
-      if (data.action === 'disconnect' && data.userId === 'hom5750') {
-        console.log('🔌 Received disconnect request - closing connection');
-        ws.current.close(1000, 'Disconnect requested by server');
-        setConnectionStatus('disconnected');
-        return;
-      }
+    
 
       if (data.type === 'BOT_RESPONSE') {
         handleBotMessage(data);
@@ -210,13 +176,13 @@ export const ChatPage = () => {
 
     ws.current.onerror = (error) => {
       console.error('❌ WebSocket error:', error.message || error);
-      setConnectionStatus('disconnected');
+     
       clearResponseTimeout();
     };
 
     ws.current.onclose = (e) => {
       console.log('🔌 WebSocket closed:', e.code, e.reason);
-      setConnectionStatus('disconnected');
+     
       clearResponseTimeout();
     };
   };
@@ -232,23 +198,67 @@ export const ChatPage = () => {
       if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
         const disconnectPayload = {
           action: "disconnect",
-          userId: "hom5750"
+          userId: reconfigApiResponse?.userInfo?.agentId,
         };
         ws.current.send(JSON.stringify(disconnectPayload));
         console.log('Disconnect message sent');
       }
 
-      // Only try to close if socket exists and isn't already closing/closed
-      if ([WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.current.readyState)) {
-        ws.current.close(1000, 'Normal closure');
-      }
     } catch (error) {
       console.error('Error during WebSocket cleanup:', error);
     } finally {
-      // Always clean up references
       ws.current = null;
     }
   };
+ const initialize = async () => {
+  try {
+    const newToken = await fetchToken();
+//we need to replace with actual data from mspace and code should be uncommented after that
+    // const validationResponse = await validateJwtToken(
+    //   newToken,
+    //   "dummy-jwt-token", 
+    //   "dummy-cog-token",
+    //   "MSPACE",
+    //   {
+    //     agentId: "hom5750",
+    //     userName: "Mukul Lawas",
+    //     email: "mukul.lawas@axismaxlife.com",
+    //     role: "lead1",
+    //     firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
+    //     deviceId: "faf86667cef41bc4",
+    //   }
+    // );
+    // if (validationResponse && validationResponse.status === "success") {
+      settoken(newToken);
+      const response =await dispatch(getData({ token: newToken, agentId: "hom5750",platform: "MSPACE"})).unwrap()
+       dispatch(clearMessages());
+       setnavigationPage(response.statusFlag);
+       setReconfigApiResponse(response);
+       if (response.statusFlag.toLowerCase() === "agenda") {
+        loadChatHistory(response.userInfo.agentId, page, 10, newToken); 
+       }
+         connectWebSocket(response.userInfo.agentId);
+            setIsInitializing(false);
+      // } else {
+    //   console.warn("Token validation failed. Initialization aborted.");
+    //   setIsInitializing(false);
+    // }
+  } catch (error) {
+    console.error("Initialization failed:", error);
+    setIsInitializing(false);
+  }
+};
+
+useEffect(() => {
+      initialize();
+      return () => {
+        console.log("Cleaning up WebSocket and timeouts");
+        cleanupWebSocket(true); 
+        clearResponseTimeout();
+      }
+  }, []);
+
+
 
   useEffect(() => {
     let currentAppState = AppState.currentState;
@@ -267,7 +277,7 @@ export const ChatPage = () => {
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App returning to foreground');
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          connectWebSocket();
+          initialize(); // Reinitialize WebSocket connection
         }
       }
 
@@ -283,16 +293,7 @@ export const ChatPage = () => {
       clearResponseTimeout();
     };
   }, []);
-  useEffect(() => {
-    connectWebSocket();
 
-    return () => {
-      clearResponseTimeout();
-      cleanupWebSocket();
-    };
-  }, []);
-
-  // will be used after websoket is updated in the backend 
   const handleBotMessage = (data) => {
     clearResponseTimeout();
     dispatch(hideLoader());
@@ -305,7 +306,10 @@ export const ChatPage = () => {
     }, 3600000));
     sendAcknowledgement(data?.messageId);
 
+
+
     const botMessage = formatBotMessage(data);
+    
     if (!isAtBottom) {
       setShowFab(false);
       setShowNewMessageAlert(true);
@@ -314,9 +318,13 @@ export const ChatPage = () => {
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
 
+
   };
   const handleAcknowledgement = (data) => {
     console.log("Received acknowledgement:", JSON.stringify(data));
+    dispatch(showLoader());
+    console.log("Acknowledgement received for messageId:", !data.messageId);
+    startResponseTimeout();
     if (data.acknowledgement === "RECEIVED") {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
@@ -327,12 +335,19 @@ export const ChatPage = () => {
 
   const sendAcknowledgement = (messageId) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      console.log("Sending acknowledgement for messageId:", reconfigApiResponse?.userInfo?.agentId,reconfigApiResponse?.userInfo?.email);
       const payload = {
-        action: 'acknowledgement',
+        
+        action: "api/chatbot/message-proxy",
+        token: token,
+        message: {
         messageId: messageId,
         status: "READ",
         sendType: "ACKNOWLEDGEMENT",
         userId: reconfigApiResponse?.userInfo?.agentId,
+        emailId: reconfigApiResponse?.userInfo?.email,
+        platform: reconfigApiResponse?.theme?.platform,
+        }
       };
       ws.current.send(JSON.stringify(payload));
     }
@@ -392,18 +407,20 @@ export const ChatPage = () => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined }
           style={{ flex: 1 }}
         >
           <View style={styles.content}>
-            {navigationPage === stringConstants.coach ? (
+            { !isInitializing && navigationPage === stringConstants.coach && (
               <LandingPage
                 socket={ws.current}
                 setnavigationPage={setnavigationPage}
                 reconfigApiResponse={reconfigApiResponse}
                 startResponseTimeout={startResponseTimeout}
+                token={token}
               />
-            ) : (
+            )}
+            {!isInitializing && navigationPage !== stringConstants.coach && (
               <ChatBody
                 scrollViewRef={scrollViewRef}
                 isAtBottom={isAtBottom}
@@ -476,6 +493,7 @@ export const ChatPage = () => {
             cleanupWebSocket={cleanupWebSocket}
             startResponseTimeout={startResponseTimeout}
             clearResponseTimeout={clearResponseTimeout}
+            token={token}
           />
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
