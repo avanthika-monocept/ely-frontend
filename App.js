@@ -1,11 +1,15 @@
 import React, { useEffect } from "react";
-import { LogBox, StatusBar, StyleSheet, View } from "react-native";
+import {
+  LogBox,
+  StatusBar,
+  StyleSheet,
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler"; // ✅ Import this
 import AppNavigator from "./src/navigation/appNavigator";
 import apiCall from "./src/config/axiosRequest";
 import { loadFonts } from "./src/config/loadFonts";
+ 
 export default function App() {
-  //const [fontsLoaded, setFontsLoaded] = useState(false);
-  //example for api axios call
   LogBox.ignoreAllLogs(true);
  
   useEffect(() => {
@@ -22,10 +26,10 @@ export default function App() {
         console.error("API Error:", err.message);
       }
     };
-
+ 
     fetchAPI();
   }, []);
-
+ 
   useEffect(() => {
     async function prepare() {
       try {
@@ -36,15 +40,15 @@ export default function App() {
     }
     prepare();
   }, []);
-
+ 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <AppNavigator />
-    </View>
+<GestureHandlerRootView style={styles.container}>
+<StatusBar style="auto" />
+<AppNavigator standalone={true} />
+</GestureHandlerRootView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
