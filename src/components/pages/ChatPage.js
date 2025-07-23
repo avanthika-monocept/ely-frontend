@@ -29,9 +29,15 @@ import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
+import PropTypes from "prop-types";
 
-
-export const ChatPage = () => {
+export const ChatPage = ({ route }) => {
+   const { 
+    jwtToken,     
+    cogToken,      
+    userInfo,    
+    platform 
+  } = route.params || {};
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
@@ -213,22 +219,22 @@ const [isInitializing, setIsInitializing] = useState(true);
  const initialize = async () => {
   try {
     const newToken = await fetchToken();
-//we need to replace with actual data from mspace and code should be uncommented after that
-    // const validationResponse = await validateJwtToken(
-    //   newToken,
-    //   "dummy-jwt-token", 
-    //   "dummy-cog-token",
-    //   "MSPACE",
-    //   {
-    //     agentId: "hom5750",
-    //     userName: "Mukul Lawas",
-    //     email: "mukul.lawas@axismaxlife.com",
-    //     role: "lead1",
-    //     firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
-    //     deviceId: "faf86667cef41bc4",
-    //   }
-    // );
-    // if (validationResponse && validationResponse.status === "success") {
+
+    const validationResponse = await validateJwtToken(
+      newToken,
+      jwtToken, 
+      cogToken,
+      platform,
+      {
+        agentId: userInfo?.agentId,
+        userName: userInfo?.userName,
+        email: userInfo?.email,
+        role: userInfo?.role,
+        firebaseId: userInfo?.firebaseId,
+        deviceId: userInfo?.deviceId,
+      }
+    );
+    if (validationResponse && validationResponse.status === "SUCCESS") {
       settoken(newToken);
       const response =await dispatch(getData({ token: newToken, agentId: "hom5750",platform: "MSPACE"})).unwrap()
        dispatch(clearMessages());
@@ -239,10 +245,10 @@ const [isInitializing, setIsInitializing] = useState(true);
        }
          connectWebSocket(response.userInfo.agentId);
             setIsInitializing(false);
-      // } else {
-    //   console.warn("Token validation failed. Initialization aborted.");
-    //   setIsInitializing(false);
-    // }
+      } else {
+      console.warn("Token validation failed. Initialization aborted.");
+      setIsInitializing(false);
+    }
   } catch (error) {
     console.error("Initialization failed:", error);
     setIsInitializing(false);
@@ -529,3 +535,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(181, 178, 178, 0.5)',
   },
 });
+
+ChatPage.propTypes = {
+  route: PropTypes.shape({
+    params: PropTypes.shape({
+      jwtToken: PropTypes.string,
+      cogToken: PropTypes.string,
+      userInfo: PropTypes.object,
+      platform: PropTypes.string,
+    }),
+  }),
+};
