@@ -44,7 +44,7 @@ export const ChatPage = () => {
   const [navigationPage, setnavigationPage] = useState("");
   const [reply, setReply] = useState(false);
 const [isInitializing, setIsInitializing] = useState(true);
-
+  const [userId, setuserId] = useState("");
   const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
@@ -199,7 +199,7 @@ console.log("Connecting to WebSocket:", WEBSOCKET_URL);
       if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
         const disconnectPayload = {
           action: "disconnect",
-          userId: "hom5750"
+          userId: userId,
         };
         ws.current.send(JSON.stringify(disconnectPayload));
         console.log('Disconnect message sent');
@@ -238,6 +238,7 @@ console.log("Connecting to WebSocket:", WEBSOCKET_URL);
           platform: "MSPACE",
           callback: (response) => {
             setnavigationPage(response.statusFlag);
+            setuserId(response.userInfo.agentId);
             setReconfigApiResponse(response);
             dispatch(clearMessages());
             if (response.statusFlag.toLowerCase() === "agenda") {
