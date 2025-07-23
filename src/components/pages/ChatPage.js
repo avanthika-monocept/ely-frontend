@@ -44,7 +44,7 @@ export const ChatPage = () => {
   const [navigationPage, setnavigationPage] = useState("");
   const [reply, setReply] = useState(false);
 const [isInitializing, setIsInitializing] = useState(true);
-
+  const [userId, setuserId] = useState("");
   const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
@@ -157,7 +157,6 @@ const [isInitializing, setIsInitializing] = useState(true);
     const connectWebSocket = (agentId) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
-console.log("Connecting to WebSocket:", WEBSOCKET_URL);
     ws.current.onopen = () => {
       console.log('✅ WebSocket connected');
       };
@@ -199,7 +198,7 @@ console.log("Connecting to WebSocket:", WEBSOCKET_URL);
       if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
         const disconnectPayload = {
           action: "disconnect",
-          userId: "hom5750"
+          userId: reconfigApiResponse?.userInfo?.agentId,
         };
         ws.current.send(JSON.stringify(disconnectPayload));
         console.log('Disconnect message sent');
@@ -215,42 +214,32 @@ console.log("Connecting to WebSocket:", WEBSOCKET_URL);
   try {
     const newToken = await fetchToken();
 //we need to replace with actual data from mspace and code should be uncommented after that
-    const validationResponse = await validateJwtToken(
-      newToken,
-      "dummy-jwt-token", 
-      "dummy-cog-token",
-      "MSPACE",
-      {
-        agentId: "hom5750",
-        userName: "Mukul Lawas",
-        email: "mukul.lawas@axismaxlife.com",
-        role: "lead1",
-        firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
-        deviceId: "faf86667cef41bc4",
-      }
-    );
+    // const validationResponse = await validateJwtToken(
+    //   newToken,
+    //   "dummy-jwt-token", 
+    //   "dummy-cog-token",
+    //   "MSPACE",
+    //   {
+    //     agentId: "hom5750",
+    //     userName: "Mukul Lawas",
+    //     email: "mukul.lawas@axismaxlife.com",
+    //     role: "lead1",
+    //     firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
+    //     deviceId: "faf86667cef41bc4",
+    //   }
+    // );
     // if (validationResponse && validationResponse.status === "success") {
       settoken(newToken);
-      dispatch(
-        getData({
-          token: newToken,
-          agentId: "hom5750",
-          platform: "MSPACE",
-          callback: (response) => {
-            setnavigationPage(response.statusFlag);
-            setReconfigApiResponse(response);
-            dispatch(clearMessages());
-            if (response.statusFlag.toLowerCase() === "agenda") {
-              loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-            }
-            connectWebSocket(response.userInfo.agentId);
+      const response =await dispatch(getData({ token: newToken, agentId: "hom5750",platform: "MSPACE"})).unwrap()
+       dispatch(clearMessages());
+       setnavigationPage(response.statusFlag);
+       setReconfigApiResponse(response);
+       if (response.statusFlag.toLowerCase() === "agenda") {
+        loadChatHistory(response.userInfo.agentId, page, 10, newToken); 
+       }
+         connectWebSocket(response.userInfo.agentId);
             setIsInitializing(false);
-          },
-        })
-      );
-
-    
-    // } else {
+      // } else {
     //   console.warn("Token validation failed. Initialization aborted.");
     //   setIsInitializing(false);
     // }
@@ -260,8 +249,7 @@ console.log("Connecting to WebSocket:", WEBSOCKET_URL);
   }
 };
 
-
-  useEffect(() => {
+useEffect(() => {
       initialize();
       return () => {
         console.log("Cleaning up WebSocket and timeouts");
