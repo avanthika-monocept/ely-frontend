@@ -154,45 +154,7 @@ const [isInitializing, setIsInitializing] = useState(true);
       console.error(stringConstants.failToLoad, err);
     }
   };
-    const initialize = async () => {
-      try {
-        const newToken = await fetchToken();
-        dispatch(
-          getData({
-            token: newToken,
-            agentId: "hom5750",
-            platform: "MSPACE",
-            callback: (response) => {
-              setnavigationPage(response.statusFlag);
-              setReconfigApiResponse(response);
-              setuserId(response.userInfo.agentId);
-              dispatch(clearMessages());
-              if (response.statusFlag.toLowerCase() === "agenda") {
-                console.log("newtoken", newToken);
-                loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-              }
-              setIsInitializing(false);
-            },
-          })
-        );
-        connectWebSocket();
-      } catch (error) {
-        console.error("Initialization failed:", error);
-        setIsInitializing(false);
-        // Handle error case (maybe use fallback data)
-      }
-    };
-
-  useEffect(() => {
-      initialize();
-      return () => {
-        console.log("Cleaning up WebSocket and timeouts");
-        cleanupWebSocket(true); 
-        clearResponseTimeout();
-      }
-  }, []);
-
-  const connectWebSocket = () => {
+    const connectWebSocket = () => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${userId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
 
@@ -249,6 +211,45 @@ const [isInitializing, setIsInitializing] = useState(true);
       ws.current = null;
     }
   };
+    const initialize = async () => {
+      try {
+        const newToken = await fetchToken();
+        dispatch(
+          getData({
+            token: newToken,
+            agentId: "hom5750",
+            platform: "MSPACE",
+            callback: (response) => {
+              setnavigationPage(response.statusFlag);
+              setReconfigApiResponse(response);
+              setuserId(response.userInfo.agentId);
+              dispatch(clearMessages());
+              if (response.statusFlag.toLowerCase() === "agenda") {
+                console.log("newtoken", newToken);
+                loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+              }
+              setIsInitializing(false);
+            },
+          })
+        );
+        connectWebSocket();
+      } catch (error) {
+        console.error("Initialization failed:", error);
+        setIsInitializing(false);
+        // Handle error case (maybe use fallback data)
+      }
+    };
+
+  useEffect(() => {
+      initialize();
+      return () => {
+        console.log("Cleaning up WebSocket and timeouts");
+        cleanupWebSocket(true); 
+        clearResponseTimeout();
+      }
+  }, []);
+
+
 
   useEffect(() => {
     let currentAppState = AppState.currentState;
@@ -283,16 +284,7 @@ const [isInitializing, setIsInitializing] = useState(true);
       clearResponseTimeout();
     };
   }, []);
-  // useEffect(() => {
-  //   connectWebSocket();
 
-  //   return () => {
-  //     clearResponseTimeout();
-  //     cleanupWebSocket();
-  //   };
-  // }, []);
-
-  // will be used after websoket is updated in the backend 
   const handleBotMessage = (data) => {
     clearResponseTimeout();
     dispatch(hideLoader());
