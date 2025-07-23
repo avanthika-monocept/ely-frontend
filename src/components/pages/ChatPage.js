@@ -27,6 +27,7 @@ import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/ut
 import { stringConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
+import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 
 
@@ -211,34 +212,55 @@ const [isInitializing, setIsInitializing] = useState(true);
       ws.current = null;
     }
   };
-    const initialize = async () => {
-      try {
-        const newToken = await fetchToken();
-        dispatch(
-          getData({
-            token: newToken,
-            agentId: "hom5750",
-            platform: "MSPACE",
-            callback: (response) => {
-              setnavigationPage(response.statusFlag);
-              setReconfigApiResponse(response);
-              setuserId(response.userInfo.agentId);
-              dispatch(clearMessages());
-              if (response.statusFlag.toLowerCase() === "agenda") {
-                console.log("newtoken", newToken);
-                loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-              }
-              setIsInitializing(false);
-            },
-          })
-        );
-        connectWebSocket();
-      } catch (error) {
-        console.error("Initialization failed:", error);
-        setIsInitializing(false);
-        // Handle error case (maybe use fallback data)
+ const initialize = async () => {
+  try {
+    const newToken = await fetchToken();
+//we need to replace with actual data from mspace and code should be uncommented after that
+    const validationResponse = await validateJwtToken(
+      newToken,
+      "dummy-jwt-token", 
+      "dummy-cog-token",
+      "MSPACE",
+      {
+        agentId: "hom5750",
+        userName: "Mukul Lawas",
+        email: "mukul.lawas@axismaxlife.com",
+        role: "lead1",
+        firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
+        deviceId: "faf86667cef41bc4",
       }
-    };
+    );
+    // if (validationResponse && validationResponse.status === "success") {
+      settoken(newToken);
+      dispatch(
+        getData({
+          token: newToken,
+          agentId: "hom5750",
+          platform: "MSPACE",
+          callback: (response) => {
+            setnavigationPage(response.statusFlag);
+            setReconfigApiResponse(response);
+            setuserId(response.userInfo.agentId);
+            dispatch(clearMessages());
+            if (response.statusFlag.toLowerCase() === "agenda") {
+              loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+            }
+            setIsInitializing(false);
+          },
+        })
+      );
+
+      connectWebSocket();
+    // } else {
+    //   console.warn("Token validation failed. Initialization aborted.");
+    //   setIsInitializing(false);
+    // }
+  } catch (error) {
+    console.error("Initialization failed:", error);
+    setIsInitializing(false);
+  }
+};
+
 
   useEffect(() => {
       initialize();
