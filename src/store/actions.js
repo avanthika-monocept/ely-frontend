@@ -25,19 +25,17 @@ export const getData = createAsyncThunk("getData", async (data) => {
       },
       data: encryptedPayload,
     });
-
-    console.log("Encrypted config API response:", apiResponse);
-    
-    if (apiResponse?.data?.payload) {
-      response = decResPayload(apiResponse.data.payload);
+   
+    if (apiResponse?.payload) {
+      response = decResPayload(apiResponse.payload);
       console.log("Decrypted config API response:", response);
       if (response?.error) throw new Error("API Error");
+      return response.data;
     } else {
       throw new Error("Invalid response format");
     }
   } catch (error) {
     console.warn("Using fallback response due to error:", error.message);
-    // response = fallbackResponse;
   }
   
   callback(response);

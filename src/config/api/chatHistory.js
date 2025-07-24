@@ -20,11 +20,9 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10, token) => {
       },
       data: encryptedPayload,
     });
-
-    console.log("Encrypted response:", response);
     
-    if (response?.data?.payload) {
-      const decryptedData = decResPayload(response.data.payload);
+if (response?.payload) {
+      const decryptedData = decResPayload(response?.payload);
       console.log("Decrypted chat history:", decryptedData);
       return decryptedData?.content || [];
     }
