@@ -144,3 +144,30 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
     }
    };
 };
+
+// utils/messageFormatter.js
+
+export const formatHistoryMessage = (apiMessage) => {
+  const isBot = apiMessage.messageTo === "BOT";
+  
+  return {
+    messageId: apiMessage.messageId,
+    messageTo: isBot ? "bot" : "user",
+    dateTime: new Date(apiMessage.createdAt * 1000).toISOString(),
+    activity: apiMessage.action==="SELECTED" ? "like" : "dislike", 
+    replyId: apiMessage.replyToMessageId, 
+    conversationEnded: false, 
+    status: apiMessage.status || "RECEIVED",
+    message: {
+      text: apiMessage.text,
+      table: null, 
+      botOption: apiMessage.botOptions, 
+      options: apiMessage.options || [],
+    },
+    media: apiMessage.media || { 
+      video: [],
+      image: [],
+      document: [],
+    },
+  };
+};

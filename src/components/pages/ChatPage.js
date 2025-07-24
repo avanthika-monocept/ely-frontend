@@ -23,7 +23,7 @@ import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { spacing } from "../../constants/Dimensions";
-import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/utils";
+import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
 import { stringConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
@@ -154,7 +154,10 @@ const [isInitializing, setIsInitializing] = useState(true);
     if (!hasMore) return;
     try {
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
-      dispatch(addChatHistory(newMessages));
+      const formattedMessages = newMessages.map(msg => 
+      formatHistoryMessage(msg)
+    );
+      dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
     } catch (err) {
       console.error(stringConstants.failToLoad, err);
@@ -220,23 +223,23 @@ const [isInitializing, setIsInitializing] = useState(true);
   try {
     const newToken = await fetchToken();
 
-    const validationResponse = await validateJwtToken(
-      newToken,
-      jwtToken, 
-      cogToken,
-      platform,
-      {
-        agentId: userInfo?.agentId,
-        userName: userInfo?.userName,
-        email: userInfo?.email,
-        role: userInfo?.role,
-        firebaseId: userInfo?.firebaseId,
-        deviceId: userInfo?.deviceId,
-      }
-    );
-    if (validationResponse && validationResponse.status === "SUCCESS") {
+    // const validationResponse = await validateJwtToken(
+    //   newToken,
+    //   jwtToken, 
+    //   cogToken,
+    //   platform,
+    //   {
+    //     agentId: userInfo?.agentId,
+    //     userName: userInfo?.userName,
+    //     email: userInfo?.email,
+    //     role: userInfo?.role,
+    //     firebaseId: userInfo?.firebaseId,
+    //     deviceId: userInfo?.deviceId,
+    //   }
+    // );
+    // if (validationResponse && validationResponse.status === "SUCCESS") {
       settoken(newToken);
-      const response =await dispatch(getData({ token: newToken, agentId: "hom5750",platform: "MSPACE"})).unwrap()
+      const response =await dispatch(getData({ token: newToken, agentId: userInfo?.agentId,platform: platform})).unwrap()
        dispatch(clearMessages());
        setnavigationPage(response.statusFlag);
        setReconfigApiResponse(response);
@@ -245,10 +248,10 @@ const [isInitializing, setIsInitializing] = useState(true);
        }
          connectWebSocket(response.userInfo.agentId);
             setIsInitializing(false);
-      } else {
-      console.warn("Token validation failed. Initialization aborted.");
-      setIsInitializing(false);
-    }
+    //   } else {
+    //   console.warn("Token validation failed. Initialization aborted.");
+    //   setIsInitializing(false);
+    // }
   } catch (error) {
     console.error("Initialization failed:", error);
     setIsInitializing(false);
