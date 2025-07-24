@@ -1,7 +1,7 @@
 import apiCall from "../axiosRequest";
 import { CHAT_HISTORY } from "../apiUrls";
 import { baseUrl ,X_API_KEY} from "../../constants/constants";
-import { encNewPayload, decResPayload } from "../../common/utils";
+import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
 
 
 export const fetchChatHistory = async (agentId, page = 0, size = 10, token) => {

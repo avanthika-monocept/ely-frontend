@@ -1,7 +1,7 @@
 import apiCall from "../axiosRequest";
 import { baseUrl, X_API_KEY } from "../../constants/constants";
 import {VALIDATE_JWT_TOKEN_URL} from "../apiUrls";
-import { encNewPayload, decResPayload } from "../../common/utils";
+import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
 
 export const validateJwtToken = async (
   bearerToken,

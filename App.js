@@ -12,23 +12,7 @@ import { loadFonts } from "./src/config/loadFonts";
 export default function App() {
   LogBox.ignoreAllLogs(true);
  
-  useEffect(() => {
-    const fetchAPI = async () => {
-      console.log("API Call Initiated...");
-      try {
-        const response = await apiCall({
-          baseURL: "https://jsonplaceholder.typicode.com",
-          url: "/posts/1",
-          method: "GET",
-        });
-        console.log("API Response:", response);
-      } catch (err) {
-        console.error("API Error:", err.message);
-      }
-    };
  
-    fetchAPI();
-  }, []);
  
   useEffect(() => {
     async function prepare() {
