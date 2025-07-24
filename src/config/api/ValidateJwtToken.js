@@ -30,9 +30,6 @@ export const validateJwtToken = async (
       },
       data: encryptedPayload,
     });
-
-    console.log("Encrypted validation response:", response);
-    
     if (response?.payload) {
       const decryptedData = decResPayload(response?.payload);
       console.log("Decrypted validation response:", decryptedData);

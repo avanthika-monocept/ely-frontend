@@ -23,7 +23,6 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10, token) => {
     
 if (response?.payload) {
       const decryptedData = decResPayload(response?.payload);
-      console.log("Decrypted chat history:", decryptedData);
       return decryptedData?.data.content || [];
     }
     

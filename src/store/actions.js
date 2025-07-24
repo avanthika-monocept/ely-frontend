@@ -28,7 +28,6 @@ export const getData = createAsyncThunk("getData", async (data) => {
    
     if (apiResponse?.payload) {
       response = decResPayload(apiResponse.payload);
-      console.log("Decrypted config API response:", response);
       if (response?.error) throw new Error("API Error");
       return response.data;
     } else {
