@@ -23,7 +23,7 @@ import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { spacing } from "../../constants/Dimensions";
-import { splitMarkdownIntoTableAndText, formatBotMessage } from "../../common/utils";
+import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
 import { stringConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
@@ -148,7 +148,10 @@ const [isInitializing, setIsInitializing] = useState(true);
     if (!hasMore) return;
     try {
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
-      dispatch(addChatHistory(newMessages));
+      const formattedMessages = newMessages.map(msg => 
+      formatHistoryMessage(msg)
+    );
+      dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
     } catch (err) {
       console.error(stringConstants.failToLoad, err);
