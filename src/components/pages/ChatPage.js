@@ -37,7 +37,7 @@ export const ChatPage = () => {
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
-
+const reconfigApiResponseRef = useRef({});
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -80,7 +80,9 @@ const [isInitializing, setIsInitializing] = useState(true);
       keyboardDidHideListener.remove();
     };
   }, []);
-
+useEffect(() => {
+  reconfigApiResponseRef.current = reconfigApiResponse;
+}, [reconfigApiResponse]);
   const messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
@@ -191,67 +193,68 @@ const [isInitializing, setIsInitializing] = useState(true);
   };
 
   const cleanupWebSocket = (sendDisconnect = false) => {
-    // Add null check first
-    if (!ws.current) {
-      console.log('WebSocket already cleaned up');
-      return;
-    }
+  if (!ws.current) return;
 
-    try {
-      if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
-        const disconnectPayload = {
-          action: "disconnect",
-          userId: reconfigApiResponse?.userInfo?.agentId,
-        };
-        ws.current.send(JSON.stringify(disconnectPayload));
-        console.log('Disconnect message sent');
-      }
-
-    } catch (error) {
-      console.error('Error during WebSocket cleanup:', error);
-    } finally {
-      ws.current = null;
-    }
-  };
- const initialize = async () => {
   try {
-    const newToken = await fetchToken();
-//we need to replace with actual data from mspace and code should be uncommented after that
-    // const validationResponse = await validateJwtToken(
-    //   newToken,
-    //   "dummy-jwt-token", 
-    //   "dummy-cog-token",
-    //   "MSPACE",
-    //   {
-    //     agentId: "hom5750",
-    //     userName: "Mukul Lawas",
-    //     email: "mukul.lawas@axismaxlife.com",
-    //     role: "lead1",
-    //     firebaseId: "ExponentPushToken[cFlGjHLOG1ltf8dJ7ZiVfC]",
-    //     deviceId: "faf86667cef41bc4",
-    //   }
-    // );
-    // if (validationResponse && validationResponse.status === "success") {
-      settoken(newToken);
-      const response =await dispatch(getData({ token: newToken, agentId: "hom5750",platform: "MSPACE"})).unwrap()
-       dispatch(clearMessages());
-       setnavigationPage(response.statusFlag);
-       setReconfigApiResponse(response);
-       if (response.statusFlag.toLowerCase() === "agenda") {
-        loadChatHistory(response.userInfo.agentId, page, 10, newToken); 
-       }
-         connectWebSocket(response.userInfo.agentId);
-            setIsInitializing(false);
-      // } else {
-    //   console.warn("Token validation failed. Initialization aborted.");
-    //   setIsInitializing(false);
-    // }
+    if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
+      const disconnectPayload = {
+        action: "disconnect",
+        userId: reconfigApiResponseRef.current?.userInfo?.agentId,
+      };
+      ws.current.send(JSON.stringify(disconnectPayload));
+    }
   } catch (error) {
-    console.error("Initialization failed:", error);
-    setIsInitializing(false);
+    console.error('Error during WebSocket cleanup:', error);
+  } finally {
+    ws.current = null;
   }
 };
 
+const sendAcknowledgement = (messageId) => {
+  if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+    const currentConfig = reconfigApiResponseRef.current;
+    console.log("Sending acknowledgement for messageId:", messageId, currentConfig?.userInfo?.agentId, currentConfig?.userInfo?.email);
+    const payload = {
+      action: "api/chatbot/message-proxy",
+      token: token,
+      message: {
+        messageId: messageId,
+        status: "READ",
+        sendType: "ACKNOWLEDGEMENT",
+        userId: currentConfig?.userInfo?.agentId,
+        emailId: currentConfig?.userInfo?.email,
+        platform: currentConfig?.theme?.platform,
+      }
+    };
+    ws.current.send(JSON.stringify(payload));
+  }
+};
+const initialize = async () => {
+  try {
+    setIsInitializing(true);
+    const newToken = await fetchToken();
+    const response = await dispatch(
+      getData({ token: newToken, agentId: "hom5750", platform: "MSPACE" })
+    ).unwrap();
+
+    if (response && response.userInfo?.agentId) {
+      settoken(newToken);
+      dispatch(clearMessages());
+      setnavigationPage(response.statusFlag);
+      setReconfigApiResponse(prev => ({ ...prev, ...response }));
+      
+      if (response.statusFlag.toLowerCase() === "agenda") {
+        await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+      }
+      
+      connectWebSocket(response.userInfo.agentId);
+    }
+  } catch (error) {
+    console.error("Initialization failed:", error);
+  } finally {
+    setIsInitializing(false);
+  }
+};
 useEffect(() => {
       initialize();
       return () => {
@@ -272,7 +275,7 @@ useEffect(() => {
 
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
         console.log('App going to background - closing WebSocket');
-        cleanupWebSocket(true); // Send disconnect message
+        cleanupWebSocket(true);
         clearResponseTimeout();
         dispatch(hideLoader())
       }
@@ -280,7 +283,7 @@ useEffect(() => {
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App returning to foreground');
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          initialize(); // Reinitialize WebSocket connection
+          initialize(); 
         }
       }
 
@@ -292,7 +295,7 @@ useEffect(() => {
     return () => {
       isMounted = false;
       subscription.remove();
-      cleanupWebSocket(true); // Graceful disconnect on unmount
+      cleanupWebSocket(true);
       clearResponseTimeout();
     };
   }, []);
@@ -336,25 +339,8 @@ useEffect(() => {
     }
   };
 
-  const sendAcknowledgement = (messageId) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      console.log("Sending acknowledgement for messageId:", reconfigApiResponse?.userInfo?.agentId,reconfigApiResponse?.userInfo?.email);
-      const payload = {
-        
-        action: "api/chatbot/message-proxy",
-        token: token,
-        message: {
-        messageId: messageId,
-        status: "READ",
-        sendType: "ACKNOWLEDGEMENT",
-        userId: reconfigApiResponse?.userInfo?.agentId,
-        emailId: reconfigApiResponse?.userInfo?.email,
-        platform: reconfigApiResponse?.theme?.platform,
-        }
-      };
-      ws.current.send(JSON.stringify(payload));
-    }
-  };
+  
+ 
 
   const handleReplyClose = () => {
     setReplyIndex(0);

@@ -12,9 +12,9 @@ export const Reactions = ({
   platform,
   socket,
   token,
+  activity
 }) => {
-  const [selected, setSelected] = useState(null);
-
+  const [selected, setSelected] = useState(activity || null);
   const handleSelect = (id) => {
     setSelected(selected === id ? null : id);
     onSelect?.(id, messageId);
@@ -84,6 +84,7 @@ Reactions.propTypes = {
   socket: PropTypes.object.isRequired,
   token: PropTypes.string,
   platform: PropTypes.string,
+  activity: PropTypes.string,
 };
 
 const styles = StyleSheet.create({

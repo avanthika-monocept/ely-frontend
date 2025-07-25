@@ -46,7 +46,7 @@ export const ChatBody = ({
     socket: PropTypes.object.isRequired,
     copyToClipboard: PropTypes.func,
     setCopied: PropTypes.func,
-  
+
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
   };
@@ -72,21 +72,21 @@ export const ChatBody = ({
   }, [messages]);
 
   const formatTime = (dateTime) => {
-  let date;
-  if (typeof dateTime === "string") {
-    date = new Date(dateTime);
-  }
-  else if (typeof dateTime === "number") {
-    date = new Date(dateTime * 1000); 
-  }
-  else {
-    return "Invalid Time";
-  }
-  if (isNaN(date.getTime())) {
-    return "Invalid Time";
-  }
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
+    let date;
+    if (typeof dateTime === "string") {
+      date = new Date(dateTime);
+    }
+    else if (typeof dateTime === "number") {
+      date = new Date(dateTime * 1000);
+    }
+    else {
+      return "Invalid Time";
+    }
+    if (isNaN(date.getTime())) {
+      return "Invalid Time";
+    }
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
 
   const formatSeparatorDate = (dateObj) => {
@@ -161,7 +161,7 @@ export const ChatBody = ({
       result.push({ ...msg, type: "message" });
 
       if (msg?.conversationEnded) {
-        console.log("conversationended",msg?.conversationEnded)
+        console.log("conversationended", msg?.conversationEnded)
         result.push({
           id: `banner-conversation-ended-${msg.messageId}`,
           type: "banner",
@@ -177,8 +177,9 @@ export const ChatBody = ({
 
     return result;
   };
-
-  const chatWithSeparators = generateChatDataWithSeparators(messages);
+  const chatWithSeparators = React.useMemo(() => {
+    return generateChatDataWithSeparators(messages);
+  }, [messages]);
 
   const renderItem = ({ item, index }) => {
     if (item.type === stringConstants.separator) {
@@ -261,8 +262,10 @@ export const ChatBody = ({
       onScroll={handleScroll}
       onEndReachedThreshold={1.0}
       onEndReached={() =>
-        loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 10,token)
+        loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 10, token)
       }
+      maxToRenderPerBatch={5}
+      updateCellsBatchingPeriod={50}
       ListHeaderComponent={
         isLoading ? (
           <View style={styles.messageContainer}>

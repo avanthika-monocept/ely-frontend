@@ -150,12 +150,19 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
 
 export const formatHistoryMessage = (apiMessage) => {
   const isBot = apiMessage.messageTo === "BOT";
-  
+   let activity = null;
+  if (apiMessage.emoji && apiMessage.action) {
+    if (apiMessage.emoji === "U+1F44D") { // thumbs up
+      activity = apiMessage.action === "SELECTED" ? "like" : null;
+    } else if (apiMessage.emoji === "U+1F44E") { // thumbs down
+      activity = apiMessage.action === "SELECTED" ? "dislike" : null;
+    }
+  }
   return {
     messageId: apiMessage.messageId,
     messageTo: isBot ? "bot" : "user",
     dateTime: new Date(apiMessage.createdAt * 1000).toISOString(),
-    activity: apiMessage.action==="SELECTED" ? "like" : "dislike", 
+    activity: activity, 
     replyId: apiMessage.replyToMessageId, 
     conversationEnded: false, 
     status: apiMessage.status || "RECEIVED",
