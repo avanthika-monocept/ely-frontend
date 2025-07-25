@@ -16,7 +16,7 @@ import {
   splitMarkdownIntoTableAndText,
   formatUserMessage,
 } from "../../common/utils";
-import MediaMessageView from "../atoms/MediaMessageView";
+const MediaMessageView = React.lazy(() => import('../atoms/MediaMessageView'));
 import TableBaseBubble from "../atoms/TableBaseBubble";
 import {
   borderRadius,
@@ -135,12 +135,16 @@ export const ChatBubble = ({
     socket.send(JSON.stringify(socketPayload));
   };
 
-  const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
-  const isImageOnly =
-    isBot &&
+const { tablePart, textPart } = React.useMemo(() => {
+  return splitMarkdownIntoTableAndText(text);
+}, [text]);
+
+const isImageOnly = React.useMemo(() => {
+  return isBot &&
     media?.image?.length > 0 &&
     (text === "" || text === undefined || text === null) &&
     (tablePart === "" || tablePart === undefined || tablePart === null);
+}, [isBot, media, text, tablePart]);
 
   return (
     <TouchableWithoutFeedback
@@ -192,6 +196,8 @@ export const ChatBubble = ({
                   )}
                   {(media?.image?.[0]?.mediaUrl?.length > 0 ||
                     media?.video?.[0]?.mediaUrl?.length > 0) && (
+                      //need to implement fallback for media after testing
+                       <React.Suspense fallback={<View style={styles.mediaPlaceholder} />}>
                       <MediaMessageView
                         images={media?.image?.[0]?.mediaUrl || []}
                         videos={media?.video?.[0]?.mediaUrl || []}
@@ -206,6 +212,7 @@ export const ChatBubble = ({
                         isTextEmpty={!text}
                         text={textPart}
                       />
+                      </React.Suspense>
                     )}
                   <MarkdownComponent
                     markdownText={textPart}
