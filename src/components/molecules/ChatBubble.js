@@ -51,6 +51,7 @@ export const ChatBubble = ({
   setCopied,
   setReplyIndex,
   replyIndex,
+  activity,
 }) => {
   ChatBubble.propTypes = {
     isBot: PropTypes.bool.isRequired,
@@ -75,6 +76,7 @@ export const ChatBubble = ({
     token: PropTypes.string,
     setReplyIndex: PropTypes.func,
     replyIndex: PropTypes.number,
+    activity: PropTypes.string,
   };
   const [isOpen, setIsOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
@@ -293,6 +295,7 @@ export const ChatBubble = ({
               agentId={reconfigApiResponse?.userInfo?.agentId}
               platform={reconfigApiResponse?.theme?.platform}
               token={token}
+              activity={activity}
             />
           </View>
         )}
