@@ -15,24 +15,30 @@ export const Reactions = ({
   activity
 }) => {
   const [selected, setSelected] = useState(activity || null);
+
   const handleSelect = (id) => {
-    setSelected(selected === id ? null : id);
-    onSelect?.(id, messageId);
+    const isSelected = selected === id;
+    const newSelected = isSelected ? null : id;
+    setSelected(newSelected);
+    onSelect?.(newSelected, messageId);
+    
     const message = {
       action: "api/chatbot/message-proxy",
       token: token,
-      message:{
-      emoji: id === "like" ? "U+1F44D" : "U+1F44E",
-      sendType: "REACTION",
-      action: id === "like" ? "SELECTED" : "DESELECTED",
-      platform:platform,
-      messageId: messageId,
-      userId: agentId,
+
+      message: {
+        emoji: id === "like" ? "U+1F44D" : "U+1F44E",
+        sendType: "REACTION",
+        action: newSelected === id ? "SELECTED" : "DESELECTED",
+        platform: platform,
+        messageId: messageId,
+        userId: agentId,
       }
     };
     console.log("reactionmessage", message);
     socket.send(JSON.stringify(message));
   };
+
 
   return (
     <View style={styles.container}>
