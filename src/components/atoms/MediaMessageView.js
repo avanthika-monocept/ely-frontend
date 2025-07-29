@@ -281,7 +281,7 @@ const MediaMessageView = ({
         return proceedWithDownload(mediaUrl, isVideo);
       }
     } catch (err) {
-      console.log("Permission or download error:", err);
+    
       Alert.alert("Error", "Something went wrong while downloading.");
     }
   };
@@ -311,7 +311,7 @@ const MediaMessageView = ({
         Alert.alert("Download Success", `Saved to ${res.path()}`);
       })
       .catch((error) => {
-        console.log("Download error:", error);
+       
         Alert.alert(
           "Download Failed",
           "Something went wrong while downloading"

@@ -161,7 +161,7 @@ export const ChatBody = ({
       result.push({ ...msg, type: "message" });
 
       if (msg?.conversationEnded) {
-        console.log("conversationended", msg?.conversationEnded)
+    
         result.push({
           id: `banner-conversation-ended-${msg.messageId}`,
           type: "banner",

@@ -130,7 +130,7 @@ const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse,
       setReply(false);
       setReplyMessageId(null);
     } catch (error) {
-      console.error("Error in message handling:", error);
+     
       dispatch(hideLoader());
       clearResponseTimeout();
     }

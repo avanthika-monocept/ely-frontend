@@ -113,21 +113,21 @@ const FileModal = ({
         failOnCancel: false,
       });
     } catch (error) {
-      console.error("Video share error:", error);
+      
       Alert.alert("Error", "Failed to share video. " + (error?.message || ""));
     }
   };
 
   const downloadVideo = async (comingfiles) => {
-    console.log("downloadVideo called");
-    console.log("videofiles", comingfiles);
+   
+  
     let files = [];
     if (comingfiles != undefined) {
       files = comingfiles;
     } else {
       files.push({ url: file });
     }
-    console.log("files", files);
+
     let date = new Date();
     for (const file of files) {
       const { url } = file;
@@ -146,14 +146,13 @@ const FileModal = ({
       }
 
      
-      console.log("FILE_URL", FILE_URL);
+    
 
       if (Platform.OS === "ios") {
         const permission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
         if (permission !== RESULTS.GRANTED) {
           const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
           if (result !== RESULTS.GRANTED) {
-            console.warn("Permission denied");
             return;
           }
         }
@@ -168,16 +167,16 @@ const FileModal = ({
           appendExt: file_ext,
         }).fetch("GET", FILE_URL);
 
-        console.log("Video downloaded to:", res.path());
+       
 
         await CameraRoll.save(res.path(), { type: "video" });
-        console.log("Video saved to Photos");
+  
       } else {
         const { config } = RNFetchBlob;
         let filePath = `/storage/emulated/0/Download/video_${Math.floor(
           date.getTime() + Math.random() * 1000
         )}.${file_ext}`;
-        console.log("filePath======", filePath);
+      
 
         let options = {
           fileCache: true,
@@ -198,7 +197,7 @@ const FileModal = ({
               console.log("progress", received / total);
             });
 
-          console.log("android res -> ", res.path());
+         
 
           // Force media scan for immediate gallery visibility
           await RNFetchBlob.fs.scanFile([
@@ -285,7 +284,7 @@ dispatch(startSharing());
         dispatch(endSharing());
         }, 500);
     } catch (error) {
-      console.error("Share error:", error);
+      
       Alert.alert("Error", "Failed to share file. " + (error?.message || ""));
     } finally {
     dispatch(endSharing());
@@ -312,7 +311,7 @@ dispatch(startSharing());
           );
 
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("Permission granted");
+           
             if (isVideo) {
               return downloadVideo(files);
             }
@@ -358,22 +357,22 @@ dispatch(startSharing());
  
 
   const downloadFile = async (comingfiles) => {
-    console.log("downloadFile called");
-    console.log("filesfiles", comingfiles);
+ 
+  
     let files = [];
     if (comingfiles != undefined) {
       files = comingfiles;
     } else {
       files.push({ url: file });
     }
-    console.log("files", files);
+
     let date = new Date();
     for (const file of files) {
       const { url } = file;
       let FILE_URL = url;
 
   
-      console.log("FILE_URL", FILE_URL);
+  
       if (Platform.OS === "ios") {
         const permission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
         if (permission !== RESULTS.GRANTED) {
@@ -394,17 +393,17 @@ dispatch(startSharing());
           appendExt: "png",
         }).fetch("GET", FILE_URL);
 
-        console.log("Image downloaded to:", res.path());
+        
 
         await CameraRoll.save(res.path(), { type: "photo" });
-        console.log("Image saved to Photos");
+     
       } else {
         const { config} = RNFetchBlob;
         const ext = "jpg";
         let filePath = `/storage/emulated/0/Download/image_${Math.floor(
           date.getTime()
         )}.${ext}`;
-        console.log("filePath======", filePath);
+    
 
         let options = {
           fileCache: true,
@@ -499,7 +498,7 @@ dispatch(startSharing());
         dispatch(endSharing());
       }, 500); // 500ms delay
     } catch (error) {
-      console.error("Share error:", error);
+      
       Alert.alert("Error", "Failed to share files. " + (error?.message || ""));
     }
      finally {

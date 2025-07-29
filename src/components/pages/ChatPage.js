@@ -95,8 +95,7 @@ useEffect(() => {
     // Set new timeout
     const timeoutId = setTimeout(() => {
       dispatch(hideLoader());
-      console.log("Loader hidden after 1 minute with no response");
-    }, 60000); // 1 minute
+      }, 60000); // 1 minute
 
     setResponseTimeout(timeoutId);
   };
@@ -145,7 +144,7 @@ useEffect(() => {
   };
 
   const loadChatHistory = async (agentId, page, message, newToken) => {
-    console.log("checking loadChatHistory", agentId, page, message, newToken);
+ 
     setHasMore(true);
     if (!hasMore) return;
     try {
@@ -168,7 +167,7 @@ useEffect(() => {
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('📨 Message:', data);
+      
 
     
 
@@ -180,13 +179,13 @@ useEffect(() => {
     };
 
     ws.current.onerror = (error) => {
-      console.error('❌ WebSocket error:', error.message || error);
+     
      
       clearResponseTimeout();
     };
 
     ws.current.onclose = (e) => {
-      console.log('🔌 WebSocket closed:', e.code, e.reason);
+      
       setPage(0);
       clearResponseTimeout();
     };
@@ -213,7 +212,7 @@ useEffect(() => {
 const sendAcknowledgement = (messageId) => {
   if (ws.current && ws.current.readyState === WebSocket.OPEN) {
     const currentConfig = reconfigApiResponseRef.current;
-    console.log("Sending acknowledgement for messageId:", messageId, currentConfig?.userInfo?.agentId, currentConfig?.userInfo?.email);
+
     const payload = {
       action: "api/chatbot/message-proxy",
       token: token,
@@ -259,7 +258,7 @@ const initialize = async () => {
 useEffect(() => {
       initialize();
       return () => {
-        console.log("Cleaning up WebSocket and timeouts");
+        
         cleanupWebSocket(true); 
         clearResponseTimeout();
       }
@@ -275,14 +274,14 @@ useEffect(() => {
       if (!isMounted) return;
 
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
-        console.log('App going to background - closing WebSocket');
+      
         cleanupWebSocket(true);
         clearResponseTimeout();
         dispatch(hideLoader())
       }
 
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('App returning to foreground');
+       
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
           initialize(); 
         }
@@ -308,7 +307,7 @@ useEffect(() => {
       clearTimeout(inactivityTimer);
     }
     setInactivityTimer(setTimeout(() => {
-      console.log("Disconnecting due to inactivity");
+    
       cleanupWebSocket(true);
     }, 3600000));
     sendAcknowledgement(data?.messageId);
@@ -328,9 +327,9 @@ useEffect(() => {
 
   };
   const handleAcknowledgement = (data) => {
-    console.log("Received acknowledgement:", JSON.stringify(data));
+   
     dispatch(showLoader());
-    console.log("Acknowledgement received for messageId:", !data.messageId);
+    
     startResponseTimeout();
     if (data.acknowledgement === "RECEIVED") {
       dispatch(updateMessageStatus({

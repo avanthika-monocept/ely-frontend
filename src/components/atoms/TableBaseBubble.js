@@ -63,8 +63,7 @@ const TableBaseBubble = ({
       await RNFS.moveFile(uri, newPath);
       setImageUri(`file://${newPath}`);
     } catch (error) {
-      console.error("Error capturing markdown:", error);
-      setImageUri(null); // Reset on error
+     setImageUri(null); // Reset on error
     } finally {
       setIsCapturing(false);
     }

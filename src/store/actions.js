@@ -22,7 +22,7 @@ export const getData = createAsyncThunk("getData", async (data) => {
       data: { agentId: agentId, platform: platform },
     });
    
-  console.log("configAPIResponse:", apiResponse);
+
     response = apiResponse?.data;
     if (response?.error) throw new Error("API Error");
   } catch (error) {

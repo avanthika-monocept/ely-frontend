@@ -35,7 +35,7 @@ export const Reactions = ({
         userId: agentId,
       }
     };
-    console.log("reactionmessage", message);
+
     socket.send(JSON.stringify(message));
   };
 

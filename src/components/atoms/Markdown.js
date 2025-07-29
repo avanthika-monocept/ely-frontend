@@ -35,7 +35,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      console.error("Error opening mail link:", error); // Log for debugging
+     
       Alert.alert("Error", "No email app found.");
     }
     return;
@@ -49,7 +49,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       Alert.alert("Invalid URL", `Unable to open: ${url}`);
     }
   } catch (error) {
-    console.error("Error opening link:", error); // Log for debugging
+    
     Alert.alert("Error", "Failed to open link.");
   }
 };
