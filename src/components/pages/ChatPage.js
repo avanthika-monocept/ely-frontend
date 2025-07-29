@@ -187,7 +187,7 @@ useEffect(() => {
 
     ws.current.onclose = (e) => {
       console.log('🔌 WebSocket closed:', e.code, e.reason);
-     
+      setPage(0);
       clearResponseTimeout();
     };
   };
@@ -232,6 +232,7 @@ const sendAcknowledgement = (messageId) => {
 const initialize = async () => {
   try {
     setIsInitializing(true);
+    setPage(0);
     const newToken = await fetchToken();
     const response = await dispatch(
       getData({ token: newToken, agentId: "hom5750", platform: "MSPACE" })
