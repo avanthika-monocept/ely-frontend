@@ -216,7 +216,6 @@ const isImageOnly = React.useMemo(() => {
                     )}
                   <MarkdownComponent
                     markdownText={textPart}
-                    setCopied={setCopied}
                     setDropDownType={setDropDownType}
                   />
                   {botOption && options.length > 0 && (

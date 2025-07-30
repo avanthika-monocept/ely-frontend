@@ -17,7 +17,7 @@ import { openBottomSheet, setBottomSheetURL } from "../../store/reducers/bottomS
 
 const LONG_PRESS_THRESHOLD = 500;
 
-const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
+const MarkdownComponent = ({ markdownText,setDropDownType }) => {
 
   const dispatch = useDispatch();
   const longPressTimer = useRef(null);
@@ -68,13 +68,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       setDropDownType("url");
     }
     setBottomSheetURL(url);
-
-    // Clipboard.setString(url);
-    // if(!Platform.OS == "ios") {
-    // setCopied(true);
-    // }
-    // setTimeout(() => setCopied(false), 1000);
-  };
+};
 
   const renderCustomLink = (children, href) => (
     <TouchableWithoutFeedback

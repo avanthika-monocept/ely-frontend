@@ -159,6 +159,7 @@ export const size = {
   sixtySevenPercent: "67%",
   fortyNinePercent: "49%",
   fortyFivePercent: "45%",
+  fiftyPercent: "50%",
   fortytThreePercent: "43.8%",
   thirtyFivePercent: "35%",
   thirtyFourPercent: "34%",

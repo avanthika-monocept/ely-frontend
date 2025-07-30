@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import {LinearGradient} from "react-native-linear-gradient";
 import {stringConstants } from "../../constants/StringConstants";
-import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
+import { borderRadius, borderWidth, spacing, size } from "../../constants/Dimensions";
 import {SuggestionList} from "./SuggestionList";
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
@@ -96,12 +96,12 @@ LandingPage.propTypes = {
 const styles = StyleSheet.create({
   chatBodyContainer: {
     flex: 1,
-    width: "100%",
+    width: size.hundredPercent,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "space-between",
-    paddingTop: "50%",
+    paddingTop: size.fiftyPercent,
   },
   textContainer: {
     alignSelf: "center",
