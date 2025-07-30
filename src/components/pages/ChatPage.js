@@ -24,7 +24,7 @@ import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { size, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
-import { platformName, stringConstants, timeoutConstants } from "../../constants/StringConstants";
+import { platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
@@ -107,7 +107,7 @@ export const ChatPage = () => {
       }
       return response.access_token;
     } catch (err) {
-      console.error('Token fetch failed:', err);
+      console.error(err);
     }
   };
   const handleScroll = (event) => {
@@ -154,7 +154,7 @@ export const ChatPage = () => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
-      console.log('✅ WebSocket connected');
+      console.log(stringConstants.socketConnected)
     };
     ws.current.onmessage = (event) => {
       try {
@@ -162,13 +162,13 @@ export const ChatPage = () => {
           return;
         }
         const data = JSON.parse(event.data);
-        if (data.type === 'BOT_RESPONSE') {
+        if (data.type === socketConstants.botResponse) {
           handleBotMessage(data);
-        } else if (data.type === 'ACKNOWLEDGEMENT') {
+        } else if (data.type === socketConstants.acknowledgement) {
           handleAcknowledgement(data);
         }
       } catch (err) {
-        console.error("❌ Failed to parse WebSocket message:", event.data, err);
+        console.error(event.data, err);
       }
     };
     ws.current.onerror = (error) => {
@@ -184,13 +184,13 @@ export const ChatPage = () => {
     try {
       if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
         const disconnectPayload = {
-          action: "disconnect",
+          action: socketConstants.disconnect,
           userId: reconfigApiResponseRef.current?.userInfo?.agentId,
         };
         ws.current.send(JSON.stringify(disconnectPayload));
       }
     } catch (error) {
-      console.error('Error during WebSocket cleanup:', error);
+      console.error(error);
     } finally {
       ws.current = null;
     }
@@ -203,8 +203,8 @@ export const ChatPage = () => {
         token: token,
         message: {
           messageId: messageId,
-          status: "READ",
-          sendType: "ACKNOWLEDGEMENT",
+          status: socketConstants.read,
+          sendType: socketConstants.acknowledgement,
           userId: currentConfig?.userInfo?.agentId,
           emailId: currentConfig?.userInfo?.email,
           platform: currentConfig?.theme?.platform,
@@ -232,7 +232,7 @@ export const ChatPage = () => {
         connectWebSocket(response.userInfo.agentId);
       }
     } catch (error) {
-      console.error("Initialization failed:", error);
+      console.error(error);
     } finally {
       setIsInitializing(false);
     }
@@ -296,10 +296,10 @@ export const ChatPage = () => {
   const handleAcknowledgement = (data) => {
     dispatch(showLoader());
     startResponseTimeout();
-    if (data.acknowledgement === "RECEIVED") {
+    if (data.acknowledgement === socketConstants.received) {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
-        status: "RECEIVED"
+        status: socketConstants.received,
       }));
     }
   };
@@ -353,7 +353,7 @@ export const ChatPage = () => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === platformName.ios ? "padding" : undefined}
+          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : undefined}
           style={{ flex: 1 }}
         >
           <View style={styles.content}>

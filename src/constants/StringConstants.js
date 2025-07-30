@@ -1,3 +1,6 @@
+import { Keyboard } from "react-native";
+import { read } from "react-native-fs";
+
 export const navigationscreen = {
   header: "header",
 };
@@ -28,9 +31,21 @@ export const stringConstants = {
   agenda: "AGENDA",
   coach: "COACH",
   typeMessage: "Type a message...",
-};
+  socketConnected: "✅ Socket connected",
+  KeyboardPadding: "padding"
+  };
 
 export const timeoutConstants = {
   response: 60000,
   inactivity: 3600000,
 };
+
+export const socketConstants = {
+  disconnect: "disconnect",
+  botResponse: "BOT_RESPONSE",
+  acknowledgement: "ACKNOWLEDGEMENT",
+  read: "READ",
+  received: "RECEIVED",
+};
+
+

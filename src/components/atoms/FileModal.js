@@ -44,8 +44,8 @@ const FileModal = ({
   FileModal.propTypes = {
     visible: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    file: PropTypes.string.isRequired,
-    PdfModalChildren: PropTypes.func.isRequired,
+    file: PropTypes.string,
+    PdfModalChildren: PropTypes.func,
     handleReplyMessage: PropTypes.func.isRequired,
     type: PropTypes.string.isRequired,
     // setTableModal: PropTypes.func.isRequired,
