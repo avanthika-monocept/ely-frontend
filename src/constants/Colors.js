@@ -51,7 +51,9 @@ const colors = {
   textShadowColor: {
     smartNudge: "rgba(0, 0, 0, 0.12)",
   },
-
+ loaderBackground: {
+  loaderBackgroundDark:"rgba(181, 178, 178, 0.5)",
+ },
   gradient: {
     primary: {
       jaffa: ["#D44300", "#F27930"],

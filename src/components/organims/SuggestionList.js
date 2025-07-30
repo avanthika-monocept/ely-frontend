@@ -21,14 +21,12 @@ export const SuggestionList = ({
   setnavigationPage,
   reconfigApiResponse,
   socket,
-  startResponseTimeout,
   token,
 }) => {
   SuggestionList.propTypes = {
     setnavigationPage: PropTypes.func.isRequired,
     reconfigApiResponse: PropTypes.object.isRequired,
     socket: PropTypes.object,
-    startResponseTimeout: PropTypes.func,
     token: PropTypes.string,
   };
 
@@ -36,7 +34,7 @@ export const SuggestionList = ({
   const data = reconfigApiResponse?.options || [];
   const [selectedItemId, setSelectedItemId] = useState(null);
   const handleTopicSelect = async (topic) => {
-    setnavigationPage("AGENDA");
+    setnavigationPage(stringConstants.agenda);
 
     const { message, socketPayload } = formatUserMessage(
       topic,

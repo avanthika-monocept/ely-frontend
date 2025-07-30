@@ -11,7 +11,7 @@ import { hideLoader, showLoader } from "../../store/reducers/loaderSlice";
 import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
 import { borderWidth, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
-import { stringConstants } from "../../constants/StringConstants";
+import { stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
 
 
@@ -105,11 +105,11 @@ token,
     if (reconfigApiResponse?.statusFlag === stringConstants.coach) {
       const timer = setTimeout(() => {
         cleanupWebSocket(true);
-      }, 3600000);
+      }, timeoutConstants.inactivity);
       setInactivityTimer(timer);
     }
     if (navigationPage === stringConstants.coach)
-      setnavigationPage(stringConstants.agendaCaps);
+      setnavigationPage(stringConstants.agenda);
   
   const lastBotMessage = [...messages].reverse().find((msg) => msg.messageTo === stringConstants.user);
     const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;

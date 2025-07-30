@@ -25,8 +25,12 @@ export const stringConstants = {
   assistText: "Hello there! How can I assist you today?",
   noAnswer: "Sorry, I don't have an answer for that.",
   failToLoad: "Failed to load chat history:",
-  agenda: "agenda",
+  agenda: "AGENDA",
   coach: "COACH",
   typeMessage: "Type a message...",
-  agendaCaps: "AGENDA",
+};
+
+export const timeoutConstants = {
+  response: 60000,
+  inactivity: 3600000,
 };
