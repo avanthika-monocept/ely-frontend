@@ -29,6 +29,7 @@ import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
+import {CHAT_MESSAGE_PROXY} from "../../config/apiUrls";
 
 
 export const ChatPage = () => {
@@ -165,18 +166,22 @@ useEffect(() => {
       console.log('✅ WebSocket connected');
       };
 
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
+   ws.current.onmessage = (event) => {
+    try {
+    if (!event.data) {
+      return;
+    }
+    const data = JSON.parse(event.data);
+    if (data.type === 'BOT_RESPONSE') {
+      handleBotMessage(data);
+    } else if (data.type === 'ACKNOWLEDGEMENT') {
+      handleAcknowledgement(data);
+    }
+  } catch (err) {
+    console.error("❌ Failed to parse WebSocket message:", event.data, err);
+  }
+};
 
-    
-
-      if (data.type === 'BOT_RESPONSE') {
-        handleBotMessage(data);
-      } else if (data.type === 'ACKNOWLEDGEMENT') {
-        handleAcknowledgement(data);
-      }
-    };
 
     ws.current.onerror = (error) => {
      
@@ -214,7 +219,7 @@ const sendAcknowledgement = (messageId) => {
     const currentConfig = reconfigApiResponseRef.current;
 
     const payload = {
-      action: "api/chatbot/message-proxy",
+      action: CHAT_MESSAGE_PROXY,
       token: token,
       message: {
         messageId: messageId,

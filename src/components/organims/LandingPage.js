@@ -88,7 +88,7 @@ export const LandingPage = ({
 LandingPage.propTypes = {
   setnavigationPage: PropTypes.func.isRequired,
   reconfigApiResponse: PropTypes.object.isRequired,
-  socket: PropTypes.object.isRequired,
+  socket: PropTypes.object,
   startResponseTimeout: PropTypes.func,
   token: PropTypes.string,
 };

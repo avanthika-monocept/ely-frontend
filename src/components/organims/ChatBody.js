@@ -43,7 +43,7 @@ export const ChatBody = ({
     loadChatHistory: PropTypes.func.isRequired,
     page: PropTypes.number.isRequired,
     reconfigApiResponse: PropTypes.object.isRequired,
-    socket: PropTypes.object.isRequired,
+    socket: PropTypes.object,
     copyToClipboard: PropTypes.func,
     setCopied: PropTypes.func,
 

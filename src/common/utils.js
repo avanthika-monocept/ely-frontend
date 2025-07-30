@@ -1,5 +1,6 @@
 import { format, isToday, isYesterday, isSameYear, parseISO } from "date-fns";
 import uuid from "react-native-uuid"
+import { CHAT_MESSAGE_PROXY } from "../config/apiUrls";
 
 export const getFormattedDividerDate = (dateString) => {
     const date = parseISO(dateString);
@@ -128,7 +129,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
       },
     },
     socketPayload: {
-      action: "api/chatbot/message-proxy",
+      action: CHAT_MESSAGE_PROXY,
       token:token,
       message: {
       emailId: reconfigApiResponse?.userInfo?.email,
