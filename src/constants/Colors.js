@@ -17,6 +17,7 @@ const colors = {
     red: "#ff0000",
     lightSurface: "#F4F6FA",
     borderTop: "#e0e0e0",
+    skyBlue: "#CDEAF8"
   },
   secondaryColors: {
     summerSky: "#3597EC",

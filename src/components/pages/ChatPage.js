@@ -117,7 +117,6 @@ export const ChatPage = () => {
     setIsAtBottom(isBottom);
     if (isBottom) {
       setShowNewMessageAlert(false);
-      setNewMessageCount(0);
     }
   };
   const handleReplyMessage = () => {
@@ -150,8 +149,8 @@ export const ChatPage = () => {
       console.error(stringConstants.failToLoad, err);
     }
   };
-  const connectWebSocket = (agentId) => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
+  const connectWebSocket = (agentId,token) => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected)
@@ -228,7 +227,7 @@ export const ChatPage = () => {
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-        connectWebSocket(response.userInfo.agentId);
+        connectWebSocket(response.userInfo.agentId, newToken);
       }
     } catch (error) {
       console.error(error);
@@ -373,7 +372,6 @@ export const ChatPage = () => {
                 setDropDownType={setDropDownType}
                 setMessageObjectId={setMessageObjectId}
                 showFab={showFab}
-                showNewMessage={showNewMessageAlert}
                 handleReplyMessage={handleReplyMessage}
                 setReplyIndex={setReplyIndex}
                 replyIndex={replyIndex}

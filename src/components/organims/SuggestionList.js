@@ -6,16 +6,14 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
+import { borderRadius, borderWidth, spacing, size } from "../../constants/Dimensions";
 import { useDispatch } from "react-redux";
 import { addMessage } from "../../store/reducers/chatSlice";
-import { stringConstants } from "../../constants/StringConstants";
+import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-import { showLoader } from "../../store/reducers/loaderSlice";
 import { formatUserMessage } from "../../common/utils";
-
 
 export const SuggestionList = ({
   setnavigationPage,
@@ -23,23 +21,16 @@ export const SuggestionList = ({
   socket,
   token,
 }) => {
-  SuggestionList.propTypes = {
-    setnavigationPage: PropTypes.func.isRequired,
-    reconfigApiResponse: PropTypes.object.isRequired,
-    socket: PropTypes.object,
-    token: PropTypes.string,
-  };
 
   const dispatch = useDispatch();
   const data = reconfigApiResponse?.options || [];
   const [selectedItemId, setSelectedItemId] = useState(null);
   const handleTopicSelect = async (topic) => {
     setnavigationPage(stringConstants.agenda);
-
     const { message, socketPayload } = formatUserMessage(
       topic,
       reconfigApiResponse,
-      "REPLY_TO_LANDING_PAGE",
+      socketMessageTypes.replyToLandingPage,
       token,
       null,
       0
@@ -47,21 +38,19 @@ export const SuggestionList = ({
     dispatch(addMessage(message));
     socket.send(JSON.stringify(socketPayload));
   };
-
   const renderItem = ({ item, index }) => {
+    const isSelected = (index) => selectedItemId === index;
     return (
       <TouchableOpacity
         style={[
           styles.itemContainer,
           {
-            backgroundColor:
-              selectedItemId === index
-                ? colors.Extended_Palette.otherColor.color1
-                : colors.primaryColors.white,
-            borderColor:
-              selectedItemId === index
-                ? colors.primaryColors.borderBlue
-                : colors.Extended_Palette.otherColor.color2,
+            backgroundColor: isSelected(index)
+              ? colors.Extended_Palette.otherColor.color1
+              : colors.primaryColors.white,
+            borderColor: isSelected(index)
+              ? colors.primaryColors.borderBlue
+              : colors.Extended_Palette.otherColor.color2,
           },
         ]}
         onPressIn={() => setSelectedItemId(index)}
@@ -75,7 +64,6 @@ export const SuggestionList = ({
       </TouchableOpacity>
     );
   };
-
   return (
     <View style={styles.mainContainer}>
       <FlatList
@@ -89,10 +77,15 @@ export const SuggestionList = ({
     </View>
   );
 };
-
+SuggestionList.propTypes = {
+  setnavigationPage: PropTypes.func.isRequired,
+  reconfigApiResponse: PropTypes.object.isRequired,
+  socket: PropTypes.object,
+  token: PropTypes.string,
+};
 const styles = StyleSheet.create({
   mainContainer: {
-    width: "100%",
+    width: size.hundredPercent,
     marginTop: spacing.space_m2,
     paddingLeft: spacing.space_m2,
   },
@@ -117,5 +110,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-
 export default SuggestionList;

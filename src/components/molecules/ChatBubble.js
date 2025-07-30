@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, StyleSheet, TouchableWithoutFeedback, Text } from "react-native";
 import { LinearGradient } from "react-native-linear-gradient";
 import BotTail from "../../../assets/BotBubbleTail.svg";
@@ -25,9 +25,9 @@ import {
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 import colors from "../../constants/Colors";
-
+import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
 export const ChatBubble = ({
   isBot,
   options,
@@ -53,61 +53,35 @@ export const ChatBubble = ({
   replyIndex,
   activity,
 }) => {
-  ChatBubble.propTypes = {
-    isBot: PropTypes.bool.isRequired,
-    options: PropTypes.array,
-    text: PropTypes.string.isRequired,
-    time: PropTypes.string,
-    status: PropTypes.string,
-    media: PropTypes.object,
-    isLoader: PropTypes.bool,
-    replyMessage: PropTypes.string,
-    setDropDownType: PropTypes.func,
-    setMessageObjectId: PropTypes.func,
-    messageId: PropTypes.string.isRequired,
-    botOption: PropTypes.bool,
-    replyFrom: PropTypes.string.isRequired,
-    socket: PropTypes.object,
-    handleReplyMessage: PropTypes.func.isRequired,
-    copyToClipboard: PropTypes.func,
-    replyMessageObj: PropTypes.object,
-    reconfigApiResponse: PropTypes.object,
-    setCopied: PropTypes.func,
-    token: PropTypes.string,
-    setReplyIndex: PropTypes.func,
-    replyIndex: PropTypes.number,
-    activity: PropTypes.string,
-  };
+ const LONG_PRESS_THRESHOLD = 500;
   const [isOpen, setIsOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState("");
-  const [type, setType] = useState("tableWithText");
+  const [type, setType] = useState(stringConstants.tableWithText);
   const messageColor = isBot
-    ? reconfigApiResponse?.theme?.botMessageColor.trim() || "#CDEAF8"
-    : reconfigApiResponse?.theme?.userMessageColor.trim() || "#F4F6FA";
+    ? reconfigApiResponse?.theme?.botMessageColor.trim() || colors.primaryColors.skyBlue
+    : reconfigApiResponse?.theme?.userMessageColor.trim() || colors.primaryColors.lightSurface;
   const dispatch = useDispatch();
-
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
-
+const RotatedThumb = () => <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>;
   const reactionOptions = [
     { id: "like", svg: <Text>👍</Text> },
     {
       id: "dislike",
-      svg: <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>,
+      svg: <RotatedThumb/>,
     },
   ];
-
   const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
     if (table && table != "") {
       setIsTableOpen(true);
       if (text != "") {
-        setType("tableWithText");
+        setType(stringConstants.tableWithText);
       } else {
-        setType("table");
+        setType(stringConstants.table);
       }
     } else if (
       (media && media?.image[0]?.mediaUrl?.length > 0) ||
@@ -116,16 +90,15 @@ export const ChatBubble = ({
       setIsOpen(true);
     } else {
       dispatch(openBottomSheet());
-      setDropDownType("text");
+      setDropDownType(stringConstants.text);
     }
   };
-
   const handleFeedbackSelect = (feedback) => {
     setSelectedFeedback(feedback);
     const { message, socketPayload } = formatUserMessage(
       feedback,
       reconfigApiResponse,
-      "QUICK_REPLY",
+      socketMessageTypes.quickReply,
       token,
       null,
       0,
@@ -134,24 +107,21 @@ export const ChatBubble = ({
     dispatch(addMessage(message));
     socket.send(JSON.stringify(socketPayload));
   };
-
-const { tablePart, textPart } = React.useMemo(() => {
+const { tablePart, textPart } = useMemo(() => {
   return splitMarkdownIntoTableAndText(text);
 }, [text]);
-
-const isImageOnly = React.useMemo(() => {
+const isImageOnly = useMemo(() => {
   return isBot &&
     media?.image?.length > 0 &&
     (text === "" || text === undefined || text === null) &&
     (tablePart === "" || tablePart === undefined || tablePart === null);
 }, [isBot, media, text, tablePart]);
-
   return (
     <TouchableWithoutFeedback
       onLongPress={() =>
         onLongPressBubble(messageId, text, media, tablePart, textPart)
       }
-      delayLongPress={200}
+      delayLongPress={LONG_PRESS_THRESHOLD}
     >
       <View style={styles.chatBubbleContainer}>
         {isBot ? (
@@ -169,7 +139,6 @@ const isImageOnly = React.useMemo(() => {
                   replyMessage={replyMessage}
                   reply={false}
                   media={replyMessageObj.media}
-
                 />
               )}
               {isLoader ? (
@@ -206,7 +175,6 @@ const isImageOnly = React.useMemo(() => {
                         copyToClipboard={copyToClipboard}
                         handleReplyMessage={handleReplyMessage}
                         setMessageObjectId={setMessageObjectId}
-
                         setReplyIndex={setReplyIndex}
                         messageId={messageId}
                         isTextEmpty={!text}
@@ -240,7 +208,7 @@ const isImageOnly = React.useMemo(() => {
               )}
             </View>
             <View style={[styles.tail, styles.tailLeft]}>
-              <BotTail width={20} height={20} />
+              <BotTail width={sizeWithoutScale.width20} height={sizeWithoutScale.height20} />
             </View>
           </>
         ) : (
@@ -262,11 +230,10 @@ const isImageOnly = React.useMemo(() => {
                   (replyMessageObj?.media.image?.length > 0 ||
                     replyMessageObj?.media.video?.length > 0))) && (
                   <ReplyMessage
-                    replyFrom={replyFrom === "bot" ? "YOU" : "BOT"}
+                    replyFrom={replyFrom === stringConstants.bot ? stringConstants.you : stringConstants.botCaps}
                     replyMessage={replyMessage || ""}
                     reply={false}
                     media={replyMessageObj?.media}
-
                     replyIndex={replyIndex}
                   />
                 )}
@@ -309,7 +276,31 @@ const isImageOnly = React.useMemo(() => {
     </TouchableWithoutFeedback>
   );
 };
-
+  ChatBubble.propTypes = {
+    isBot: PropTypes.bool.isRequired,
+    options: PropTypes.array,
+    text: PropTypes.string.isRequired,
+    time: PropTypes.string,
+    status: PropTypes.string,
+    media: PropTypes.object,
+    isLoader: PropTypes.bool,
+    replyMessage: PropTypes.string,
+    setDropDownType: PropTypes.func,
+    setMessageObjectId: PropTypes.func,
+    messageId: PropTypes.string.isRequired,
+    botOption: PropTypes.bool,
+    replyFrom: PropTypes.string.isRequired,
+    socket: PropTypes.object,
+    handleReplyMessage: PropTypes.func,
+    copyToClipboard: PropTypes.func,
+    replyMessageObj: PropTypes.object,
+    reconfigApiResponse: PropTypes.object,
+    setCopied: PropTypes.func,
+    token: PropTypes.string,
+    setReplyIndex: PropTypes.func,
+    replyIndex: PropTypes.number,
+    activity: PropTypes.string,
+  };
 const styles = StyleSheet.create({
   chatBubbleContainer: {
     maxWidth: "80%",
@@ -374,5 +365,4 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.space_base,
   },
 });
-
 export default ChatBubble;

@@ -32,7 +32,14 @@ export const stringConstants = {
   coach: "COACH",
   typeMessage: "Type a message...",
   socketConnected: "✅ Socket connected",
-  KeyboardPadding: "padding"
+  KeyboardPadding: "padding",
+  table: "table",
+  text: "text",
+  tableWithText: "tableWithText",
+  image: "image",
+  bot:"bot",
+  botCaps: "BOT",
+  you:"YOU"
   };
 
 export const timeoutConstants = {
@@ -47,5 +54,14 @@ export const socketConstants = {
   read: "READ",
   received: "RECEIVED",
 };
+
+export const socketMessageTypes = {
+  text: "TEXT",
+  replyToMessage: "REPLY_TO_MESSAGE",
+  replyToInteractive: "REPLY_TO_INTERACTIVE",
+  replyToLandingPage: "REPLY_TO_LANDING_PAGE",
+  quickReply: "QUICK_REPLY",
+};
+
 
 
