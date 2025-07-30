@@ -222,7 +222,6 @@ export const ChatPage = () => {
         getData({ token: newToken, agentId: "hom5750", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        settoken(newToken);
         dispatch(clearMessages());
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
