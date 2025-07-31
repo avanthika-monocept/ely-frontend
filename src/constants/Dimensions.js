@@ -1,5 +1,6 @@
 import { moderateScale, verticalScale, scale } from "react-native-size-matters";
 import { Dimensions } from "react-native";
+import { shadow } from "react-native-paper";
 export const screenWidth = Dimensions.get("screen").width;
 export const screenHeight = Dimensions.get("screen").height;
 
@@ -195,6 +196,7 @@ export const size = {
   width_170: scale(170),
   width_213: scale(213),
   width_220: scale(220),
+  width224: scale(224),
   width_312: scale(312),
   width_328: scale(328),
   width_16: scale(16),
@@ -298,6 +300,7 @@ export const sizeWithoutScale = {
   width120: 120,
   width164: 164,
   width131: 131,
+  width135:135,
   width137: 137,
   width144: 144,
   width150: 150,
@@ -321,8 +324,9 @@ export const sizeWithoutScale = {
   width300: 300,
   width360: 360,
   width328: 328,
-
+  height0: 0,
   height1: 1,
+  height2: 2,
   height3: 3,
   height4: 4,
   height6: 6,
@@ -518,7 +522,10 @@ export const extraSpacing = {
 };
 export const shadowOpacityElevation = {
   opacity0: 0,
+  opacity0_1: 0.1,
+  opacity0_2: 0.2,
   opacity0_5: 0.5,
+  opacity0_25: 0.25,
   opacity1: 1,
   elevation1: 1,
   elevation2: 2,
@@ -531,6 +538,7 @@ export const shadowOpacityElevation = {
 export const ShadowRadius = {
   shadowRadius3: 3,
   shadowRadius4: 4,
+  shadowRadius8: 8,
   shadowRadius12: 12,
   shadowRadius15: 15,
   shadowRadius16: 16,

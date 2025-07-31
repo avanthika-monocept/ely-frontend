@@ -27,6 +27,7 @@ const colors = {
     cyberYellow: "#ffd639",
     punch: "#D93025",
     midnightBlue: "#143172",
+   
   },
   darkNeutrals: {
     n900: "#252931",
@@ -40,6 +41,7 @@ const colors = {
     n400: "#737881",
     n300: "#858991",
     n200: "#969AA1",
+    n100:"#E4E8F0",
   },
   lightNeutrals: {
     n100: "#A8ABB1",

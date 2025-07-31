@@ -1,5 +1,4 @@
-import { Keyboard } from "react-native";
-import { read } from "react-native-fs";
+
 
 export const navigationscreen = {
   header: "header",
@@ -36,10 +35,16 @@ export const stringConstants = {
   table: "table",
   text: "text",
   tableWithText: "tableWithText",
+  imageWithText: "imageWithText",
+  videoWithText: "videoWithText",
+  video: "video",
   image: "image",
   bot:"bot",
   botCaps: "BOT",
-  you:"YOU"
+  you:"YOU",
+  copiedToClipboard: "Copied to Clipboard",
+  error:"Error",
+  success:"Success",
   };
 
 export const timeoutConstants = {
@@ -62,6 +67,21 @@ export const socketMessageTypes = {
   replyToLandingPage: "REPLY_TO_LANDING_PAGE",
   quickReply: "QUICK_REPLY",
 };
+export const share= {
+    title: "Share Media",
+    error: "Failed to share file.",
+    videoTitle: "Share Video",
+    imageTitle: "Share Image",
+    invalidUri: "Invalid URI",
+   
+  }
+  export const labels= {
+    preview: "Preview",
+    reply: "Reply-to",
+    download: "Download",
+    share: "Share",
+    copyText: "Copy Text"
+  }
 
 
 

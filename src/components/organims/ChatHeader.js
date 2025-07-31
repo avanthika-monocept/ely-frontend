@@ -5,6 +5,7 @@ import Avatar from "../atoms/Avatar";
 import { useNavigation } from "@react-navigation/native";
 import colors from "../../constants/Colors";
 import {
+  shadowOpacityElevation,
   size,
   sizeWithoutScale,
   spacing,
@@ -13,6 +14,7 @@ import {
 } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { stringConstants } from "../../constants/StringConstants";
+import { shadow } from "react-native-paper";
 
 export const ChatHeader = memo(
   ({
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
       width: sizeWithoutScale.width0,
       height: spacingVerticalScale.space_s1,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: shadowOpacityElevation.opacity0_1,
     shadowRadius: spacing.space_s2,
     elevation: spacingModerateScale.space_s2,
   },

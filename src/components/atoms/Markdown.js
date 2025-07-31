@@ -14,6 +14,7 @@ import { borderRadius, spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { useDispatch } from "react-redux";
 import { openBottomSheet, setBottomSheetURL } from "../../store/reducers/bottomSheetSlice";
+import { platformName } from "../../constants/StringConstants";
 
 const LONG_PRESS_THRESHOLD = 500;
 
@@ -127,13 +128,13 @@ const markdownStyles = {
     textDecorationLine: "underline",
   },
   strong: {
-    fontWeight: Platform.OS === "ios" ? "600" : "bold",
+    fontWeight: Platform.OS === platformName.ios ? "600" : "bold",
   },
   em: {
     fontStyle: "italic",
   },
   code_inline: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === platformName.ios ? "Courier" : "monospace",
     backgroundColor: "#F1F1F1",
     padding: spacing.space_s1,
     borderRadius: borderRadius.borderRadius4,

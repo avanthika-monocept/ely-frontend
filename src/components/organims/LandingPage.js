@@ -10,7 +10,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import {LinearGradient} from "react-native-linear-gradient";
-import {stringConstants } from "../../constants/StringConstants";
+import {platformName, stringConstants } from "../../constants/StringConstants";
 import { borderRadius, borderWidth, spacing, size, flex } from "../../constants/Dimensions";
 import {SuggestionList} from "./SuggestionList";
 import { fontStyle } from "../../constants/Fonts";
@@ -29,7 +29,7 @@ export const LandingPage = ({
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         style={{ flex: flex.one }}
-        behavior={Platform.OS === "ios" && "padding"}
+        behavior={Platform.OS === platformName.ios && "padding"}
         keyboardVerticalOffset={100}
       >
         <LinearGradient

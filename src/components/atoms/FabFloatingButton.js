@@ -1,7 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import Chevron from "../../../assets/Chevron.svg"; // Ensure the path is correct
-import ChevronDown from "../../../assets/ChevronDown.svg"; // Ensure the path is correct
+import Chevron from "../../../assets/Chevron.svg"; 
+import ChevronDown from "../../../assets/ChevronDown.svg";
 import {
   borderRadius,
   borderWidth,
@@ -61,7 +61,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     opacity: shadowOpacityElevation.opacity1,
-    transition: "opacity 0.3s ease-in-out",
   },
   extendedFab: {
     width: sizeWithoutScale.width137,

@@ -26,6 +26,7 @@ import PropTypes from "prop-types";
 import FileModal from "./FileModal";
 import RNFetchBlob from "react-native-blob-util";
 import VideoLoader from "./VideoLoader";
+import { platformName } from "../../constants/StringConstants";
 
 
 const screenWidth = Dimensions.get("window").width;
@@ -240,7 +241,7 @@ const MediaMessageView = ({
 
   const downloadMedia = async (mediaUrl, isVideo = false) => {
     try {
-      if (Platform.OS === "android") {
+      if (Platform.OS === platformName.android) {
         const permissionToRequest =
           Platform.Version >= 33
             ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
@@ -824,7 +825,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 70 : StatusBar.currentHeight + 10,
+    paddingTop: Platform.OS === platformName.ios ? 70 : StatusBar.currentHeight + 10,
     paddingBottom: 10,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },

@@ -7,14 +7,14 @@ import {
   borderRadius,
   imageSize,
   size,
+  sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
-
+import { stringConstants } from "../../constants/StringConstants";
 const CopyTextClipboard = ({ reply }) => {
   const [visible, setVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     // Animate in
     Animated.timing(fadeAnim, {
@@ -22,7 +22,6 @@ const CopyTextClipboard = ({ reply }) => {
       duration: 200,
       useNativeDriver: true,
     }).start();
-
     // Auto-dismiss after 5 seconds
     const timeout = setTimeout(() => {
       Animated.timing(fadeAnim, {
@@ -31,18 +30,15 @@ const CopyTextClipboard = ({ reply }) => {
         useNativeDriver: true,
       }).start(() => setVisible(false));
     }, 2000);
-
     return () => clearTimeout(timeout);
   }, []);
-
   if (!visible) return null;
-
   return (
     <Animated.View
       testID="copy-toast-container"
       style={[
         styles.copiedMessage,
-        { bottom: reply ? 135 : 80, opacity: fadeAnim },
+        { bottom: reply ? sizeWithoutScale.width135 : sizeWithoutScale.width80, opacity: fadeAnim },
       ]}
     >
       <CopyClip
@@ -50,15 +46,13 @@ const CopyTextClipboard = ({ reply }) => {
         height={imageSize.height15}
         testID="copy-icon"
       />
-      <Text style={styles.text}>Copied to Clipboard</Text>
+      <Text style={styles.text}>{stringConstants.copiedToClipboard}</Text>
     </Animated.View>
   );
 };
-
 CopyTextClipboard.propTypes = {
   reply: PropTypes.bool,
 };
-
 const styles = StyleSheet.create({
   copiedMessage: {
     position: "absolute",
@@ -68,7 +62,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryColors.woodSmoke,
     padding: spacing.space_10,
     borderRadius: borderRadius.borderRadius8,
-    width: 224,
+    width: size.width224,
     height: size.height36,
     alignSelf: "center",
   },
@@ -79,5 +73,4 @@ const styles = StyleSheet.create({
     marginLeft: spacing.space_base,
   },
 });
-
 export default CopyTextClipboard;
