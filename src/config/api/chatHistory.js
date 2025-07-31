@@ -19,7 +19,7 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10,token) => {
       data: { agentId: agentId, page: page, size: size },
     });
 
-    console.log(JSON.stringify(response), " chathistory   response");
+
     return response?.data?.content || [];
     
   } catch (error) {

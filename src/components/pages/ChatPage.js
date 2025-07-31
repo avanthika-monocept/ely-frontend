@@ -22,15 +22,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
-import { spacing } from "../../constants/Dimensions";
+import { flex, size, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
-import { stringConstants } from "../../constants/StringConstants";
+import { ApiResponseConstant, platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
-import PropTypes from "prop-types";
-
+import PropTypes, { string } from "prop-types";import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 export const ChatPage = ({ route }) => {
    const { 
     jwtToken,     
@@ -43,21 +42,20 @@ export const ChatPage = ({ route }) => {
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
-
+  const reconfigApiResponseRef = useRef({});
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
   const [navigationPage, setnavigationPage] = useState("");
   const [reply, setReply] = useState(false);
-const [isInitializing, setIsInitializing] = useState(true);
-  const [userId, setuserId] = useState("");
+  const [isInitializing, setIsInitializing] = useState(true);
   const [replyIndex, setReplyIndex] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
   const [inputHeight, setInputHeight] = useState(24);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [newMessageCount, setNewMessageCount] = useState(1); // will be updated after socket connection
+  const [newMessageCount, setNewMessageCount] = useState(1);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [token, settoken] = useState("");
@@ -65,8 +63,7 @@ const [isInitializing, setIsInitializing] = useState(true);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const messages = useSelector((state) => state.chat.messages);
   const ws = useRef(null);
-  const backgroundColor =
-    reconfigApiResponse?.theme?.backgroundColor || "#F4F6FA";
+  const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
   const isSharing = useSelector((state) => state.shareLoader.isSharing);
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -86,22 +83,20 @@ const [isInitializing, setIsInitializing] = useState(true);
       keyboardDidHideListener.remove();
     };
   }, []);
-
+  useEffect(() => {
+    reconfigApiResponseRef.current = reconfigApiResponse;
+  }, [reconfigApiResponse]);
   const messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
   const startResponseTimeout = () => {
-    // Clear any existing timeout
-    if (responseTimeout) {
+     if (responseTimeout) {
       clearTimeout(responseTimeout);
     }
-
-    // Set new timeout
+    
     const timeoutId = setTimeout(() => {
       dispatch(hideLoader());
-      console.log("Loader hidden after 1 minute with no response");
-    }, 60000); // 1 minute
-
+    }, timeoutConstants.response);
     setResponseTimeout(timeoutId);
   };
   const clearResponseTimeout = () => {
@@ -111,18 +106,14 @@ const [isInitializing, setIsInitializing] = useState(true);
     }
   };
   const fetchToken = async () => {
-
     try {
       const response = await getCognitoToken();
-
       if (response && response.access_token) {
         settoken(response.access_token);
       }
       return response.access_token;
-
-
     } catch (err) {
-      console.error('Token fetch failed:', err);
+      console.error(err);
     }
   };
   const handleScroll = (event) => {
@@ -140,169 +131,170 @@ const [isInitializing, setIsInitializing] = useState(true);
       setReply(true);
     }
   };
+  const resetNewMessageState = () => {
+  setShowFab(false);
+  setShowNewMessageAlert(false);
+  setNewMessageCount(0);
+};
 
   const scrollToDown = () => {
-    setShowFab(false);
-    setShowNewMessageAlert(false);
-
+    resetNewMessageState();
     scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
-
   const loadChatHistory = async (agentId, page, message, newToken) => {
-    console.log("checking loadChatHistory", agentId, page, message, newToken);
     setHasMore(true);
     if (!hasMore) return;
     try {
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
-      const formattedMessages = newMessages.map(msg => 
-      formatHistoryMessage(msg)
-    );
+      const formattedMessages = newMessages.map(msg =>
+        formatHistoryMessage(msg)
+      );
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
     } catch (err) {
       console.error(stringConstants.failToLoad, err);
     }
   };
-    const connectWebSocket = (agentId) => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}`;
+  const connectWebSocket = (agentId,token) => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
-      console.log('✅ WebSocket connected');
-      };
-
+      console.log(stringConstants.socketConnected)
+    };
     ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('📨 Message:', data);
-
-    
-
-      if (data.type === 'BOT_RESPONSE') {
-        handleBotMessage(data);
-      } else if (data.type === 'ACKNOWLEDGEMENT') {
-        handleAcknowledgement(data);
+      try {
+        if (!event.data) {
+          return;
+        }
+        const data = JSON.parse(event.data);
+        if (data.type === socketConstants.botResponse) {
+          handleBotMessage(data);
+        } else if (data.type === socketConstants.acknowledgement) {
+          handleAcknowledgement(data);
+        }
+      } catch (err) {
+        console.error(event.data, err);
       }
     };
-
     ws.current.onerror = (error) => {
-      console.error('❌ WebSocket error:', error.message || error);
-     
       clearResponseTimeout();
     };
-
     ws.current.onclose = (e) => {
-      console.log('🔌 WebSocket closed:', e.code, e.reason);
-     
+      setPage(0);
       clearResponseTimeout();
     };
   };
-
   const cleanupWebSocket = (sendDisconnect = false) => {
-    // Add null check first
-    if (!ws.current) {
-      console.log('WebSocket already cleaned up');
-      return;
-    }
-
+    if (!ws.current) return;
     try {
       if (sendDisconnect && ws.current.readyState === WebSocket.OPEN) {
         const disconnectPayload = {
-          action: "disconnect",
-          userId: reconfigApiResponse?.userInfo?.agentId,
+          action: socketConstants.disconnect,
+          userId: reconfigApiResponseRef.current?.userInfo?.agentId,
         };
         ws.current.send(JSON.stringify(disconnectPayload));
-        console.log('Disconnect message sent');
       }
-
     } catch (error) {
-      console.error('Error during WebSocket cleanup:', error);
+      console.error(error);
     } finally {
       ws.current = null;
     }
   };
- const initialize = async () => {
-  try {
-    const newToken = await fetchToken();
-
-    // const validationResponse = await validateJwtToken(
-    //   newToken,
-    //   jwtToken, 
-    //   cogToken,
-    //   platform,
-    //   {
-    //     agentId: userInfo?.agentId,
-    //     userName: userInfo?.userName,
-    //     email: userInfo?.email,
-    //     role: userInfo?.role,
-    //     firebaseId: userInfo?.firebaseId,
-    //     deviceId: userInfo?.deviceId,
-    //   }
-    // );
-    // if (validationResponse && validationResponse.status === "SUCCESS") {
-      settoken(newToken);
-      const response =await dispatch(getData({ token: newToken, agentId: userInfo?.agentId,platform: platform})).unwrap()
-       dispatch(clearMessages());
-       setnavigationPage(response.statusFlag);
-       setReconfigApiResponse(response);
-       if (response.statusFlag.toLowerCase() === "agenda") {
-        loadChatHistory(response.userInfo.agentId, page, 10, newToken); 
-       }
-         connectWebSocket(response.userInfo.agentId);
-            setIsInitializing(false);
-    //   } else {
-    //   console.warn("Token validation failed. Initialization aborted.");
-    //   setIsInitializing(false);
-    // }
-  } catch (error) {
-    console.error("Initialization failed:", error);
-    setIsInitializing(false);
-  }
+  const sendAcknowledgement = (messageId) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const currentConfig = reconfigApiResponseRef.current;
+      const payload = {
+        action: CHAT_MESSAGE_PROXY,
+        token: token,
+        message: {
+          messageId: messageId,
+          status: socketConstants.read,
+          sendType: socketConstants.acknowledgement,
+          userId: currentConfig?.userInfo?.agentId,
+          emailId: currentConfig?.userInfo?.email,
+          platform: currentConfig?.theme?.platform,
+        }
+      };
+      ws.current.send(JSON.stringify(payload));
+    }
+  };
+  const initialize = async () => {
+    try {
+      setIsInitializing(true);
+      setPage(0);
+      const newToken = await fetchToken();
+      const validationResponse = await validateJwtToken(
+      newToken,
+      jwtToken, 
+      cogToken,
+      platform,
+      {
+        agentId: userInfo?.agentId,
+        userName: userInfo?.userName,
+        email: userInfo?.email,
+        role: userInfo?.role,
+        firebaseId: userInfo?.firebaseId,
+        deviceId: userInfo?.deviceId,
+      }
+    );
+   if (!validationResponse || validationResponse.status !== stringConstants.success) {
+      console.warn(ApiResponseConstant.fail, validationResponse.message);
+      setIsInitializing(false);
+      return;
+    }
+      const response = await dispatch(
+        getData({ token: newToken, agentId: userInfo.agentId, platform: platform })
+      ).unwrap();
+      if (response && response.userInfo?.agentId) {
+        dispatch(clearMessages());
+        setnavigationPage(response.statusFlag);
+        setReconfigApiResponse(prev => ({ ...prev, ...response }));
+        if (response.statusFlag === stringConstants.agenda) {
+          await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+        }
+        connectWebSocket(response.userInfo.agentId, newToken);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsInitializing(false);
+    }
+    
+  };
+  const safelyCleanupSocket = () => {
+  cleanupWebSocket(true);
+  clearResponseTimeout();
+  dispatch(hideLoader());
 };
 
-useEffect(() => {
-      initialize();
-      return () => {
-        console.log("Cleaning up WebSocket and timeouts");
-        cleanupWebSocket(true); 
-        clearResponseTimeout();
-      }
+  useEffect(() => {
+    initialize();
+    return () => {
+      safelyCleanupSocket();
+    }
   }, []);
-
-
-
   useEffect(() => {
     let currentAppState = AppState.currentState;
     let isMounted = true; // Track mounted state
-
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
-
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
-        console.log('App going to background - closing WebSocket');
-        cleanupWebSocket(true); // Send disconnect message
-        clearResponseTimeout();
-        dispatch(hideLoader())
+        safelyCleanupSocket();
       }
-
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('App returning to foreground');
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          initialize(); // Reinitialize WebSocket connection
+          initialize();
         }
       }
-
       currentAppState = nextAppState;
     };
-
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
     return () => {
       isMounted = false;
       subscription.remove();
-      cleanupWebSocket(true); // Graceful disconnect on unmount
-      clearResponseTimeout();
+      safelyCleanupSocket();
     };
   }, []);
-
   const handleBotMessage = (data) => {
     clearResponseTimeout();
     dispatch(hideLoader());
@@ -310,58 +302,31 @@ useEffect(() => {
       clearTimeout(inactivityTimer);
     }
     setInactivityTimer(setTimeout(() => {
-      console.log("Disconnecting due to inactivity");
       cleanupWebSocket(true);
-    }, 3600000));
+    }, timeoutConstants.inactivity));
     sendAcknowledgement(data?.messageId);
-
-
-
     const botMessage = formatBotMessage(data);
-    
     if (!isAtBottom) {
       setShowFab(false);
       setShowNewMessageAlert(true);
+      setNewMessageCount((prev) => prev + 1);
     }
-
+     else {
+    setNewMessageCount(0); 
+  }
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
-
-
   };
   const handleAcknowledgement = (data) => {
-    console.log("Received acknowledgement:", JSON.stringify(data));
     dispatch(showLoader());
-    console.log("Acknowledgement received for messageId:", !data.messageId);
     startResponseTimeout();
-    if (data.acknowledgement === "RECEIVED") {
+    if (data.acknowledgement === socketConstants.received) {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
-        status: "RECEIVED"
+        status: socketConstants.received,
       }));
     }
   };
-
-  const sendAcknowledgement = (messageId) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      console.log("Sending acknowledgement for messageId:", reconfigApiResponse?.userInfo?.agentId,reconfigApiResponse?.userInfo?.email);
-      const payload = {
-        
-        action: "api/chatbot/message-proxy",
-        token: token,
-        message: {
-        messageId: messageId,
-        status: "READ",
-        sendType: "ACKNOWLEDGEMENT",
-        userId: reconfigApiResponse?.userInfo?.agentId,
-        emailId: reconfigApiResponse?.userInfo?.email,
-        platform: reconfigApiResponse?.theme?.platform,
-        }
-      };
-      ws.current.send(JSON.stringify(payload));
-    }
-  };
-
   const handleReplyClose = () => {
     setReplyIndex(0);
     setReplyMessageId(null);
@@ -372,10 +337,8 @@ useEffect(() => {
     const textToCopy = messageObject?.message?.text
       ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
       : messageObject?.message?.text;
-
     Clipboard.setString(textToCopy);
-
-    if (androidVersion < 33 || Platform.OS === "ios") {
+    if (androidVersion < 33 || Platform.OS === platformName.ios) {
       setCopied(true);
       setTimeout(() => {
         setCopied(false);
@@ -385,7 +348,6 @@ useEffect(() => {
       setMessageObjectId(null);
     }
   };
-
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (messages.length > prevMessagesLength) {
@@ -395,7 +357,6 @@ useEffect(() => {
       setPrevMessagesLength(messages.length);
     }
   }, [messages, isAtBottom, prevMessagesLength]);
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
@@ -416,11 +377,11 @@ useEffect(() => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined }
-          style={{ flex: 1 }}
+          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
+          style={{ flex: flex.one }}
         >
           <View style={styles.content}>
-            { !isInitializing && navigationPage === stringConstants.coach && (
+            {!isInitializing && navigationPage === stringConstants.coach && (
               <LandingPage
                 socket={ws.current}
                 setnavigationPage={setnavigationPage}
@@ -437,7 +398,6 @@ useEffect(() => {
                 setDropDownType={setDropDownType}
                 setMessageObjectId={setMessageObjectId}
                 showFab={showFab}
-                showNewMessage={showNewMessageAlert}
                 handleReplyMessage={handleReplyMessage}
                 setReplyIndex={setReplyIndex}
                 replyIndex={replyIndex}
@@ -451,15 +411,14 @@ useEffect(() => {
               />
             )}
           </View>
-
           {navigationPage !== stringConstants.coach && showFab && (
             <View
               style={[
                 styles.fabIcon,
                 {
                   bottom:
-                    (Platform.OS === "ios" ? keyboardOffset : 0) +
-                    (reply ? 130 : 80 + (inputHeight - 24)),
+                    (Platform.OS ===  platformName.ios ? keyboardOffset : spacing.space_s0) +
+                    (reply ? size.width_130 : spacing.space_xl1 + (inputHeight - spacing.space_m4)),
                 },
               ]}
             >
@@ -472,7 +431,6 @@ useEffect(() => {
               />
             </View>
           )}
-
           <ChatFooter
             copied={copied}
             setCopied={setCopied}
@@ -506,18 +464,16 @@ useEffect(() => {
           />
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
-
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: colors.primaryColors.white,
   },
   content: {
-    flex: 1,
+    flex: flex.one,
   },
   fabIcon: {
     position: "absolute",
@@ -528,14 +484,14 @@ const styles = StyleSheet.create({
   },
   loaderContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: spacing.space_s0,
+    left: spacing.space_s0,
+    right: spacing.space_s0,
+    bottom: spacing.space_s0,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    backgroundColor: 'rgba(181, 178, 178, 0.5)',
+    backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
 });
 

@@ -14,10 +14,11 @@ import { borderRadius, spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { useDispatch } from "react-redux";
 import { openBottomSheet, setBottomSheetURL } from "../../store/reducers/bottomSheetSlice";
+import { platformName } from "../../constants/StringConstants";
 
 const LONG_PRESS_THRESHOLD = 500;
 
-const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
+const MarkdownComponent = ({ markdownText,setDropDownType }) => {
 
   const dispatch = useDispatch();
   const longPressTimer = useRef(null);
@@ -35,7 +36,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      console.error("Error opening mail link:", error); // Log for debugging
+     
       Alert.alert("Error", "No email app found.");
     }
     return;
@@ -49,7 +50,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       Alert.alert("Invalid URL", `Unable to open: ${url}`);
     }
   } catch (error) {
-    console.error("Error opening link:", error); // Log for debugging
+    
     Alert.alert("Error", "Failed to open link.");
   }
 };
@@ -68,13 +69,7 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       setDropDownType("url");
     }
     setBottomSheetURL(url);
-
-    // Clipboard.setString(url);
-    // if(!Platform.OS == "ios") {
-    // setCopied(true);
-    // }
-    // setTimeout(() => setCopied(false), 1000);
-  };
+};
 
   const renderCustomLink = (children, href) => (
     <TouchableWithoutFeedback
@@ -133,13 +128,13 @@ const markdownStyles = {
     textDecorationLine: "underline",
   },
   strong: {
-    fontWeight: Platform.OS === "ios" ? "600" : "bold",
+    fontWeight: Platform.OS === platformName.ios ? "600" : "bold",
   },
   em: {
     fontStyle: "italic",
   },
   code_inline: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    fontFamily: Platform.OS === platformName.ios ? "Courier" : "monospace",
     backgroundColor: "#F1F1F1",
     padding: spacing.space_s1,
     borderRadius: borderRadius.borderRadius4,

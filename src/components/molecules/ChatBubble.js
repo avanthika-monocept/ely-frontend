@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, StyleSheet, TouchableWithoutFeedback, Text } from "react-native";
 import { LinearGradient } from "react-native-linear-gradient";
 import BotTail from "../../../assets/BotBubbleTail.svg";
@@ -16,7 +16,7 @@ import {
   splitMarkdownIntoTableAndText,
   formatUserMessage,
 } from "../../common/utils";
-import MediaMessageView from "../atoms/MediaMessageView";
+const MediaMessageView = React.lazy(() => import('../atoms/MediaMessageView'));
 import TableBaseBubble from "../atoms/TableBaseBubble";
 import {
   borderRadius,
@@ -25,9 +25,9 @@ import {
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 import colors from "../../constants/Colors";
-
+import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
 export const ChatBubble = ({
   isBot,
   options,
@@ -51,61 +51,37 @@ export const ChatBubble = ({
   setCopied,
   setReplyIndex,
   replyIndex,
+  activity,
 }) => {
-  ChatBubble.propTypes = {
-    isBot: PropTypes.bool.isRequired,
-    options: PropTypes.array,
-    text: PropTypes.string.isRequired,
-    time: PropTypes.string,
-    status: PropTypes.string,
-    media: PropTypes.object,
-    isLoader: PropTypes.bool,
-    replyMessage: PropTypes.string,
-    setDropDownType: PropTypes.func,
-    setMessageObjectId: PropTypes.func,
-    messageId: PropTypes.string.isRequired,
-    botOption: PropTypes.bool,
-    replyFrom: PropTypes.string.isRequired,
-    socket: PropTypes.object,
-    handleReplyMessage: PropTypes.func.isRequired,
-    copyToClipboard: PropTypes.func,
-    replyMessageObj: PropTypes.object,
-    reconfigApiResponse: PropTypes.object,
-    setCopied: PropTypes.func,
-    token: PropTypes.string,
-    setReplyIndex: PropTypes.func,
-    replyIndex: PropTypes.number,
-  };
+ const LONG_PRESS_THRESHOLD = 500;
   const [isOpen, setIsOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState("");
-  const [type, setType] = useState("tableWithText");
+  const [type, setType] = useState(stringConstants.tableWithText);
   const messageColor = isBot
-    ? reconfigApiResponse?.theme?.botMessageColor.trim() || "#CDEAF8"
-    : reconfigApiResponse?.theme?.userMessageColor.trim() || "#F4F6FA";
+    ? reconfigApiResponse?.theme?.botMessageColor.trim() || colors.primaryColors.skyBlue
+    : reconfigApiResponse?.theme?.userMessageColor.trim() || colors.primaryColors.lightSurface;
   const dispatch = useDispatch();
-
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
-
+const RotatedThumb = () => <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>;
   const reactionOptions = [
     { id: "like", svg: <Text>👍</Text> },
     {
       id: "dislike",
-      svg: <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>,
+      svg: <RotatedThumb/>,
     },
   ];
-
   const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
     if (table && table != "") {
       setIsTableOpen(true);
       if (text != "") {
-        setType("tableWithText");
+        setType(stringConstants.tableWithText);
       } else {
-        setType("table");
+        setType(stringConstants.table);
       }
     } else if (
       (media && media?.image[0]?.mediaUrl?.length > 0) ||
@@ -114,16 +90,15 @@ export const ChatBubble = ({
       setIsOpen(true);
     } else {
       dispatch(openBottomSheet());
-      setDropDownType("text");
+      setDropDownType(stringConstants.text);
     }
   };
-
   const handleFeedbackSelect = (feedback) => {
     setSelectedFeedback(feedback);
     const { message, socketPayload } = formatUserMessage(
       feedback,
       reconfigApiResponse,
-      "QUICK_REPLY",
+      socketMessageTypes.quickReply,
       token,
       null,
       0,
@@ -132,20 +107,21 @@ export const ChatBubble = ({
     dispatch(addMessage(message));
     socket.send(JSON.stringify(socketPayload));
   };
-
-  const { tablePart, textPart } = splitMarkdownIntoTableAndText(text);
-  const isImageOnly =
-    isBot &&
+const { tablePart, textPart } = useMemo(() => {
+  return splitMarkdownIntoTableAndText(text);
+}, [text]);
+const isImageOnly = useMemo(() => {
+  return isBot &&
     media?.image?.length > 0 &&
     (text === "" || text === undefined || text === null) &&
     (tablePart === "" || tablePart === undefined || tablePart === null);
-
+}, [isBot, media, text, tablePart]);
   return (
     <TouchableWithoutFeedback
       onLongPress={() =>
         onLongPressBubble(messageId, text, media, tablePart, textPart)
       }
-      delayLongPress={200}
+      delayLongPress={LONG_PRESS_THRESHOLD}
     >
       <View style={styles.chatBubbleContainer}>
         {isBot ? (
@@ -163,7 +139,6 @@ export const ChatBubble = ({
                   replyMessage={replyMessage}
                   reply={false}
                   media={replyMessageObj.media}
-
                 />
               )}
               {isLoader ? (
@@ -190,6 +165,8 @@ export const ChatBubble = ({
                   )}
                   {(media?.image?.[0]?.mediaUrl?.length > 0 ||
                     media?.video?.[0]?.mediaUrl?.length > 0) && (
+                      //need to implement fallback for media after testing
+                       <React.Suspense fallback={<View style={styles.mediaPlaceholder} />}>
                       <MediaMessageView
                         images={media?.image?.[0]?.mediaUrl || []}
                         videos={media?.video?.[0]?.mediaUrl || []}
@@ -198,16 +175,15 @@ export const ChatBubble = ({
                         copyToClipboard={copyToClipboard}
                         handleReplyMessage={handleReplyMessage}
                         setMessageObjectId={setMessageObjectId}
-
                         setReplyIndex={setReplyIndex}
                         messageId={messageId}
                         isTextEmpty={!text}
                         text={textPart}
                       />
+                      </React.Suspense>
                     )}
                   <MarkdownComponent
                     markdownText={textPart}
-                    setCopied={setCopied}
                     setDropDownType={setDropDownType}
                   />
                   {botOption && options.length > 0 && (
@@ -232,7 +208,7 @@ export const ChatBubble = ({
               )}
             </View>
             <View style={[styles.tail, styles.tailLeft]}>
-              <BotTail width={20} height={20} />
+              <BotTail width={sizeWithoutScale.width20} height={sizeWithoutScale.height20} />
             </View>
           </>
         ) : (
@@ -254,11 +230,10 @@ export const ChatBubble = ({
                   (replyMessageObj?.media.image?.length > 0 ||
                     replyMessageObj?.media.video?.length > 0))) && (
                   <ReplyMessage
-                    replyFrom={replyFrom === "bot" ? "YOU" : "BOT"}
+                    replyFrom={replyFrom === stringConstants.bot ? stringConstants.you : stringConstants.botCaps}
                     replyMessage={replyMessage || ""}
                     reply={false}
                     media={replyMessageObj?.media}
-
                     replyIndex={replyIndex}
                   />
                 )}
@@ -293,6 +268,7 @@ export const ChatBubble = ({
               agentId={reconfigApiResponse?.userInfo?.agentId}
               platform={reconfigApiResponse?.theme?.platform}
               token={token}
+              activity={activity}
             />
           </View>
         )}
@@ -300,7 +276,31 @@ export const ChatBubble = ({
     </TouchableWithoutFeedback>
   );
 };
-
+  ChatBubble.propTypes = {
+    isBot: PropTypes.bool.isRequired,
+    options: PropTypes.array,
+    text: PropTypes.string.isRequired,
+    time: PropTypes.string,
+    status: PropTypes.string,
+    media: PropTypes.object,
+    isLoader: PropTypes.bool,
+    replyMessage: PropTypes.string,
+    setDropDownType: PropTypes.func,
+    setMessageObjectId: PropTypes.func,
+    messageId: PropTypes.string.isRequired,
+    botOption: PropTypes.bool,
+    replyFrom: PropTypes.string.isRequired,
+    socket: PropTypes.object,
+    handleReplyMessage: PropTypes.func,
+    copyToClipboard: PropTypes.func,
+    replyMessageObj: PropTypes.object,
+    reconfigApiResponse: PropTypes.object,
+    setCopied: PropTypes.func,
+    token: PropTypes.string,
+    setReplyIndex: PropTypes.func,
+    replyIndex: PropTypes.number,
+    activity: PropTypes.string,
+  };
 const styles = StyleSheet.create({
   chatBubbleContainer: {
     maxWidth: "80%",
@@ -365,5 +365,4 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.space_base,
   },
 });
-
 export default ChatBubble;

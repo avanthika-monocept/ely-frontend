@@ -3,11 +3,10 @@ import { TouchableOpacity, StyleSheet, View } from "react-native";
 import PropTypes from "prop-types";
 import SendButtonEnabled from "../../../assets/sendButtonEnabled.svg";
 import SendButtonDisabled from "../../../assets/sendButtonDisabled.svg";
-import { spacing } from "../../constants/Dimensions";
-
+import { spacing, sizeWithoutScale, borderRadius } from "../../constants/Dimensions";
+import colors from "../../constants/Colors";
 const Button = ({ isEnabled, onClick, reconfigApiResponse }) => {
-  const buttonColor = reconfigApiResponse?.theme?.buttonColor || "#97144D";
-
+  const buttonColor = reconfigApiResponse?.theme?.buttonColor || colors.primaryColors.surface;
   return (
     <TouchableOpacity
       onPress={onClick}
@@ -20,25 +19,22 @@ const Button = ({ isEnabled, onClick, reconfigApiResponse }) => {
     </TouchableOpacity>
   );
 };
-
 const SendButtonImage = ({ isEnabled, buttonColor }) => {
   const containerStyle = {
-    backgroundColor: isEnabled ? buttonColor : "#EEEEEF",
-    borderRadius: 50,
-    padding: 10,
-    width: 41,
-    height: 41,
+    backgroundColor: isEnabled ? buttonColor : colors.primaryColors.grey,
+    borderRadius: borderRadius.borderRadius50,
+    padding: spacing.space_10,
+    width: spacing.space_l2,
+    height: spacing.space_l2,
     alignItems: "center",
     justifyContent: "center",
-    paddingLeft: 12,
-  };
-
+    paddingLeft: spacing.space_m1,
+};
   const iconProps = {
-    width: 15,
-    height: 15,
+    width: sizeWithoutScale.width15,
+    height: sizeWithoutScale.height15,
     testID: "send-icon",
   };
-
   return (
     <View style={containerStyle}>
       {isEnabled ? (
@@ -49,12 +45,10 @@ const SendButtonImage = ({ isEnabled, buttonColor }) => {
     </View>
   );
 };
-
 SendButtonImage.propTypes = {
   isEnabled: PropTypes.bool.isRequired,
   buttonColor: PropTypes.string.isRequired,
 };
-
 Button.propTypes = {
   isEnabled: PropTypes.bool.isRequired,
   onClick: PropTypes.func.isRequired,
@@ -64,9 +58,7 @@ Button.propTypes = {
     }),
   }),
 };
-
 export default Button;
-
 const styles = StyleSheet.create({
   button: {
     alignSelf: "flex-end",

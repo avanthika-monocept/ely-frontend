@@ -7,15 +7,12 @@ import CopyTextClipboard from "../atoms/CopyTextClipboard";
 import Dropdown from "../atoms/Dropdown";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage } from "../../store/reducers/chatSlice";
-import { hideLoader, showLoader } from "../../store/reducers/loaderSlice";
+import { hideLoader } from "../../store/reducers/loaderSlice";
 import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
-import { borderWidth, spacing } from "../../constants/Dimensions";
+import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
-import { stringConstants } from "../../constants/StringConstants";
+import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
-
-
-
 export const ChatFooter = ({
   copied,
   dropDownType,
@@ -35,12 +32,11 @@ export const ChatFooter = ({
   scrollToDown,
   inactivityTimer,
   setInactivityTimer,
-setCopied,
- replyIndex,
- cleanupWebSocket,
-startResponseTimeout,
-clearResponseTimeout,
-token,
+  setCopied,
+  replyIndex,
+  cleanupWebSocket,
+  clearResponseTimeout,
+  token,
 }) => {
   ChatFooter.propTypes = {
     copied: PropTypes.bool.isRequired,
@@ -54,31 +50,24 @@ token,
     handleReplyClose: PropTypes.func.isRequired,
     handleReplyMessage: PropTypes.func.isRequired,
     reconfigApiResponse: PropTypes.object.isRequired,
-    socket: PropTypes.object.isRequired,
+    socket: PropTypes.object,
     messages: PropTypes.array,
     copyToClipboard: PropTypes.func,
     onInputHeightChange: PropTypes.func.isRequired,
     scrollToDown: PropTypes.func,
-    inactivityTimer: PropTypes.object,
+    inactivityTimer: PropTypes.number,
     setInactivityTimer: PropTypes.func,
     replyIndex: PropTypes.number,
     setCopied: PropTypes.func,
     cleanupWebSocket: PropTypes.func,
-    startResponseTimeout: PropTypes.func,
-    clearResponseTimeout:PropTypes.func,
+    clearResponseTimeout: PropTypes.func,
     token: PropTypes.string,
   };
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
-  const [dynamicPlaceholder, setDynamicPlaceholder] = useState(
-    stringConstants.typeMessage
-  );
+  const [dynamicPlaceholder, setDynamicPlaceholder] = useState(stringConstants.typeMessage);
   const isLoading = useSelector((state) => state.loader.isLoading);
-
-  const isBottomSheetOpen = useSelector(
-    (state) => state.bottomSheet.isBottomSheetOpen
-  );
-
+  const isBottomSheetOpen = useSelector((state) => state.bottomSheet.isBottomSheetOpen);
   useEffect(() => {
     const clearPlaceholderInterval = setupDynamicPlaceholder(
       reconfigApiResponse.placeHolders || [],
@@ -87,12 +76,15 @@ token,
       isLoading,
       reply
     );
-
     return () => clearPlaceholderInterval();
   }, [reconfigApiResponse, isLoading, reply]);
   const handleChange = (text) => {
     setValue(text);
   };
+  const resetReplyState = () => {
+  setReply(false);
+  setReplyMessageId(null);
+};
 
   const handleSend = async () => {
     scrollToDown();
@@ -105,37 +97,35 @@ token,
     if (reconfigApiResponse?.statusFlag === stringConstants.coach) {
       const timer = setTimeout(() => {
         cleanupWebSocket(true);
-      }, 3600000);
+      }, timeoutConstants.inactivity);
       setInactivityTimer(timer);
     }
     if (navigationPage === stringConstants.coach)
-      setnavigationPage(stringConstants.agendaCaps);
-  
-  const lastBotMessage = [...messages].reverse().find((msg) => msg.messageTo === stringConstants.user);
+      setnavigationPage(stringConstants.agenda);
+
+    const lastBotMessage = [...messages].reverse().find((msg) => msg.messageTo === stringConstants.user);
     const isInteractiveReply = lastBotMessage?.message?.botOption && lastBotMessage?.message?.options?.length > 0;
     try {
       setReply(false);
-  let messageType;
-if (isInteractiveReply) {
-  messageType = "REPLY_TO_INTERACTIVE";
-} else if (reply && replyMessageId) {
-  messageType = "REPLY_TO_MESSAGE";
-} else {
-  messageType = "TEXT";
-}
-const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType,token ,replyMessageId,replyIndex);
+      let messageType;
+      if (isInteractiveReply) {
+        messageType = socketMessageTypes.replyToInteractive;
+      } else if (reply && replyMessageId) {
+        messageType = socketMessageTypes.replyToMessage;
+      } else {
+        messageType = socketMessageTypes.text;
+      }
+      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, token, replyMessageId, replyIndex);
       dispatch(addMessage(message));
       setValue("");
       socket.send(JSON.stringify(socketPayload));
-      setReply(false);
-      setReplyMessageId(null);
+      resetReplyState();
     } catch (error) {
-      console.error("Error in message handling:", error);
+
       dispatch(hideLoader());
       clearResponseTimeout();
     }
   };
-
   const getReplyMessage = () => {
     let replyMessageObject = messages.find(
       (msg) => msg?.messageId === replyMessageId
@@ -153,19 +143,19 @@ const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse,
       <View style={styles.containerHead}>
         {reply &&
           ((data = getReplyMessage()),
-          (
-            <ReplyMessage
-              replyFrom={
-                data?.messageTo?.toLowerCase() === "bot" ? "YOU" : "BOT"
-              }
-              replyMessage={data.text}
-              media={data.media}
-              reply={reply}
-              handleClose={handleReplyClose}
-            
-              replyIndex={replyIndex}
-            />
-          ))}
+            (
+              <ReplyMessage
+                replyFrom={
+                  data?.messageTo?.toLowerCase() === "bot" ? "YOU" : "BOT"
+                }
+                replyMessage={data.text}
+                media={data.media}
+                reply={reply}
+                handleClose={handleReplyClose}
+
+                replyIndex={replyIndex}
+              />
+            ))}
         <View style={styles.container}>
           <View style={styles.inputContainer}>
             <DynamicTextInput
@@ -200,7 +190,6 @@ const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse,
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   containerHead: {
     backgroundColor: colors.primaryColors.lightSurface,
@@ -214,7 +203,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.space_base,
   },
   inputContainer: {
-    flex: 1,
+    flex: flex.one,
     marginRight: spacing.space_s0,
   },
   buttonContainer: {

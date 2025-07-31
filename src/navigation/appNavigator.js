@@ -1,5 +1,4 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Provider } from "react-redux";
 import store from "../store/store";
@@ -11,8 +10,7 @@ const AppNavigator = (props) => {
  
   return (
     <Provider store={store}>
-      <NavigationContainer independent={true} >
-        <Stack.Navigator>
+    <Stack.Navigator>
           <Stack.Screen
             name={"header"}
             component={ChatPage}
@@ -20,7 +18,6 @@ const AppNavigator = (props) => {
             initialParams={props.props}
           />
         </Stack.Navigator>
-      </NavigationContainer>
     </Provider>
   );
 };

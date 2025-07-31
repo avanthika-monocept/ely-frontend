@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
+import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 
 export const Reactions = ({
   options,
@@ -12,34 +13,40 @@ export const Reactions = ({
   platform,
   socket,
   token,
+  activity
 }) => {
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(activity || null);
 
   const handleSelect = (id) => {
-    setSelected(selected === id ? null : id);
-    onSelect?.(id, messageId);
+    const isSelected = selected === id;
+    const newSelected = isSelected ? null : id;
+    setSelected(newSelected);
+    onSelect?.(newSelected, messageId);
+    
     const message = {
-      action: "api/chatbot/message-proxy",
+      action: CHAT_MESSAGE_PROXY,
       token: token,
-      message:{
-      emoji: id === "like" ? "U+1F44D" : "U+1F44E",
-      sendType: "REACTION",
-      action: id === "like" ? "SELECTED" : "DESELECTED",
-      platform:platform,
-      messageId: messageId,
-      userId: agentId,
+
+      message: {
+        emoji: id === "like" ? "U+1F44D" : "U+1F44E",
+        sendType: "REACTION",
+        action: newSelected === id ? "SELECTED" : "DESELECTED",
+        platform: platform,
+        messageId: messageId,
+        userId: agentId,
       }
     };
-    console.log("reactionmessage", message);
+
     socket.send(JSON.stringify(message));
   };
+
 
   return (
     <View style={styles.container}>
       {options.map(({ id, svg }) => (
         <View
           key={id}
-          backgroundColor="#FFF"
+          backgroundColor={colors.primaryColors.white}
           borderRadius={borderRadius.borderRadius4}
         >
           <TouchableOpacity
@@ -48,7 +55,7 @@ export const Reactions = ({
             style={[
               styles.option,
               {
-                borderColor: selected === id ? "#0092DB" : "#E8EBF1",
+                borderColor: selected === id ? colors.primaryColors.borderBlue : colors.Extended_Palette.midnightBlue.mb100,
                 backgroundColor:
                   selected === id
                     ? `linear-gradient(
@@ -81,9 +88,10 @@ Reactions.propTypes = {
   onSelect: PropTypes.func,
   messageId: PropTypes.string,
   agentId: PropTypes.string,
-  socket: PropTypes.object.isRequired,
+  socket: PropTypes.object,
   token: PropTypes.string,
   platform: PropTypes.string,
+  activity: PropTypes.string,
 };
 
 const styles = StyleSheet.create({
@@ -92,7 +100,6 @@ const styles = StyleSheet.create({
     gap: 5,
     position: "absolute",
     right: spacing.space_10,
-    // backgroundColor: "#FFFFFF",
     borderRadius: borderRadius.borderRadius4,
   },
   option: {

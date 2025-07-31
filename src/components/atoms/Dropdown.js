@@ -23,12 +23,17 @@ import {
 import colors from "../../constants/Colors";
 import {
   borderRadius,
+  flex,
+  shadowOpacityElevation,
+  ShadowRadius,
+  size,
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import Clipboard from "@react-native-clipboard/clipboard";
+import { platformName } from "../../constants/StringConstants";
 
 
 
@@ -79,7 +84,7 @@ const Dropdown = ({
 const handleCopyURL = () => {
   const androidVersion = parseInt(Platform.Version, 10);
     Clipboard.setString(url);
-    if((androidVersion < 33 || Platform.OS === "ios")) {
+    if((androidVersion < 33 || Platform.OS === platformName.ios)) {
     setCopied(true);
     }
     setTimeout(() => setCopied(false), 1000);
@@ -262,21 +267,21 @@ const handleOpenURL = () => {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: colors.rgba.modalOverlayColor,
     justifyContent: "flex-end",
   },
   dropdown: {
-    width: "100%",
+    width: size.hundredPercent,
     backgroundColor: colors.primaryColors.white,
     borderTopLeftRadius: borderRadius.borderRadius10,
     borderTopRightRadius: borderRadius.borderRadius10,
     overflow: "hidden",
-    elevation: 5,
+    elevation: shadowOpacityElevation.elevation5,
     shadowColor: colors.primaryColors.black,
-    shadowOffset: { width: sizeWithoutScale.width0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.5,
+    shadowOffset: { width: sizeWithoutScale.width0, height: sizeWithoutScale.height2 },
+    shadowOpacity: shadowOpacityElevation.opacity0_25,
+    shadowRadius: ShadowRadius.shadowRadius3,
   },
   list: {
     padding: spacing.space_m2,
@@ -292,7 +297,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: spacing.space_10,
-      width: 24,
+    width: sizeWithoutScale.width24,
     alignItems: 'left',
   },
   label: {

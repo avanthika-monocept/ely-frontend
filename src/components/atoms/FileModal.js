@@ -16,15 +16,17 @@ import ShareSvg from "../../../assets/shareIcon.svg";
 import Group from "../../../assets/Group.svg";
 import Copy from "../../../assets/Copy.svg";
 import RNFetchBlob from "react-native-blob-util";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, flex, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
 import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
 import Share from "react-native-share";
 import { useDispatch } from "react-redux";
 import { startSharing, endSharing } from "../../store/reducers/shareLoader";
-
+import colors from "../../constants/Colors";
+import { platformName, share, stringConstants, labels } from "../../constants/StringConstants";
+import { isVideoFile, getFileExtension, getMimeType } from "../../common/utils";
 const FileModal = ({
   visible,
   onClose,
@@ -32,153 +34,92 @@ const FileModal = ({
   PdfModalChildren,
   handleReplyMessage,
   type,
-  // setTableModal,
   copyToClipboard,
   isMediaOpened,
-  isMultipleMedia,
   files,
   text,
 }) => {
   const dispatch = useDispatch();
-
-  FileModal.propTypes = {
-    visible: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    file: PropTypes.string.isRequired,
-    PdfModalChildren: PropTypes.func.isRequired,
-    handleReplyMessage: PropTypes.func.isRequired,
-    type: PropTypes.string.isRequired,
-    // setTableModal: PropTypes.func.isRequired,
-    copyToClipboard: PropTypes.func,
-    isMediaOpened: PropTypes.bool,
-    isMultipleMedia: PropTypes.bool,
-    files: PropTypes.arrayOf(PropTypes.string),
-    text: PropTypes.string,
-  };
-
-  // Video sharing function
   const shareVideo = async () => {
     try {
       const { config, fs } = RNFetchBlob;
       const date = new Date();
-
-      // Detect video file extension safely
       let file_ext = file.split(".").pop().split("?")[0].toLowerCase();
       const supportedVideoFormats = ["mp4", "mov", "avi", "mkv"];
-
       if (!supportedVideoFormats.includes(file_ext)) {
-        file_ext = "mp4"; // default to mp4 if extension not recognized
+        file_ext = "mp4";
       }
-
       let pathToShare = "";
-      const mimeTypes = {
-        mp4: "video/mp4",
-        mov: "video/quicktime",
-        avi: "video/x-msvideo",
-        mkv: "video/x-matroska",
-      };
-      const mimeType = mimeTypes[file_ext] || "video/mp4";
-
-      // Check if it's a remote URL
+      const mimeType = getMimeType(file_ext) || "video/mp4";
       if (file.startsWith("http://") || file.startsWith("https://")) {
         const fileName = `share_temp_${date.getTime()}.${file_ext}`;
         const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-
         // Remove existing file if needed
         if (await fs.exists(filePath)) {
           await fs.unlink(filePath);
         }
-
         // Download the video file
         const res = await config({
           fileCache: true,
           path: filePath,
         }).fetch("GET", file);
-
         pathToShare =
-          Platform.OS === "android" ? `file://${res.path()}` : res.path();
+          Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
       } else if (file.startsWith("file://")) {
         // It's already a local file
         pathToShare = file;
       } else {
-        throw new Error("Invalid video URI");
+        throw new Error(share.invalidUri);
       }
-
       await Share.open({
-        title: "Share Video",
-        message: isMediaOpened ?  undefined : text || undefined,
+        title: share.videoTitle,
+        message: isMediaOpened ? undefined : text || undefined,
         url: pathToShare,
         type: mimeType,
         filename: `shared_video.${file_ext}`,
         failOnCancel: false,
       });
     } catch (error) {
-      console.error("Video share error:", error);
-      Alert.alert("Error", "Failed to share video. " + (error?.message || ""));
+      Alert.alert(stringConstants.error, share.error + (error?.message || ""));
     }
   };
-
   const downloadVideo = async (comingfiles) => {
-    console.log("downloadVideo called");
-    console.log("videofiles", comingfiles);
     let files = [];
     if (comingfiles != undefined) {
       files = comingfiles;
     } else {
       files.push({ url: file });
     }
-    console.log("files", files);
     let date = new Date();
     for (const file of files) {
       const { url } = file;
       let FILE_URL = url;
-
-      const getFileExtension = (url) => {
-        const cleanUrl = url.split("?")[0];
-        return cleanUrl?.split(".").pop();
-      };
-
       let file_ext = getFileExtension(FILE_URL);
-
-      // Default to mp4 if extension is invalid or too long
       if (!file_ext || file_ext.length > 5) {
         file_ext = "mp4";
       }
-
-     
-      console.log("FILE_URL", FILE_URL);
-
-      if (Platform.OS === "ios") {
+      if (Platform.OS === platformName.ios) {
         const permission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
         if (permission !== RESULTS.GRANTED) {
           const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
           if (result !== RESULTS.GRANTED) {
-            console.warn("Permission denied");
             return;
           }
         }
-
         const { config, fs } = RNFetchBlob;
         const dir = fs.dirs.CacheDir;
         const videoPath = `${dir}/tempVideo.${file_ext}`;
-
         const res = await config({
           fileCache: true,
           path: videoPath,
           appendExt: file_ext,
         }).fetch("GET", FILE_URL);
-
-        console.log("Video downloaded to:", res.path());
-
-        await CameraRoll.save(res.path(), { type: "video" });
-        console.log("Video saved to Photos");
+        await CameraRoll.save(res.path(), { type: stringConstants.video });
       } else {
         const { config } = RNFetchBlob;
         let filePath = `/storage/emulated/0/Download/video_${Math.floor(
           date.getTime() + Math.random() * 1000
         )}.${file_ext}`;
-        console.log("filePath======", filePath);
-
         let options = {
           fileCache: true,
           addAndroidDownloads: {
@@ -190,16 +131,12 @@ const FileModal = ({
             mime: `video/${file_ext}`,
           },
         };
-
         try {
           const res = await config(options)
             .fetch("GET", FILE_URL)
             .progress((received, total) => {
               console.log("progress", received / total);
             });
-
-          console.log("android res -> ", res.path());
-
           // Force media scan for immediate gallery visibility
           await RNFetchBlob.fs.scanFile([
             {
@@ -211,34 +148,14 @@ const FileModal = ({
           console.error("Download failed:", error);
         }
       }
-
       onClose(false);
     }
   };
-  const getFileExtension = (url) => {
-    // Remove query parameters if they exist
-    const cleanUrl = url.split("?")[0];
-    // Get the last part after dot
-    const parts = cleanUrl.split(".");
-    if (parts.length > 1) {
-      return parts.pop().toLowerCase();
-    }
-    return null;
-  };
-  const isVideoFile = (url) => {
-    const ext = getFileExtension(url);
-    const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "3gp"];
-    return ext ? videoExtensions.includes(ext) : false;
-  };
-  
-
-
   const onShare = async () => {
     try {
       const { config, fs } = RNFetchBlob;
       const date = new Date();
-dispatch(startSharing());
-      // Detect file extension safely
+      dispatch(startSharing());
       let file_ext = file.split(".").pop().split("?")[0].toLowerCase();
       if (!["jpg", "jpeg", "png"].includes(file_ext)) {
         file_ext = "jpg";
@@ -252,52 +169,44 @@ dispatch(startSharing());
       if (file.startsWith("http://") || file.startsWith("https://")) {
         const fileName = `ely_${date.getTime()}.${file_ext}`;
         const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-
         // Remove existing file if needed
         if (await fs.exists(filePath)) {
           await fs.unlink(filePath);
         }
-
         // Download the file
         const res = await config({
           fileCache: true,
           path: filePath,
         }).fetch("GET", file);
-
         pathToShare =
-          Platform.OS === "android" ? `file://${res.path()}` : res.path();
+          Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
       } else if (file.startsWith("file://")) {
         // It's already a local file
         pathToShare = file;
       } else {
         throw new Error("Invalid file URI");
       }
-
       setTimeout(() => {
         Share.open({
-          title: "Share Image",
-          message: isMediaOpened ?  undefined : text || undefined,
+          title: share.imageTitle,
+          message: isMediaOpened ? undefined : text || undefined,
           url: pathToShare,
           type: "image/*",
           filename: `shared_image.${file_ext}`,
           failOnCancel: false,
         });
         dispatch(endSharing());
-        }, 500);
+      }, 500);
     } catch (error) {
-      console.error("Share error:", error);
-      Alert.alert("Error", "Failed to share file. " + (error?.message || ""));
+      Alert.alert(stringConstants.error, share.error + (error?.message || ""));
     } finally {
-    dispatch(endSharing());
-  }
-   
+      dispatch(endSharing());
+    }
   };
   const checkPermission = async (files) => {
-    console.log("checkPermission called");
     try {
       const isVideo = isVideoFile(file);
-
-      if (Platform.OS === "android") {
+      if (Platform.OS === platformName.android) {
         if (Platform.Version >= 33) {
           // Android 13+
           const granted = await PermissionsAndroid.request(
@@ -310,15 +219,12 @@ dispatch(startSharing());
               buttonPositive: "OK",
             }
           );
-
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("Permission granted");
             if (isVideo) {
               return downloadVideo(files);
             }
             return downloadFile(files);
           } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-            console.warn("Permission set to never ask again");
             Linking.openSettings(); // Open app settings for manual permission
           } else {
             console.warn("Permission denied");
@@ -335,12 +241,9 @@ dispatch(startSharing());
               buttonPositive: "OK",
             }
           );
-
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("Permission granted");
             downloadFile(files);
           } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-            console.warn("Permission set to never ask again");
             Linking.openSettings();
           } else {
             console.warn("Permission denied");
@@ -354,58 +257,40 @@ dispatch(startSharing());
       console.error("Permission check failed:", err);
     }
   };
-
- 
-
   const downloadFile = async (comingfiles) => {
-    console.log("downloadFile called");
-    console.log("filesfiles", comingfiles);
     let files = [];
     if (comingfiles != undefined) {
       files = comingfiles;
     } else {
       files.push({ url: file });
     }
-    console.log("files", files);
     let date = new Date();
     for (const file of files) {
       const { url } = file;
       let FILE_URL = url;
-
-  
-      console.log("FILE_URL", FILE_URL);
-      if (Platform.OS === "ios") {
+      if (Platform.OS === platformName.ios) {
         const permission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
         if (permission !== RESULTS.GRANTED) {
           const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
           if (result !== RESULTS.GRANTED) {
-            console.warn("Permission denied");
             return;
           }
         }
-
         const { config, fs } = RNFetchBlob;
         const dir = fs.dirs.CacheDir;
         const imagePath = `${dir}/tempImage.png`;
-
         const res = await config({
           fileCache: true,
           path: imagePath,
           appendExt: "png",
         }).fetch("GET", FILE_URL);
-
-        console.log("Image downloaded to:", res.path());
-
         await CameraRoll.save(res.path(), { type: "photo" });
-        console.log("Image saved to Photos");
       } else {
-        const { config} = RNFetchBlob;
+        const { config } = RNFetchBlob;
         const ext = "jpg";
         let filePath = `/storage/emulated/0/Download/image_${Math.floor(
           date.getTime()
         )}.${ext}`;
-        console.log("filePath======", filePath);
-
         let options = {
           fileCache: true,
           addAndroidDownloads: {
@@ -415,7 +300,6 @@ dispatch(startSharing());
             useDownloadManager: true,
           },
         };
-
         config(options)
           .fetch("GET", FILE_URL)
           .progress((received, total) => {
@@ -423,13 +307,8 @@ dispatch(startSharing());
           })
           .then((res) => {
             console.log("android res -> ", res.path());
-          
-            
-
-            // android.actionViewIntent(res.path(), mimeType);
           });
       }
-
       onClose(false);
     }
   };
@@ -439,134 +318,121 @@ dispatch(startSharing());
       const { config, fs } = RNFetchBlob;
       const date = new Date();
       const pathsToShare = [];
-
       for (const file of files) {
         const { type, url } = file;
-
         // Detect file extension
         let file_ext = url.split(".").pop().split("?")[0].toLowerCase();
         if (!["jpg", "jpeg", "png", "mp4", "mkv"].includes(file_ext)) {
           file_ext = "jpg"; // Default to jpg for unknown types
         }
-
-        const isVideo = type === "video";
-        let mimeType = isVideo
-          ? "video/mp4"
-          : file_ext === "png"
-            ? "image/png"
-            : "image/jpeg";
+        const isVideo = type === stringConstants.video || isVideoFile(url);
+        let mimeType = getMimeType(file_ext) || (isVideo ? "video/mp4" : "image/jpeg");
         let pathToShare = "";
-
         // Check if it's a remote URL
         if (url.startsWith("http://") || url.startsWith("https://")) {
           const fileName = `ely_${date.getTime()}_${Math.random().toString(36).substring(7)}.${file_ext}`;
           const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-
           // Remove existing file if needed
           if (await fs.exists(filePath)) {
             await fs.unlink(filePath);
           }
-
           // Download the file
           const res = await config({
             fileCache: true,
             path: filePath,
           }).fetch("GET", url);
-
           pathToShare =
-            Platform.OS === "android" ? `file://${res.path()}` : res.path();
+            Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
         } else if (url.startsWith("file://")) {
           // It's already a local file
           pathToShare = url;
         } else {
-          throw new Error("Invalid file URI");
+          throw new Error(share.invalidUri);
         }
-
         pathsToShare.push({
           url: pathToShare,
           type: mimeType,
         });
       }
-
       setTimeout(() => {
         Share.open({
-          title: "Share Media",
-          message: isMediaOpened ?  undefined : text || undefined,
+          title: share.title,
+          message: isMediaOpened ? undefined : text || undefined,
           urls: pathsToShare.map((item) => item.url),
-          type: pathsToShare.length === 1 ? pathsToShare[0].type : undefined, // Use undefined for mixed types
+          type: pathsToShare.length === 1 ? pathsToShare[0].type : undefined,
           failOnCancel: false,
         });
         dispatch(endSharing());
-      }, 500); // 500ms delay
+      }, 500);
     } catch (error) {
-      console.error("Share error:", error);
-      Alert.alert("Error", "Failed to share files. " + (error?.message || ""));
+      Alert.alert(stringConstants.error, share.error + (error?.message || ""));
     }
-     finally {
-    dispatch(endSharing());
-  }
+    finally {
+      dispatch(endSharing());
+    }
   };
-
-const documentMenuItems = [
+  const handleDownload = (files) => {
+    if (isMediaOpened) {
+      if (Platform.OS === platformName.ios) {
+        onShare();
+      } else {
+        checkPermission();
+      }
+    } else {
+      if (Platform.OS === platformName.ios) {
+        onShareMultipleFiles(files);
+      } else {
+        checkPermission(files);
+      }
+    }
+    onClose();
+  };
+  const handleShare = () => {
+    if (isMediaOpened) {
+      onShare();
+    } else {
+      onShareMultipleFiles(files);
+    }
+    onClose();
+  };
+  const handleReply = () => {
+    handleReplyMessage();
+    onClose(false);
+  }
+  const documentMenuItems = [
     {
-      type: "docWithText",
-      label: "Preview",
+ 
+      label: labels.preview,
       icon: <Group />,
       action: () => PdfModalChildren(true),
     },
     {
-      type: "text",
-      label: "Reply-to",
+     
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
-        handleReplyMessage();
-        onClose(false);
+        handleReply();
       },
     },
     {
-      type: "docWithText",
-      label: "Download",
+  
+      label: labels.download,
       icon: <Download />,
       action: () => {
-        if (isMediaOpened) {
-          if (Platform.OS === "ios") {
-            onShare();
-            onClose();
-          } else {
-            checkPermission();
-            onClose();
-          }
-        } else {
-          if (Platform.OS === "ios") {
-            onShareMultipleFiles(files);
-            onClose();
-          } else {
-            checkPermission(files);
-            onClose();
-          }
-        }
+        handleDownload(files);
       },
     },
     {
-      type: "docWithText",
-      label: "Share",
+    
+      label: labels.share,
       icon: <ShareSvg />,
       action: () => onShare(),
     },
   ];
   const imgWithTextMenuItems = [
-    // {
-    //   type: "imgWithText",
-    //   label: "Open",
-    //   icon: <Group />,
-    //   action: () => {
-    //     setTableModal(true);
-    //     onClose(false);
-    //   },
-    // },
     {
-      type: "imageWithText",
-      label: "Copy Text",
+    
+      label: labels.copyText,
       icon: <Copy />,
       action: () => {
         copyToClipboard();
@@ -574,137 +440,63 @@ const documentMenuItems = [
       },
     },
     {
-      type: "text",
-      label: "Reply-to",
+     
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
-        handleReplyMessage();
-        onClose();
+        handleReply();
       },
     },
     {
-      type: "imgWithText",
-      label: "Download",
+      
+      label: labels.download,
       icon: <Download />,
       action: () => {
-        if (isMediaOpened) {
-          if (Platform.OS === "ios") {
-            onShare();
-            onClose();
-          } else {
-            checkPermission();
-            onClose();
-          }
-        } else {
-          if (Platform.OS === "ios") {
-            onShareMultipleFiles(files);
-            onClose();
-          } else {
-            checkPermission(files);
-            onClose();
-          }
-        }
+        handleDownload(files);
       },
     },
     {
-      type: "imgWithText",
-      label: "Share",
-      icon: <ShareSvg/>,
-      action: () => {
-        if (isMediaOpened) {
-          onShare();
-        } else {
-          onShareMultipleFiles(files);
-        }
-
-        onClose();
-      },
-    },
-  ];
-  const imgMenuItems = [
-    // ...(!isMediaOpened
-    //   ? [
-    //       {
-    //         type: "imgWithText",
-    //         label: "Open",
-    //         icon: <Group />,
-    //         action: () => {
-    //           setTableModal(true);
-    //           onClose(false);
-    //         },
-    //       },
-    //     ]
-    //   : []),
-
-    {
-      type: "text",
-      label: "Reply-to",
-      icon: <Vector />,
-      action: () => {
-        handleReplyMessage();
-        onClose();
-      },
-    },
-    {
-      type: "imgWithText",
-      label: "Download",
-      icon: <Download />,
-      action: () => {
-        if (isMediaOpened) {
-          if (Platform.OS === "ios") {
-            onShare();
-            onClose();
-          } else {
-            checkPermission();
-            onClose();
-          }
-        } else {
-          if (Platform.OS === "ios") {
-            onShareMultipleFiles(files);
-            onClose();
-          } else {
-            checkPermission(files);
-            onClose();
-          }
-        }
-      },
-    },
-    {
-      type: "imgWithText",
-      label: "Share",
+    
+      label: labels.share,
       icon: <ShareSvg />,
       action: () => {
-        if (isMediaOpened) {
-          onShare();
-        } else {
-          onShareMultipleFiles(files);
-        }
-        onClose();
+        handleShare();
       },
-    },
+    }
   ];
-  const tableMenuItems = [
-    // {
-    //   type: "imageWithText",
-    //   label: "Open",
-    //   icon: <Group />,
-    //   action: () => {
-    //     setTableModal(true);
-    //     onClose(false);
-    //   },
-    // },
+  const imgMenuItems = [
     {
-      type: "text",
-      label: "Reply-to",
+     label: labels.reply,
       icon: <Vector />,
       action: () => {
-        handleReplyMessage();
-        onClose(false);
+        handleReply();
       },
     },
     {
-      type: "imageWithText",
-      label: "Share",
+     label: labels.download,
+      icon: <Download />,
+      action: () => {
+        handleDownload(files);
+      },
+    },
+    {
+     label: labels.share,
+      icon: <ShareSvg />,
+      action: () => {
+        handleShare();
+      },
+    }
+  ];
+  const tableMenuItems = [
+    {
+      label: labels.reply,
+      icon: <Vector />,
+      action: () => {
+        handleReply();
+      },
+    },
+    {
+      label: labels.share,
       icon: <ShareSvg />,
       action: () => {
         onShare();
@@ -712,20 +504,9 @@ const documentMenuItems = [
       },
     },
   ];
-
   const tableTextMenuItems = [
-    // {
-    //   type: "imageWithText",
-    //   label: "Open",
-    //   icon: <Group />,
-    //   action: () => {
-    //     setTableModal(true);
-    //     onClose(false);
-    //   },
-    // },
     {
-      type: "imageWithText",
-      label: "Copy Text",
+     label: labels.copyText,
       icon: <Copy />,
       action: () => {
         copyToClipboard();
@@ -733,39 +514,32 @@ const documentMenuItems = [
       },
     },
     {
-      type: "text",
-      label: "Reply-to",
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
-        handleReplyMessage();
-        onClose(false);
+        handleReply();
       },
     },
     {
-      type: "imageWithText",
-      label: "Share",
+      label: labels.share,
       icon: <ShareSvg />,
       action: () => {
         onShare(); onClose();
       },
     },
   ];
-
-let menuItems;
-
-if (type === "tableWithText") {
-  menuItems = tableTextMenuItems;
-} else if (type === "table") {
-  menuItems = tableMenuItems;
-} else if (type === "imageWithText" || type === "videoWithText") {
-  menuItems = imgWithTextMenuItems;
-} else if (type === "image" || type === "video") {
-  menuItems = imgMenuItems;
-} else {
-  menuItems = documentMenuItems;
-}
-
-  
+  let menuItems;
+  if (type === stringConstants.tableWithText) {
+    menuItems = tableTextMenuItems;
+  } else if (type === stringConstants.table) {
+    menuItems = tableMenuItems;
+  } else if (type === stringConstants.imageWithText || type === stringConstants.videoWithText) {
+    menuItems = imgWithTextMenuItems;
+  } else if (type === stringConstants.image || type === stringConstants.video) {
+    menuItems = imgMenuItems;
+  } else {
+    menuItems = documentMenuItems;
+  }
   return (
     <Modal
       isVisible={visible}
@@ -785,7 +559,7 @@ if (type === "tableWithText") {
               key={index}
               style={[
                 styles.listItem,
-                { paddingBottom: menuItems.length == index + 1 ? 0 : 24 },
+                { paddingBottom: menuItems.length == index + 1 ? spacing.space_s0 : spacing.space_m4 },
               ]}
               onPress={item.action}
             >
@@ -798,21 +572,32 @@ if (type === "tableWithText") {
     </Modal>
   );
 };
-
+FileModal.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  file: PropTypes.string,
+  PdfModalChildren: PropTypes.func,
+  handleReplyMessage: PropTypes.func.isRequired,
+  type: PropTypes.string.isRequired,
+  copyToClipboard: PropTypes.func,
+  isMediaOpened: PropTypes.bool,
+  files: PropTypes.arrayOf(PropTypes.string),
+  text: PropTypes.string,
+};
 const styles = StyleSheet.create({
   modal: {
     justifyContent: "flex-end",
     margin: spacing.space_s0,
   },
   iconContainer: {
-    width: 24,
-    height: 24,
+    width: sizeWithoutScale.width24,
+    height: sizeWithoutScale.height24,
     marginRight: spacing.space_m4,
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: colors.primaryColors.white,
     padding: spacing.space_m4,
     borderTopLeftRadius: borderRadius.borderRadius10,
     borderTopRightRadius: borderRadius.borderRadius10,
@@ -824,11 +609,10 @@ const styles = StyleSheet.create({
   },
   label: {
     ...fontStyle.bodyMedium,
-    flex: 1,
-    marginVertical: 0,
+    flex: flex.one,
+    marginVertical: spacing.space_s0,
     includeFontPadding: false,
     textAlignVertical: "center",
   },
 });
-
 export default FileModal;

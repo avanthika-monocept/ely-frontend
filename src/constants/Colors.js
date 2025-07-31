@@ -17,6 +17,8 @@ const colors = {
     red: "#ff0000",
     lightSurface: "#F4F6FA",
     borderTop: "#e0e0e0",
+    skyBlue: "#CDEAF8",
+    surface:"#97144D",
   },
   secondaryColors: {
     summerSky: "#3597EC",
@@ -25,6 +27,7 @@ const colors = {
     cyberYellow: "#ffd639",
     punch: "#D93025",
     midnightBlue: "#143172",
+   
   },
   darkNeutrals: {
     n900: "#252931",
@@ -38,6 +41,7 @@ const colors = {
     n400: "#737881",
     n300: "#858991",
     n200: "#969AA1",
+    n100:"#E4E8F0",
   },
   lightNeutrals: {
     n100: "#A8ABB1",
@@ -51,7 +55,9 @@ const colors = {
   textShadowColor: {
     smartNudge: "rgba(0, 0, 0, 0.12)",
   },
-
+ loaderBackground: {
+  loaderBackgroundDark:"rgba(181, 178, 178, 0.5)",
+ },
   gradient: {
     primary: {
       jaffa: ["#D44300", "#F27930"],

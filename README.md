@@ -36,6 +36,7 @@ npm install amlielychatbot
 "react-native-view-shot": "^4.0.3",
 "react-native-webview": "^13.13.5",
 "react-native-blob-util": "^0.21.2",
+"react-native-popover-view": "^6.1.0",
 ```
 
 ## ⚙️ Android Configuration

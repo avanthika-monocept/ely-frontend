@@ -20,12 +20,13 @@ import Video from "react-native-video";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ImageViewer from "react-native-image-zoom-viewer";
 import colors from "../../constants/Colors";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, spacing, flex } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import FileModal from "./FileModal";
 import RNFetchBlob from "react-native-blob-util";
 import VideoLoader from "./VideoLoader";
+import { platformName } from "../../constants/StringConstants";
 
 
 const screenWidth = Dimensions.get("window").width;
@@ -240,7 +241,7 @@ const MediaMessageView = ({
 
   const downloadMedia = async (mediaUrl, isVideo = false) => {
     try {
-      if (Platform.OS === "android") {
+      if (Platform.OS === platformName.android) {
         const permissionToRequest =
           Platform.Version >= 33
             ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
@@ -281,7 +282,7 @@ const MediaMessageView = ({
         return proceedWithDownload(mediaUrl, isVideo);
       }
     } catch (err) {
-      console.log("Permission or download error:", err);
+    
       Alert.alert("Error", "Something went wrong while downloading.");
     }
   };
@@ -311,7 +312,7 @@ const MediaMessageView = ({
         Alert.alert("Download Success", `Saved to ${res.path()}`);
       })
       .catch((error) => {
-        console.log("Download error:", error);
+       
         Alert.alert(
           "Download Failed",
           "Something went wrong while downloading"
@@ -815,7 +816,7 @@ const styles = StyleSheet.create({
     ...fontStyle.bodyBold0,
   },
   modalContainer: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: "rgba(0, 0, 0, 0.95)",
   },
   modalHeader: {
@@ -824,12 +825,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 70 : StatusBar.currentHeight + 10,
+    paddingTop: Platform.OS === platformName.ios ? 70 : StatusBar.currentHeight + 10,
     paddingBottom: 10,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   singleMediaContainer: {
-    flex: 1,
+    flex: flex.one,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "black",
@@ -852,7 +853,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius5_5,
   },
   videoPlayerContainer: {
-    flex: 1,
+    flex: flex.one,
     width: "100%",
     justifyContent: "center",
     backgroundColor: "black",

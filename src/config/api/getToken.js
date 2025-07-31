@@ -19,7 +19,7 @@ export const getCognitoToken = async () => {
       },
       data: 'grant_type=client_credentials&scope=admin/write%20admin/read'
     });
-console.log('Cognito token response:', response);
+
     return response;
   } catch (error) {
     console.error('Failed to get Cognito token:', error);

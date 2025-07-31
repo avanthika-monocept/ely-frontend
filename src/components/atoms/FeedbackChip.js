@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import {borderRadius,spacing,} from "../../constants/Dimensions";
+import {borderRadius,spacing,size} from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-
 export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiResponse }) => {
   FeedbackChip.propTypes = {
     options: PropTypes.array.isRequired,
@@ -39,13 +38,12 @@ export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiR
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   feedbackChipContainer: {
     flexDirection: "column", 
     justifyContent: "center",
     alignItems: "center", 
-    width: "100%", 
+    width: size.hundredPercent, 
     marginVertical: spacing.space_s2,
   },
   feedbackButton: {
@@ -53,14 +51,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius2,
     paddingVertical: spacing.space_s3,
     paddingHorizontal: spacing.space_m1,
-    alignSelf: "stretch", // Make the button take full width
+    alignSelf: "stretch",
     marginVertical: spacing.space_s2,
-
   },
   buttonText: {
     color: colors.primaryColors.black,
-    textAlign: "center", // Ensure text is centered
+    textAlign: "center", 
     ...fontStyle.bodyMedium,
   },
 });
-

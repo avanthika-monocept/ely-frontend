@@ -6,7 +6,7 @@ import FileModal from "./FileModal";
 import colors from "../../constants/Colors";
 import Modal from "react-native-modal";
 import { WebView } from "react-native-webview";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 const DocumentFile = (props) => {
@@ -25,7 +25,7 @@ const DocumentFile = (props) => {
           setIsOpen(false);
           setPdfModal(e);
         }}
-        file={
+        file={ 
           "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         }
         handleReplyMessage={props.handleReplyMessage}
@@ -43,7 +43,7 @@ const DocumentFile = (props) => {
           <Icon
             testID="ellipsis-icon"
             name="arrow-back"
-            size={22}
+            size={sizeWithoutScale.height22}
             color={colors.darkNeutrals.n700}
             onPress={() => setPdfModal(false)}
           />
@@ -55,7 +55,7 @@ const DocumentFile = (props) => {
           source={{
             uri: "https://monocepthyd-my.sharepoint.com/:x:/g/personal/schauhan_monocept_com/EcjclXOPrlJCmMMbVJHNGMkB0V9c9-ugNcGiToQNA64cwg?e=HuUVvu",
           }}
-          style={{ flex: 1, backgroundColor: "#E4E8F0" }}
+          style={{ flex: 1, backgroundColor: colors.midNeutrals.n100 }}
         />
         {/* <Pdf
           trustAllCerts={false}
@@ -103,6 +103,7 @@ const DocumentFile = (props) => {
             />
           </View>
         </View>
+      
         {/* {props.incomingFile.document.length > 0 ? (
           <View style={styles.container}>
             <View style={{ flexDirection: "row" }}>
@@ -151,7 +152,6 @@ const DocumentFile = (props) => {
     </>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -163,14 +163,13 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius4,
   },
   modalView: {
-    backgroundColor: "#E4E8F0",
+    backgroundColor: colors.midNeutrals.n100,
     paddingTop: spacing.space_m3,
     paddingBottom: spacing.space_m1,
     paddingHorizontal: spacing.space_m4,
     flexDirection: "row",
     alignItems: "center",
   },
-
   fileNameText: {
     color: colors.primaryColors.woodSmoke,
     ...fontStyle.bodyMediumMedium,
@@ -188,5 +187,4 @@ const styles = StyleSheet.create({
     ...fontStyle.bodyMedium,
   },
 });
-
 export default DocumentFile;

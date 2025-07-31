@@ -10,8 +10,8 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import {LinearGradient} from "react-native-linear-gradient";
-import {stringConstants } from "../../constants/StringConstants";
-import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
+import {platformName, stringConstants } from "../../constants/StringConstants";
+import { borderRadius, borderWidth, spacing, size, flex } from "../../constants/Dimensions";
 import {SuggestionList} from "./SuggestionList";
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
@@ -28,8 +28,8 @@ export const LandingPage = ({
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" && "padding"}
+        style={{ flex: flex.one }}
+        behavior={Platform.OS === platformName.ios && "padding"}
         keyboardVerticalOffset={100}
       >
         <LinearGradient
@@ -88,20 +88,20 @@ export const LandingPage = ({
 LandingPage.propTypes = {
   setnavigationPage: PropTypes.func.isRequired,
   reconfigApiResponse: PropTypes.object.isRequired,
-  socket: PropTypes.object.isRequired,
+  socket: PropTypes.object,
   startResponseTimeout: PropTypes.func,
   token: PropTypes.string,
 };
  
 const styles = StyleSheet.create({
   chatBodyContainer: {
-    flex: 1,
-    width: "100%",
+    flex: flex.one,
+    width: size.hundredPercent,
   },
   scrollContent: {
-    flexGrow: 1,
+    flexGrow: flex.one,
     justifyContent: "space-between",
-    paddingTop: "50%",
+    paddingTop: size.fiftyPercent,
   },
   textContainer: {
     alignSelf: "center",
