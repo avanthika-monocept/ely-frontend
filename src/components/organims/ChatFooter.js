@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addMessage } from "../../store/reducers/chatSlice";
 import { hideLoader } from "../../store/reducers/loaderSlice";
 import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
-import { borderWidth, spacing } from "../../constants/Dimensions";
+import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
@@ -55,7 +55,7 @@ export const ChatFooter = ({
     copyToClipboard: PropTypes.func,
     onInputHeightChange: PropTypes.func.isRequired,
     scrollToDown: PropTypes.func,
-    inactivityTimer: PropTypes.object,
+    inactivityTimer: PropTypes.number,
     setInactivityTimer: PropTypes.func,
     replyIndex: PropTypes.number,
     setCopied: PropTypes.func,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.space_base,
   },
   inputContainer: {
-    flex: 1,
+    flex: flex.one,
     marginRight: spacing.space_s0,
   },
   buttonContainer: {

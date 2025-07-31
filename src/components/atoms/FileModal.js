@@ -16,7 +16,7 @@ import ShareSvg from "../../../assets/shareIcon.svg";
 import Group from "../../../assets/Group.svg";
 import Copy from "../../../assets/Copy.svg";
 import RNFetchBlob from "react-native-blob-util";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, flex, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
@@ -823,7 +823,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...fontStyle.bodyMedium,
-    flex: 1,
+    flex: flex.one,
     marginVertical: 0,
     includeFontPadding: false,
     textAlignVertical: "center",

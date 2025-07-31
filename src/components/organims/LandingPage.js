@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import {LinearGradient} from "react-native-linear-gradient";
 import {stringConstants } from "../../constants/StringConstants";
-import { borderRadius, borderWidth, spacing, size } from "../../constants/Dimensions";
+import { borderRadius, borderWidth, spacing, size, flex } from "../../constants/Dimensions";
 import {SuggestionList} from "./SuggestionList";
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
@@ -28,7 +28,7 @@ export const LandingPage = ({
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: flex.one }}
         behavior={Platform.OS === "ios" && "padding"}
         keyboardVerticalOffset={100}
       >
@@ -95,11 +95,11 @@ LandingPage.propTypes = {
  
 const styles = StyleSheet.create({
   chatBodyContainer: {
-    flex: 1,
+    flex: flex.one,
     width: size.hundredPercent,
   },
   scrollContent: {
-    flexGrow: 1,
+    flexGrow: flex.one,
     justifyContent: "space-between",
     paddingTop: size.fiftyPercent,
   },

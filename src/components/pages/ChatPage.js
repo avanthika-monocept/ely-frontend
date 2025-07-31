@@ -22,7 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
-import { size, spacing } from "../../constants/Dimensions";
+import { flex, size, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
 import { platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
@@ -352,7 +352,7 @@ export const ChatPage = () => {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : undefined}
-          style={{ flex: 1 }}
+          style={{ flex: flex.one }}
         >
           <View style={styles.content}>
             {!isInitializing && navigationPage === stringConstants.coach && (
@@ -443,11 +443,11 @@ export const ChatPage = () => {
 };
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: colors.primaryColors.white,
   },
   content: {
-    flex: 1,
+    flex: flex.one,
   },
   fabIcon: {
     position: "absolute",

@@ -23,6 +23,7 @@ import {
 import colors from "../../constants/Colors";
 import {
   borderRadius,
+  flex,
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
@@ -262,7 +263,7 @@ const handleOpenURL = () => {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: colors.rgba.modalOverlayColor,
     justifyContent: "flex-end",
   },

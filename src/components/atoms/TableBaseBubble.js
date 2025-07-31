@@ -334,7 +334,7 @@ TableBaseBubble.propTypes = {
   setIsOpen: PropTypes.func,
   handleReplyMessage: PropTypes.func,
   setMessageObjectId: PropTypes.func,
-  messageId: PropTypes.number,
+  messageId: PropTypes.string,
   setType: PropTypes.func,
   type: PropTypes.string,
   copyToClipboard: PropTypes.func,

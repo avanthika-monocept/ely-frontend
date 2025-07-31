@@ -186,6 +186,10 @@ export const size = {
   width_130: 130,
   width_167: 167,
   /** Scale */
+  width_2: scale(2),
+  width_8: scale(8),
+  width_30: scale(30),
+  width_32: scale(32),
   width_80: scale(80),
   width_140: scale(140),
   width_170: scale(170),
@@ -230,6 +234,9 @@ export const size = {
   height213: verticalScale(213),
   height606: verticalScale(606),
   height640: verticalScale(640),
+  height_8: scale(8),
+  height_32:scale(32),
+  height_30: scale(30),
 
   height_42: 42,
   height52: 52,

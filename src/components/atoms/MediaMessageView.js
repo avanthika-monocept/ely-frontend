@@ -20,7 +20,7 @@ import Video from "react-native-video";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ImageViewer from "react-native-image-zoom-viewer";
 import colors from "../../constants/Colors";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, spacing, flex } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import FileModal from "./FileModal";
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     ...fontStyle.bodyBold0,
   },
   modalContainer: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: "rgba(0, 0, 0, 0.95)",
   },
   modalHeader: {
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   singleMediaContainer: {
-    flex: 1,
+    flex: flex.one,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "black",
@@ -852,7 +852,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius5_5,
   },
   videoPlayerContainer: {
-    flex: 1,
+    flex: flex.one,
     width: "100%",
     justifyContent: "center",
     backgroundColor: "black",
