@@ -9,9 +9,7 @@ const Avatar = ({ botName }) => {
   Avatar.propTypes = {
     botName: PropTypes.string,
   };
-
   const onlineStatus = true;
-
   return (
     <View style={styles.avatarContainer}>
       <View style={styles.avatarWrapper}>
@@ -35,9 +33,7 @@ const Avatar = ({ botName }) => {
     </View>
   );
 };
-
 export default Avatar;
-
 const styles = StyleSheet.create({
   avatarContainer: {
     flexDirection: "row",
