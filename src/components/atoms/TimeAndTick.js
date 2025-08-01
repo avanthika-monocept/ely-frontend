@@ -6,7 +6,6 @@ import DoubleTickDelivered from "../../../assets/doubleTickSent.svg";
 import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
-
 export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
   const getTickIcon = () => {
     switch (status) {
@@ -20,7 +19,6 @@ export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
         return <SingleTick  testID="single-tick" />;
     }
   };
-
   return (
     <View style={[styles.timeAndTickContainer, isImageOnly && styles.imageOnlyContainer]}>
       <Text style={[styles.time, isImageOnly && styles.imageOnlyTime]}>{time}</Text>
@@ -30,14 +28,12 @@ export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
     </View>
   );
 };
-
 TimeAndTick.propTypes = {
   time: PropTypes.string.isRequired,
   status: PropTypes.string,
   isBot: PropTypes.bool.isRequired,
   isImageOnly: PropTypes.bool,
 };
-
 const styles = StyleSheet.create({
   timeAndTickContainer: {
     flexDirection: "row",

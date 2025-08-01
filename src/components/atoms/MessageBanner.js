@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
 import { spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
-
 const MessageBanner = ({ text = "info", icon }) => {
   return (
     <View style={styles.container}>
@@ -15,12 +14,10 @@ const MessageBanner = ({ text = "info", icon }) => {
     </View>
   );
 };
-
 MessageBanner.propTypes = {
   text: PropTypes.string.isRequired,
   icon: PropTypes.element, // An SVG or JSX element
 };
-
 const styles = StyleSheet.create({
   container: {
     padding: spacing.space_s2,
@@ -43,5 +40,4 @@ const styles = StyleSheet.create({
     color: colors.primaryColors.black, // Text color
   },
 });
-
 export default MessageBanner;

@@ -4,7 +4,6 @@ import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
-
 export const Reactions = ({
   options,
   onSelect,
@@ -16,7 +15,6 @@ export const Reactions = ({
   activity
 }) => {
   const [selected, setSelected] = useState(activity || null);
-
   const handleSelect = (id) => {
     const isSelected = selected === id;
     const newSelected = isSelected ? null : id;
@@ -26,7 +24,6 @@ export const Reactions = ({
     const message = {
       action: CHAT_MESSAGE_PROXY,
       token: token,
-
       message: {
         emoji: id === "like" ? "U+1F44D" : "U+1F44E",
         sendType: "REACTION",
@@ -36,10 +33,8 @@ export const Reactions = ({
         userId: agentId,
       }
     };
-
     socket.send(JSON.stringify(message));
   };
-
 
   return (
     <View style={styles.container}>
@@ -77,7 +72,6 @@ export const Reactions = ({
     </View>
   );
 };
-
 Reactions.propTypes = {
   options: PropTypes.arrayOf(
     PropTypes.shape({
@@ -93,7 +87,6 @@ Reactions.propTypes = {
   platform: PropTypes.string,
   activity: PropTypes.string,
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

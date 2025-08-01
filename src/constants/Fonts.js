@@ -20,6 +20,9 @@ export const fontType = {
   notoThin: "NotoSans-Thin",
   notoThinItalic: "NotoSans-ThinItalic",
   loto: 'Lato sans-serif',
+  monospace: 'monospace',
+  Courier:"Courier",
+  italic:"italic"
 };
 
 export const fontSize = {
@@ -42,7 +45,7 @@ export const fontSize = {
   font18: RFValue(18, standardScreenHeight),
 };
 
-const fontWeight = {
+export const fontWeight = {
   weight400: "400",
   weight500: "500",
   weight600: "600",

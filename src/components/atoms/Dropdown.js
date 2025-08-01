@@ -33,7 +33,7 @@ import {
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import Clipboard from "@react-native-clipboard/clipboard";
-import { platformName } from "../../constants/StringConstants";
+import { platformName, labels, stringConstants } from "../../constants/StringConstants";
 
 
 
@@ -96,19 +96,19 @@ const handleOpenURL = () => {
   const menuItems = [
     {
       type: "imageWithText",
-      label: "Open",
+      label: labels.open,
       icon: <Group />,
       action: handleClose,
     },
     {
       type: "imageWithText",
-      label: "Preview",
+      label: labels.preview,
       icon: <Group />,
       action: handleClose,
     },
      {
       type: "url",
-      label: "Open URL",
+      label: labels.openUrl,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -117,7 +117,7 @@ const handleOpenURL = () => {
     },
       {
       type: "url",
-      label: "Copy URL",
+      label: labels.copyUrl,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -126,7 +126,7 @@ const handleOpenURL = () => {
     },
       {
       type: "email",
-      label: "Open Email",
+      label: labels.openEmail,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -135,7 +135,7 @@ const handleOpenURL = () => {
     },
       {
       type: "email",
-      label: "Copy Email",
+      label: labels.copyEmail,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -144,7 +144,7 @@ const handleOpenURL = () => {
     },
      {
       type: "phone",
-      label: "Call Number",
+      label: labels.callNumber,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -153,7 +153,7 @@ const handleOpenURL = () => {
     },
       {
       type: "phone",
-      label: "Copy Number",
+      label: labels.copyNumber,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -161,8 +161,8 @@ const handleOpenURL = () => {
       },
     },
     {
-      type: "text",
-      label: "Copy Text",
+      type: stringConstants.text,
+      label: labels.copyText,
       icon: <Copy />,
       action: () => {
         copyToClipboard();
@@ -170,8 +170,8 @@ const handleOpenURL = () => {
       },
     },
     {
-      type: "text",
-      label: "Reply-to",
+      type: stringConstants.text,
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
         handleReplyMessage();
@@ -180,13 +180,13 @@ const handleOpenURL = () => {
     },
     {
       type: "imageWithText",
-      label: "Download",
+      label: labels.download,
       icon: <Download />,
       action: handleClose,
     },
     {
       type: "imageWithText",
-      label: "Share",
+      label: labels.share,
       icon: <Upload />,
       action: handleClose,
     },

@@ -4,9 +4,6 @@ import { borderRadius,sizeWithoutScale, spacing } from "../../constants/Dimensio
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
 import { loaderConfig } from "../../constants/StringConstants";
-
-
-
 export const Loader = () => {
   const messages = loaderConfig.messages;
   const [step, setStep] = useState(0);
@@ -42,24 +39,19 @@ useEffect(() => {
           }),
         ]);
       });
-
       Animated.loop(Animated.stagger(loaderConfig.dotAnimationDelay, animations)).start();
     };
-
     createWaveAnimation();
-
     return () => {
       dots.forEach((dot) => dot.stopAnimation());
     };
   }, []);
-
   const renderDots = () => {
     return dots.map((dot, index) => {
       const translateY = dot.interpolate({
         inputRange: [0, 1],
         outputRange: [0, -6], 
       });
-
       return (
         <Animated.View
           key={index}
@@ -76,7 +68,6 @@ useEffect(() => {
       );
     });
   };
-
   return (
     <View style={styles.loaderContainer} testID="loader-container">
       <View style={styles.dotsContainer}>{renderDots()}</View>
@@ -88,7 +79,6 @@ useEffect(() => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   loaderContainer: {
     flexDirection: "row",

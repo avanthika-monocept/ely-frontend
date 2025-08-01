@@ -1,3 +1,4 @@
+import { openUrl } from "react-native-markdown-display";
 
 
 export const navigationscreen = {
@@ -34,6 +35,9 @@ export const stringConstants = {
   KeyboardPadding: "padding",
   table: "table",
   text: "text",
+  url:"url",
+  email: "email",
+  phone: "phone",
   tableWithText: "tableWithText",
   imageWithText: "imageWithText",
   videoWithText: "videoWithText",
@@ -89,7 +93,14 @@ export const labels = {
   reply: "Reply-to",
   download: "Download",
   share: "Share",
-  copyText: "Copy Text"
+  copyText: "Copy Text",
+  open: "Open",
+  openUrl: "Open URL",
+  copyUrl: "Copy URL",
+  openEmail: "Open Email",
+  copyEmail: "Copy Email",
+  callNumber: "Call Number",
+  copyNumber: "Copy Number",
 }
 export const loaderConfig = {
   textCycleInterval: 1300,
@@ -98,6 +109,13 @@ export const loaderConfig = {
   DotAnimationDuration: 600,
   messages: ["", "ELY is thinking", "", "ELY is typing"]
 };
+
+export const markdownLinks={
+   phone :"tel:",
+   email: "mailto:",
+}
+
+
 
 
 

@@ -8,14 +8,12 @@ import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import TableBaseBubble from "./TableBaseBubble";
 import { splitMarkdownIntoTableAndText } from "../../common/utils";
-
 const ReplyMessage = ({
   replyFrom,
   replyMessage,
   handleClose,
   reply,
   media,
-
   replyIndex,
 }) => {
   ReplyMessage.propTypes = {
@@ -27,14 +25,12 @@ const ReplyMessage = ({
    
     replyIndex: PropTypes.number,
   };
-
   const { tablePart, textPart } = splitMarkdownIntoTableAndText(replyMessage);
   const MAX_REPLY_LENGTH = reply ? 35 : 42;
   const truncatedText =
     textPart.length > MAX_REPLY_LENGTH
       ? textPart.slice(0, MAX_REPLY_LENGTH) + "..."
       : textPart;
-
   
   const hasImage =
  
@@ -44,9 +40,7 @@ const ReplyMessage = ({
       media?.video?.length > 0 && media?.video[0]?.mediaUrl?.length > 0;
   const hasMedia = hasImage || hasVideo;
   const hasTable = tablePart !== "";
-
 let mediaUrl = null;
-
 if (hasImage) {
   mediaUrl = media?.image[0]?.mediaUrl[replyIndex];
 } else if (hasVideo) {
@@ -85,7 +79,6 @@ const backgroundColor = reply
             {truncatedText}
           </Text>
         </View>
-
         <View style={styles.mediaAlign}>
           {hasImage && hasMedia && media?.image[0]?.mediaUrl?.length > 0 && (
             <Image source={{ uri: mediaUrl }} style={styles.mediaPreview} />
@@ -119,7 +112,6 @@ const backgroundColor = reply
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   containerInput: {
     padding: spacing.space_base,
@@ -200,5 +192,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
-
 export default ReplyMessage;

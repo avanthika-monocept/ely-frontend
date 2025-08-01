@@ -28,10 +28,8 @@ import RNFetchBlob from "react-native-blob-util";
 import VideoLoader from "./VideoLoader";
 import { platformName } from "../../constants/StringConstants";
 
-
 const screenWidth = Dimensions.get("window").width;
 const bubbleWidth = screenWidth * 0.8 - 12;
-
 const MediaMessageView = ({
   images = [],
   videos = [],
@@ -59,25 +57,20 @@ const MediaMessageView = ({
     isTextEmpty: PropTypes.bool,
     setReplyIndex: PropTypes.func,
   };
-
   MediaMessageView.defaultProps = {
     images: [],
     videos: [],
     copyToClipboard: () => { },
     handleReplyMessage: () => { },
-
     isTextEmpty: false,
   };
-
   const allMedia = [
     ...images.map((url) => ({ type: "image", url })),
     ...videos.map((url) => ({ type: "video", url })),
   ];
-
   const MAX_MEDIA = 4;
   const displayMedia = allMedia.slice(0, MAX_MEDIA);
   const restCount = Math.max(allMedia.length - MAX_MEDIA, 0);
-
   const [isGridModalVisible, setIsGridModalVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
@@ -94,7 +87,6 @@ const MediaMessageView = ({
   const videoRef = useRef(null);
   const flatListRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
-
   const hideControlsAfterDelay = () => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -103,14 +95,12 @@ const MediaMessageView = ({
       setControlsVisible(false);
     }, 3000);
   };
-
   const toggleControls = () => {
     setControlsVisible((prev) => !prev);
     if (!paused && !controlsVisible) {
       hideControlsAfterDelay();
     }
   };
-
   const onVideoLoad = (data) => {
     setVideoLoading(false);
     setPaused(false);
@@ -119,11 +109,9 @@ const MediaMessageView = ({
       hideControlsAfterDelay();
     }
   };
-
   const onVideoProgress = (data) => {
     setProgress(data.currentTime / data.seekableDuration);
   };
-
   const handlePlayPause = () => {
     if (videoEnded) {
       videoRef.current?.seek(0);
@@ -133,7 +121,6 @@ const MediaMessageView = ({
     } else {
       setPaused((prev) => !prev);
     }
-
     if (paused || videoEnded) {
       setControlsVisible(true);
       hideControlsAfterDelay();
@@ -144,27 +131,22 @@ const MediaMessageView = ({
       setControlsVisible(true);
     }
   };
-
   const handleVideoDurationLoad = (data, url) => {
     setVideoDurations((prev) => ({
       ...prev,
       [url]: data.duration,
     }));
   };
-
   const handleMediaReply = () => {
     setReplyIndex(selectedMediaIndex);
     handleReplyMessage();
     closeModal();
   };
 
-
-
   const handleChatBubbleReply = () => {
     setReplyIndex(0);
     handleReplyMessage();
   };
-
   useEffect(() => {
     return () => {
       if (controlsTimeoutRef.current) {
@@ -172,7 +154,6 @@ const MediaMessageView = ({
       }
     };
   }, []);
-
   useEffect(() => {
     if (isOpen) {
       setPaused(true);
@@ -201,11 +182,9 @@ const MediaMessageView = ({
     setControlsVisible(true);
     hideControlsAfterDelay();
   };
-
   const openGridModal = () => {
     setIsGridModalVisible(true);
   };
-
   const closeModal = () => {
     setIsGridModalVisible(false);
     setIsModalVisible(false);
@@ -217,7 +196,6 @@ const MediaMessageView = ({
       clearTimeout(controlsTimeoutRef.current);
     }
   };
-
   const closeSingleMediaModal = () => {
     setIsModalVisible(false);
     setIsSingleMediaModalOpen(false);
@@ -232,13 +210,11 @@ const MediaMessageView = ({
       setIsGridModalVisible(false); // Close grid modal if not opened from grid
     }
   };
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
-
   const downloadMedia = async (mediaUrl, isVideo = false) => {
     try {
       if (Platform.OS === platformName.android) {
@@ -246,7 +222,6 @@ const MediaMessageView = ({
           Platform.Version >= 33
             ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
             : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-
         const granted = await PermissionsAndroid.request(permissionToRequest, {
           title: "Storage Permission Required",
           message: "App needs access to your media to download files.",
@@ -286,14 +261,12 @@ const MediaMessageView = ({
       Alert.alert("Error", "Something went wrong while downloading.");
     }
   };
-
   const proceedWithDownload = async (mediaUrl, isVideo) => {
     const { config, fs } = RNFetchBlob;
     const date = new Date();
     const ext = isVideo ? "mp4" : "jpg";
     const dir = fs.dirs.DownloadDir;
     const path = `${dir}/${isVideo ? "video" : "image"}_${Math.floor(date.getTime())}.${ext}`;
-
     const options = {
       fileCache: true,
       appendExt: ext,
@@ -305,7 +278,6 @@ const MediaMessageView = ({
         mime: isVideo ? "video/mp4" : "image/jpeg",
       },
     };
-
     config(options)
       .fetch("GET", mediaUrl)
       .then((res) => {
@@ -319,7 +291,6 @@ const MediaMessageView = ({
         );
       });
   };
-
   const renderVideoPlayer = (uri) => (
     <View style={styles.videoPlayerContainer}>
       {videoLoading && (
@@ -371,7 +342,6 @@ const MediaMessageView = ({
               {formatTime(progress * duration)}
             </Text>
             <View style={styles.timeAndMuteContainer}>
-
               <TouchableOpacity
                 style={styles.muteButton}
                 onPress={() => setIsMuted((prev) => !prev)}
@@ -394,7 +364,6 @@ const MediaMessageView = ({
       )}
     </View>
   );
-
   const renderMediaItem = (item, index, width) => {
     if (!item) return null;
     return (
@@ -427,18 +396,14 @@ const MediaMessageView = ({
       </TouchableWithoutFeedback>
     );
   };
-
   const renderMediaGrid = () => {
     if (allMedia.length === 0) return null;
-
     const count = displayMedia.length;
     const halfWidth = (bubbleWidth - 6) / 2;
-
     switch (count) {
       case 1: {
         const item = displayMedia[0];
         const duration = videoDurations[item.url] || 0;
-
         return (
           <View style={styles.row}>
             <TouchableOpacity
@@ -489,7 +454,6 @@ const MediaMessageView = ({
           </View>
         );
       }
-
       case 2:
         return (
           <View style={styles.row}>
@@ -498,7 +462,6 @@ const MediaMessageView = ({
             )}
           </View>
         );
-
       case 3:
         return (
           <>
@@ -512,7 +475,6 @@ const MediaMessageView = ({
             </View>
           </>
         );
-
       default:
         return (
           <>
@@ -567,7 +529,6 @@ const MediaMessageView = ({
         );
     }
   };
-
   const renderSingleMediaModal = () => {
     const selectedMedia = allMedia[selectedMediaIndex];
     if (!selectedMedia) return null;
@@ -584,7 +545,6 @@ const MediaMessageView = ({
         setSelectedMediaIndex(newIndex);
       }
     };
-
     return (
       <Modal
         visible={isModalVisible}
@@ -610,7 +570,6 @@ const MediaMessageView = ({
               <Ionicons name="ellipsis-vertical" size={23} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-
           <View style={styles.singleMediaContainer}>
             {selectedMedia.type === "image" ? (
               <ImageViewer
@@ -639,7 +598,6 @@ const MediaMessageView = ({
       </Modal>
     );
   };
-
   const renderGridModal = () => (
     <Modal
       visible={isGridModalVisible}
@@ -658,7 +616,6 @@ const MediaMessageView = ({
           data={allMedia}
           renderItem={({ item, index }) => {
             const duration = videoDurations[item.url] || 0;
-
             return (
               <View style={{ marginBottom: "1%" }}>
                 <TouchableWithoutFeedback
@@ -757,7 +714,6 @@ const MediaMessageView = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     marginTop: spacing.space_s0,
@@ -937,5 +893,4 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 });
-
 export default MediaMessageView;
