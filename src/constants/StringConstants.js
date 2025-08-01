@@ -39,13 +39,14 @@ export const stringConstants = {
   videoWithText: "videoWithText",
   video: "video",
   image: "image",
-  bot:"bot",
+  bot: "bot",
   botCaps: "BOT",
-  you:"YOU",
+  you: "YOU",
   copiedToClipboard: "Copied to Clipboard",
-  error:"Error",
-  success:"Success",
-  };
+  error: "Error",
+  success: "Success",
+ };
+
 
 export const timeoutConstants = {
   response: 60000,
@@ -67,21 +68,36 @@ export const socketMessageTypes = {
   replyToLandingPage: "REPLY_TO_LANDING_PAGE",
   quickReply: "QUICK_REPLY",
 };
-export const share= {
-    title: "Share Media",
-    error: "Failed to share file.",
-    videoTitle: "Share Video",
-    imageTitle: "Share Image",
-    invalidUri: "Invalid URI",
-   
-  }
-  export const labels= {
-    preview: "Preview",
-    reply: "Reply-to",
-    download: "Download",
-    share: "Share",
-    copyText: "Copy Text"
-  }
+export const share = {
+  title: "Share Media",
+  error: "Failed to share file.",
+  videoTitle: "Share Video",
+  imageTitle: "Share Image",
+  invalidUri: "Invalid URI",
+  downloadingVideo: "downloading file...",
+  mp4: "mp4",
+  fileStartCheck: "file://",
+  http: "http://",
+  https: "https://",
+  get: "GET",
+  defaultMileTypeVideo: "video/mp4",
+  defaultMileTypeImage: "image/jpeg",
+  
+}
+export const labels = {
+  preview: "Preview",
+  reply: "Reply-to",
+  download: "Download",
+  share: "Share",
+  copyText: "Copy Text"
+}
+export const loaderConfig = {
+  textCycleInterval: 1300,
+  dotCount: 5,
+  dotAnimationDelay: 200,
+  DotAnimationDuration: 600,
+  messages: ["", "ELY is thinking", "", "ELY is typing"]
+};
 
 
 

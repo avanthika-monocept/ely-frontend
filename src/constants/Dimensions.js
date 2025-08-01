@@ -263,6 +263,7 @@ export const sizeWithoutScale = {
   width1: 1,
   width2: 2,
   width4: 4,
+  width5: 5,
   width3: 3,
   width8: 8,
   width10: 10,
@@ -329,6 +330,7 @@ export const sizeWithoutScale = {
   height2: 2,
   height3: 3,
   height4: 4,
+  height5: 5,
   height6: 6,
   height7: 7,
   height8: 8,
@@ -387,6 +389,7 @@ export const sizeWithoutScale = {
 };
 
 export const borderRadius = {
+  borderRadius3: 3,
   borderRadius4: 4,
   borderRadius5: 5,
   borderRadius5_5: 5.5,

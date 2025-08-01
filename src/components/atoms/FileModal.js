@@ -18,7 +18,7 @@ import Copy from "../../../assets/Copy.svg";
 import RNFetchBlob from "react-native-blob-util";
 import { borderRadius, flex, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
-import PropTypes, { string } from "prop-types";
+import PropTypes from "prop-types";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
 import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
 import Share from "react-native-share";
@@ -47,25 +47,25 @@ const FileModal = ({
       let file_ext = file.split(".").pop().split("?")[0].toLowerCase();
       const supportedVideoFormats = ["mp4", "mov", "avi", "mkv"];
       if (!supportedVideoFormats.includes(file_ext)) {
-        file_ext = "mp4";
+        file_ext = share.mp4;
       }
       let pathToShare = "";
-      const mimeType = getMimeType(file_ext) || "video/mp4";
-      if (file.startsWith("http://") || file.startsWith("https://")) {
+      const mimeType = getMimeType(file_ext) || share.defaultMileTypeVideo;
+      if (file.startsWith(share.http) || file.startsWith(share.https)) {
         const fileName = `share_temp_${date.getTime()}.${file_ext}`;
         const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-        // Remove existing file if needed
+        
         if (await fs.exists(filePath)) {
           await fs.unlink(filePath);
         }
-        // Download the video file
+      
         const res = await config({
           fileCache: true,
           path: filePath,
-        }).fetch("GET", file);
+        }).fetch(share.get, file);
         pathToShare =
           Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
-      } else if (file.startsWith("file://")) {
+      } else if (file.startsWith(share.fileStartCheck)) {
         // It's already a local file
         pathToShare = file;
       } else {
@@ -96,7 +96,7 @@ const FileModal = ({
       let FILE_URL = url;
       let file_ext = getFileExtension(FILE_URL);
       if (!file_ext || file_ext.length > 5) {
-        file_ext = "mp4";
+        file_ext = share.mp4;
       }
       if (Platform.OS === platformName.ios) {
         const permission = await check(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
@@ -113,7 +113,7 @@ const FileModal = ({
           fileCache: true,
           path: videoPath,
           appendExt: file_ext,
-        }).fetch("GET", FILE_URL);
+        }).fetch(share.get, FILE_URL);
         await CameraRoll.save(res.path(), { type: stringConstants.video });
       } else {
         const { config } = RNFetchBlob;
@@ -124,7 +124,7 @@ const FileModal = ({
           fileCache: true,
           addAndroidDownloads: {
             path: filePath,
-            description: "downloading video...",
+            description: share.downloadingVideo,
             notification: true,
             useDownloadManager: true,
             mediaScannable: true,
@@ -133,11 +133,10 @@ const FileModal = ({
         };
         try {
           const res = await config(options)
-            .fetch("GET", FILE_URL)
+            .fetch(share.get, FILE_URL)
             .progress((received, total) => {
-              console.log("progress", received / total);
+              console.log(received / total);
             });
-          // Force media scan for immediate gallery visibility
           await RNFetchBlob.fs.scanFile([
             {
               path: res.path(),
@@ -145,7 +144,7 @@ const FileModal = ({
             },
           ]);
         } catch (error) {
-          console.error("Download failed:", error);
+          console.error(error);
         }
       }
       onClose(false);
@@ -166,7 +165,7 @@ const FileModal = ({
       }
       let pathToShare = "";
       // Check if it's a remote URL
-      if (file.startsWith("http://") || file.startsWith("https://")) {
+      if (file.startsWith(share.http) || file.startsWith(share.https)) {
         const fileName = `ely_${date.getTime()}.${file_ext}`;
         const filePath = `${fs.dirs.CacheDir}/${fileName}`;
         // Remove existing file if needed
@@ -177,14 +176,14 @@ const FileModal = ({
         const res = await config({
           fileCache: true,
           path: filePath,
-        }).fetch("GET", file);
+        }).fetch(share.get, file);
         pathToShare =
           Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
-      } else if (file.startsWith("file://")) {
+      } else if (file.startsWith(share.fileStartCheck)) {
         // It's already a local file
         pathToShare = file;
       } else {
-        throw new Error("Invalid file URI");
+        throw new Error(share.invalidUri);
       }
       setTimeout(() => {
         Share.open({
@@ -283,7 +282,7 @@ const FileModal = ({
           fileCache: true,
           path: imagePath,
           appendExt: "png",
-        }).fetch("GET", FILE_URL);
+        }).fetch(share.get, FILE_URL);
         await CameraRoll.save(res.path(), { type: "photo" });
       } else {
         const { config } = RNFetchBlob;
@@ -295,18 +294,18 @@ const FileModal = ({
           fileCache: true,
           addAndroidDownloads: {
             path: filePath,
-            description: "downloading file...",
+            description: share.downloadingVideo,
             notification: true,
             useDownloadManager: true,
           },
         };
         config(options)
-          .fetch("GET", FILE_URL)
+          .fetch(share.get, FILE_URL)
           .progress((received, total) => {
-            console.log("progress", received / total);
+            console.log(received / total);
           })
           .then((res) => {
-            console.log("android res -> ", res.path());
+            console.log(res.path());
           });
       }
       onClose(false);
@@ -320,30 +319,26 @@ const FileModal = ({
       const pathsToShare = [];
       for (const file of files) {
         const { type, url } = file;
-        // Detect file extension
-        let file_ext = url.split(".").pop().split("?")[0].toLowerCase();
+       let file_ext = url.split(".").pop().split("?")[0].toLowerCase();
         if (!["jpg", "jpeg", "png", "mp4", "mkv"].includes(file_ext)) {
-          file_ext = "jpg"; // Default to jpg for unknown types
+          file_ext = "jpg";
         }
         const isVideo = type === stringConstants.video || isVideoFile(url);
-        let mimeType = getMimeType(file_ext) || (isVideo ? "video/mp4" : "image/jpeg");
+        let mimeType = getMimeType(file_ext) || (isVideo ? share.defaultMileTypeVideo : share.defaultMileTypeImage);
         let pathToShare = "";
-        // Check if it's a remote URL
-        if (url.startsWith("http://") || url.startsWith("https://")) {
+        if (url.startsWith(share.http) || url.startsWith(share.https)) {
           const fileName = `ely_${date.getTime()}_${Math.random().toString(36).substring(7)}.${file_ext}`;
           const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-          // Remove existing file if needed
-          if (await fs.exists(filePath)) {
+         if (await fs.exists(filePath)) {
             await fs.unlink(filePath);
           }
-          // Download the file
-          const res = await config({
+         const res = await config({
             fileCache: true,
             path: filePath,
-          }).fetch("GET", url);
+          }).fetch(share.get, url);
           pathToShare =
             Platform.OS === platformName.android ? `file://${res.path()}` : res.path();
-        } else if (url.startsWith("file://")) {
+        } else if (url.startsWith(share.fileStartCheck)) {
           // It's already a local file
           pathToShare = url;
         } else {

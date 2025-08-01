@@ -1,51 +1,49 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing } from "react-native";
-import { spacing } from "../../constants/Dimensions";
+import { borderRadius,sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
+import colors from "../../constants/Colors";
+import { loaderConfig } from "../../constants/StringConstants";
 
-export const TEXT_CYCLE_INTERVAL = 1300; // Exported for reuse in tests
+
 
 export const Loader = () => {
-  const messages = ["", "ELY is thinking", "", "ELY is typing"];
+  const messages = loaderConfig.messages;
   const [step, setStep] = useState(0);
-  const dotCount = 5;
+  
   const dots = useRef(
-    Array(dotCount)
+    Array(loaderConfig.dotCount)
       .fill()
       .map(() => new Animated.Value(0))
   ).current;
-
-  // Text cycling effect
   useEffect(() => {
     const interval = setInterval(
       () => setStep((prev) => (prev + 1) % messages.length),
-      TEXT_CYCLE_INTERVAL
+      loaderConfig.textCycleInterval
     );
     return () => clearInterval(interval);
   }, []);
-
-  // Wave animation effect (vertical movement only)
-  useEffect(() => {
+useEffect(() => {
     const createWaveAnimation = () => {
       const animations = dots.map((dot, index) => {
         return Animated.sequence([
-          Animated.delay(index * 200),
+          Animated.delay(index * loaderConfig.dotAnimationDelay),
           Animated.timing(dot, {
             toValue: 1,
-            duration: 600,
+            duration: loaderConfig.DotAnimationDuration,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
           Animated.timing(dot, {
             toValue: 0,
-            duration: 600,
+            duration: loaderConfig.DotAnimationDuration,
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
         ]);
       });
 
-      Animated.loop(Animated.stagger(200, animations)).start();
+      Animated.loop(Animated.stagger(loaderConfig.dotAnimationDelay, animations)).start();
     };
 
     createWaveAnimation();
@@ -59,7 +57,7 @@ export const Loader = () => {
     return dots.map((dot, index) => {
       const translateY = dot.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, -6], // Vertical movement only
+        outputRange: [0, -6], 
       });
 
       return (
@@ -69,7 +67,7 @@ export const Loader = () => {
             styles.dot,
             {
               transform: [
-                { translateY }, // Only translateY transform
+                { translateY }, 
               ],
             },
           ]}
@@ -104,16 +102,16 @@ const styles = StyleSheet.create({
   },
   dotsContainer: {
     flexDirection: "row",
-    width: 50,
-    height: 17,
+    width: sizeWithoutScale.width50,
+    height: sizeWithoutScale.height16,
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.space_base,
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#424752",
+    width: sizeWithoutScale.width5,
+    height: sizeWithoutScale.height5,
+    borderRadius: borderRadius.borderRadius3,
+    backgroundColor: colors.primaryColors.charcoalGray,
   },
 });

@@ -19,6 +19,7 @@ const colors = {
     borderTop: "#e0e0e0",
     skyBlue: "#CDEAF8",
     surface:"#97144D",
+    charcoalGray:"#424752",
   },
   secondaryColors: {
     summerSky: "#3597EC",
