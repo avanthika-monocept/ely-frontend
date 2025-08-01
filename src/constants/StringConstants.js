@@ -41,6 +41,7 @@ export const stringConstants = {
   tableWithText: "tableWithText",
   imageWithText: "imageWithText",
   videoWithText: "videoWithText",
+  textWithLink:"textwithlink",
   video: "video",
   image: "image",
   bot: "bot",

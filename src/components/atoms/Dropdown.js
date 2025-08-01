@@ -94,20 +94,8 @@ const handleOpenURL = () => {
 
     }
   const menuItems = [
-    {
-      type: "imageWithText",
-      label: labels.open,
-      icon: <Group />,
-      action: handleClose,
-    },
-    {
-      type: "imageWithText",
-      label: labels.preview,
-      icon: <Group />,
-      action: handleClose,
-    },
-     {
-      type: "url",
+   {
+      type: stringConstants.url,
       label: labels.openUrl,
       icon: <Vector />,
       action: () => {
@@ -116,7 +104,7 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "url",
+      type: stringConstants.url,
       label: labels.copyUrl,
       icon: <Copy />,
       action: () => {
@@ -125,7 +113,7 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "email",
+      type: stringConstants.email,
       label: labels.openEmail,
       icon: <Vector />,
       action: () => {
@@ -134,7 +122,7 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "email",
+      type: stringConstants.email,
       label: labels.copyEmail,
       icon: <Copy />,
       action: () => {
@@ -143,7 +131,7 @@ const handleOpenURL = () => {
       },
     },
      {
-      type: "phone",
+      type: stringConstants.phone,
       label: labels.callNumber,
       icon: <Vector />,
       action: () => {
@@ -152,7 +140,7 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "phone",
+      type: stringConstants.phone,
       label: labels.copyNumber,
       icon: <Copy />,
       action: () => {
@@ -178,34 +166,23 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-    {
-      type: "imageWithText",
-      label: labels.download,
-      icon: <Download />,
-      action: handleClose,
-    },
-    {
-      type: "imageWithText",
-      label: labels.share,
-      icon: <Upload />,
-      action: handleClose,
-    },
+   
   ];
 
   const getFilteredMenuItems = (type) => {
     return menuItems.filter((item) => {
-      if ("textwithlink" === type) {
-        return item.type === "text" || item.type === "textwithlink";
-      } else if ("text" === type) {
-        return item.type === "text";
-        } else if ("url" === type) {
-        return item.type === "url";
+      if (stringConstants.textWithLink === type) {
+        return item.type === stringConstants.text || item.type === stringConstants.textwithlink;
+      } else if (stringConstants.text === type) {
+        return item.type === stringConstants.text;
+        } else if (stringConstants.url === type) {
+        return item.type === stringConstants.url;
         }
-        else if ("email" === type) {
-        return item.type === "email";
+        else if (stringConstants.email === type) {
+        return item.type === stringConstants.email;
         }
-          else if ("phone" === type) {
-        return item.type === "phone";
+          else if (stringConstants.phone === type) {
+        return item.type === stringConstants.phone;
       } else {
         return false;
       }
