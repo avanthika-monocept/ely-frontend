@@ -50,6 +50,9 @@ export const stringConstants = {
   copiedToClipboard: "Copied to Clipboard",
   error: "Error",
   success: "Success",
+  like:"like",
+  thumbsUpEmoji:"U+1F44D" ,
+  thumbsDownEmoji:"U+1F44E",
  };
 
 
@@ -64,6 +67,9 @@ export const socketConstants = {
   acknowledgement: "ACKNOWLEDGEMENT",
   read: "READ",
   received: "RECEIVED",
+  reaction:"REACTION",
+  selected:"SELECTED",
+  deselected:"DESELECTED",
 };
 
 export const socketMessageTypes = {

@@ -176,7 +176,7 @@ const TableBaseBubble = ({
  
       <Popover
         isVisible={isPopoverVisible}
-        from={anchorRef?.current || <View />}
+        from={<View />}
         onRequestClose={() => setPopoverVisible(false)}
         placement="auto"
       >
