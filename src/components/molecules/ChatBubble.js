@@ -135,7 +135,7 @@ const isImageOnly = useMemo(() => {
             >
               {(replyMessage || replyMessageObj?.media) && (
                 <ReplyMessage
-                  replyFrom={replyFrom === "bot" ? "YOU" : "BOT"}
+                  replyFrom={replyFrom === stringConstants.bot ? stringConstants.you : stringConstants.botCaps}
                   replyMessage={replyMessage}
                   reply={false}
                   media={replyMessageObj.media}

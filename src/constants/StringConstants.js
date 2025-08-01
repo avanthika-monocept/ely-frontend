@@ -47,6 +47,7 @@ export const stringConstants = {
   bot: "bot",
   botCaps: "BOT",
   you: "YOU",
+  ely:"ELY",
   copiedToClipboard: "Copied to Clipboard",
   error: "Error",
   success: "Success",

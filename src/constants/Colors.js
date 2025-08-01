@@ -22,6 +22,8 @@ const colors = {
     surface:"#97144D",
     charcoalGray:"#424752",
     lightYellow:"#FFF9E9",
+    digitalBlue:"#007BFF",
+    frostedBlue: "#E3F2FD",
   },
   secondaryColors: {
     summerSky: "#3597EC",
