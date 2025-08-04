@@ -22,7 +22,8 @@ export const fontType = {
   loto: 'Lato sans-serif',
   monospace: 'monospace',
   Courier:"Courier",
-  italic:"italic"
+  italic:"italic",
+  roboto:"roboto"
 };
 
 export const fontSize = {

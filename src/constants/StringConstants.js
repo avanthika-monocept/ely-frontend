@@ -1,4 +1,4 @@
-import { openUrl } from "react-native-markdown-display";
+
 
 
 export const navigationscreen = {
@@ -87,7 +87,9 @@ export const share = {
   imageTitle: "Share Image",
   invalidUri: "Invalid URI",
   downloadingVideo: "downloading file...",
+  downloadSuccess:"Download success",
   mp4: "mp4",
+  jpg:"jpg",
   fileStartCheck: "file://",
   http: "http://",
   https: "https://",
@@ -121,6 +123,28 @@ export const loaderConfig = {
 export const markdownLinks={
    phone :"tel:",
    email: "mailto:",
+}
+
+export const mediaStrings={
+  storagePermission:"Storage Permission Required",
+  needsAccess:"App needs access to your media to download files.",
+  askMeLater: "Ask Me Later",
+  cancel:"Cancel",
+  ok:"OK",
+  permissionBlocked:"Permission Blocked",
+  deniedPermission:"You've previously denied this permission and chosen not to be asked again. Please enable it manually from app settings.",
+  settingsOpen :"Settings opened successfully",
+  openSettings:"Open Settings",
+  downloadFail:"Download Failed",
+}
+export const iconNames={
+  arrowBack:"arrow-back",
+  playCircle:"play-circle",
+  ellipsisVertical:"ellipsis-vertical",
+  videocam:"videocam",
+  volumeMute:"volume-mute",
+  volumeHigh:"volume-high",
+  pause:"pause" 
 }
 
 

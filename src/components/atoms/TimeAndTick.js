@@ -6,6 +6,7 @@ import DoubleTickDelivered from "../../../assets/doubleTickSent.svg";
 import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
+import { sizeWithoutScale, spacing } from "../../constants/Dimensions";
 export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
   const getTickIcon = () => {
     switch (status) {
@@ -39,13 +40,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    gap: 2,
-    padding:0,
+    gap: spacing.space_s1,
+    padding:spacing.space_s0,
   },
   time: {
     
     ...fontStyle.bodySmallMedium,
-    fontSize:10,
+    fontSize:spacing.space_10,
     color: colors.darkNeutrals.n600,
   },
   checkContainer: {
@@ -54,13 +55,10 @@ const styles = StyleSheet.create({
   },
    imageOnlyContainer: {
     position: 'absolute',
-    bottom: 7,
-    right: 10,
+    bottom: sizeWithoutScale.height7,
+    right: spacing.space_10,
   },
   imageOnlyTime: {
-    color: 'white', // White text for better contrast on images
-    textShadowColor: 'rgba(0, 0, 0, 0.5)', // Optional shadow for better readability
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    color: colors.primaryColors.white
   },
 });
