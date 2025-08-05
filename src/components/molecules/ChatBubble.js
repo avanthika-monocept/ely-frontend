@@ -65,14 +65,14 @@ const ChatBubble = React.memo(({
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
-const RotatedThumb = () => <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>;
-  const reactionOptions = [
-    { id: "like", svg: <Text>👍</Text> },
-    {
-      id: "dislike",
-      svg: <RotatedThumb/>,
-    },
-  ];
+const RotatedThumb = React.memo(() => (
+  <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>
+));
+
+const reactionOptions = useMemo(() => [
+  { id: "like", svg: <Text>👍</Text> },
+  { id: "dislike", svg: <RotatedThumb /> },
+], []);
   const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
