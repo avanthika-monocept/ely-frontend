@@ -24,13 +24,20 @@ import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
 import { flex, size, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
-import { platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
+import { ApiResponseConstant, platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
+import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
-export const ChatPage = () => {
+export const ChatPage = ({ route }) => {
+   const {
+    jwtToken,    
+    cogToken,      
+    userInfo,    
+    platform
+  } = route.params || {};
   const dispatch = useDispatch();
   const [showFab, setShowFab] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
@@ -87,7 +94,7 @@ export const ChatPage = () => {
      if (responseTimeout) {
       clearTimeout(responseTimeout);
     }
-    
+   
     const timeoutId = setTimeout(() => {
       dispatch(hideLoader());
     }, timeoutConstants.response);
@@ -130,7 +137,7 @@ export const ChatPage = () => {
   setShowNewMessageAlert(false);
   setNewMessageCount(0);
 };
-
+ 
   const scrollToDown = () => {
     resetNewMessageState();
     scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -217,8 +224,27 @@ export const ChatPage = () => {
       setIsInitializing(true);
       setPage(0);
       const newToken = await fetchToken();
+    //   const validationResponse = await validateJwtToken(
+    //   newToken,
+    //   jwtToken,
+    //   cogToken,
+    //   platform,
+    //   {
+    //     agentId: userInfo?.agentId,
+    //     userName: userInfo?.userName,
+    //     email: userInfo?.email,
+    //     role: userInfo?.role,
+    //     firebaseId: userInfo?.firebaseId,
+    //     deviceId: userInfo?.deviceId,
+    //   }
+    // );
+  //  if (!validationResponse || validationResponse.status !== stringConstants.success) {
+  //     console.warn(ApiResponseConstant.fail, validationResponse.message);
+  //     setIsInitializing(false);
+  //     return;
+  //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: "hom5750", platform: "MSPACE" })
+        getData({ token: newToken, agentId: userInfo.agentId || "hom5750", platform: platform || "MSPACE"})
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         dispatch(clearMessages());
@@ -234,13 +260,14 @@ export const ChatPage = () => {
     } finally {
       setIsInitializing(false);
     }
+   
   };
   const safelyCleanupSocket = () => {
   cleanupWebSocket(true);
   clearResponseTimeout();
   dispatch(hideLoader());
 };
-
+ 
   useEffect(() => {
     initialize();
     return () => {
@@ -286,7 +313,7 @@ export const ChatPage = () => {
       setNewMessageCount((prev) => prev + 1);
     }
      else {
-    setNewMessageCount(0); 
+    setNewMessageCount(0);
   }
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
@@ -351,7 +378,7 @@ export const ChatPage = () => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : undefined}
+          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
           style={{ flex: flex.one }}
         >
           <View style={styles.content}>
@@ -468,3 +495,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
 });
+ 
+ChatPage.propTypes = {
+  route: PropTypes.shape({
+    params: PropTypes.shape({
+      jwtToken: PropTypes.string,
+      cogToken: PropTypes.string,
+      userInfo: PropTypes.object,
+      platform: PropTypes.string,
+    }),
+  }),
+};

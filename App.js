@@ -4,15 +4,14 @@ import {
   StatusBar,
   StyleSheet,
 } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler"; // ✅ Import this
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/appNavigator";
-import apiCall from "./src/config/axiosRequest";
 import { loadFonts } from "./src/config/loadFonts";
  
-export default function App() {
+export default function App(props) {
   LogBox.ignoreAllLogs(true);
  
-
+ 
  
   useEffect(() => {
     async function prepare() {
@@ -28,7 +27,7 @@ export default function App() {
   return (
 <GestureHandlerRootView style={styles.container}>
 <StatusBar style="auto" />
-<AppNavigator standalone={true} />
+<AppNavigator standalone={true} props={props} />
 </GestureHandlerRootView>
   );
 }
