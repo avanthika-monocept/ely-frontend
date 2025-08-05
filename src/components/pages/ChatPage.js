@@ -243,7 +243,7 @@ export const ChatPage = ({ route }) => {
       return;
     }
       const response = await dispatch(
-        getData({ token: newToken, agentId: userInfo.agentId, platform: platform })
+        getData({ token: newToken, agentId:userInfo?.agentId?.toLowerCase(), platform: platform })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         dispatch(clearMessages());
