@@ -166,7 +166,7 @@ export const formatHistoryMessage = (apiMessage) => {
     activity: activity, 
     replyId: apiMessage.replyToMessageId, 
     conversationEnded: false, 
-    status: stringConstants.read,
+    status: socketConstants.read,
     message: {
       text: apiMessage.text,
       table: null, 

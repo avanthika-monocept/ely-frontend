@@ -352,7 +352,7 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (messages.length > prevMessagesLength) {
-      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom) {
+      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status!== socketConstants.read) {
         setShowNewMessageAlert(true);
       }
       setPrevMessagesLength(messages.length);
