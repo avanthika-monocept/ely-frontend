@@ -30,7 +30,7 @@ export const validateJwtToken = async (
     });
 
     console.log(JSON.stringify(response), "validateJwtToken response");
-    return response?.data;
+    return response;
   } catch (error) {
     console.error("Error validating JWT token:", error);
   }

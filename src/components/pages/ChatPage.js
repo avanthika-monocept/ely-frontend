@@ -237,7 +237,7 @@ export const ChatPage = ({ route }) => {
         deviceId: userInfo?.deviceId,
       }
     );
-   if (!validationResponse || validationResponse.status !== stringConstants.success) {
+   if (validationResponse.status !== stringConstants.success) {
       console.warn(ApiResponseConstant.fail, validationResponse.message);
       setIsInitializing(false);
       return;
