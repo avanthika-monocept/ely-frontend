@@ -13,9 +13,13 @@ import {
   borderWidth,
   sizeWithoutScale,
   spacing,
+  size,
+  shadowOpacityElevation,
+  ShadowRadius,
 } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
+
 
 const DEFAULT_HEIGHT = 24;
 
@@ -36,7 +40,7 @@ const DynamicTextInput = ({
     const { contentSize } = event.nativeEvent;
     const newHeight = Math.max(
       DEFAULT_HEIGHT,
-      Math.min(contentSize.height, 24 * rows)
+      Math.min(contentSize.height, DEFAULT_HEIGHT * rows)
     );
     setInputHeight(newHeight);
     if (onInputHeightChange) {
@@ -70,7 +74,7 @@ const DynamicTextInput = ({
         <TextInput
           ref={inputRef}
           testID="dynamic-text-input"
-          style={[styles.input, { height: inputHeight, maxHeight: 24 * rows }]}
+          style={[styles.input, { height: inputHeight, maxHeight: DEFAULT_HEIGHT * rows }]}
           value={value}
           onChangeText={onChange}
           editable={!disabled}
@@ -111,19 +115,19 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   fullWidth: {
-    width: "100%",
+    width: size.hundredPercent,
   },
   focusedContainer: {
     borderColor: colors.primaryColors.borderBlue,
     ...Platform.select({
       ios: {
-        shadowColor: "#C2E0F9",
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 8,
+        shadowColor: colors.Extended_Palette.summerSky,
+        shadowOffset: { width: sizeWithoutScale.width0, height: sizeWithoutScale.height0 },
+        shadowOpacity: shadowOpacityElevation.opacity0_5,
+        shadowRadius: ShadowRadius.shadowRadius8,
       },
       android: {
-        elevation: 2,
+        elevation: shadowOpacityElevation.elevation2,
       },
     }),
   },
@@ -134,13 +138,13 @@ const styles = StyleSheet.create({
     margin: spacing.space_s0,
     includeFontPadding: false,
     textAlignVertical: "center",
-    color: "#000",
+    color: colors.primaryColors.black,
   },
   placeholderText: {
     position: "absolute",
     top: spacing.space_base,
     left: spacing.space_m1,
-    color: "#505662",
+    color: colors.darkNeutrals.n600,
     ...fontStyle.bodyMedium,
     zIndex: 1,
     pointerEvents: "none",

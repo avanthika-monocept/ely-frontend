@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { scale } from "react-native-size-matters";
-import { spacing } from "../../constants/Dimensions";
+import { borderRadius, flex, size, spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
@@ -10,17 +9,15 @@ const Avatar = ({ botName }) => {
   Avatar.propTypes = {
     botName: PropTypes.string,
   };
-
   const onlineStatus = true;
-
   return (
     <View style={styles.avatarContainer}>
       <View style={styles.avatarWrapper}>
         <View style={styles.imageContainer}>
           <ElyUpdatedLogo
             testID="avatar-logo"
-            width={scale(32)}
-            height={scale(32)}
+            width={size.width_32}
+            height={size.height_32}
             style={styles.avatarImage}
           />
         </View>
@@ -36,9 +33,7 @@ const Avatar = ({ botName }) => {
     </View>
   );
 };
-
 export default Avatar;
-
 const styles = StyleSheet.create({
   avatarContainer: {
     flexDirection: "row",
@@ -47,25 +42,25 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     position: "relative",
-    width: scale(30),
-    height: scale(30),
+    width: size.width_30,
+    height: size.height_30,
   },
   imageContainer: {
-    flex: 1,
+    flex: flex.one,
     justifyContent: "center",
     alignItems: "center",
   },
   avatarImage: {
-    marginLeft: scale(2),
+    marginLeft: size.width_2,
     alignSelf: "center",
   },
   statusDot: {
     position: "absolute",
     top: spacing.space_s1,
     right: spacing.space_s1,
-    width: scale(8),
-    height: scale(8),
-    borderRadius: scale(4.5),
+    width: size.width_8,
+    height: size.height_8,
+    borderRadius: borderRadius.borderRadius4,
   },
   online: {
     backgroundColor: colors.primaryColors.green,

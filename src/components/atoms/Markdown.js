@@ -7,75 +7,63 @@ import {
   Platform,
   Text,
   TouchableWithoutFeedback,
+  StyleSheet
 } from "react-native";
-import { fontStyle } from "../../constants/Fonts";
+import { fontStyle, fontType, fontWeight } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, spacing, size } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { useDispatch } from "react-redux";
 import { openBottomSheet, setBottomSheetURL } from "../../store/reducers/bottomSheetSlice";
+import { platformName, share, markdownLinks, stringConstants } from "../../constants/StringConstants";
+
 
 const LONG_PRESS_THRESHOLD = 500;
-
-const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
-
+const MarkdownComponent = ({ markdownText, setDropDownType }) => {
   const dispatch = useDispatch();
   const longPressTimer = useRef(null);
   const isLongPressTriggered = useRef(false);
-
   const handleLinkPress = async (url) => {
-  if (isLongPressTriggered.current) return;
-
-  if (url.startsWith("tel:")) {
-    Linking.openURL(url);
-    return;
-  }
-
-  if (url.startsWith("mailto:")) {
+    if (isLongPressTriggered.current) return;
+    if (url.startsWith(markdownLinks.phone)) {
+      Linking.openURL(url);
+      return;
+    }
+    if (url.startsWith(markdownLinks.email)) {
+      try {
+        await Linking.openURL(url);
+      } catch (error) {
+        Alert.alert(stringConstants.error);
+      }
+      return;
+    }
     try {
-      await Linking.openURL(url);
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(share.invalidUri);
+      }
     } catch (error) {
-      console.error("Error opening mail link:", error); // Log for debugging
-      Alert.alert("Error", "No email app found.");
-    }
-    return;
-  }
 
-  try {
-    const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert("Invalid URL", `Unable to open: ${url}`);
+      Alert.alert(stringConstants.error, share.invalidUri);
     }
-  } catch (error) {
-    console.error("Error opening link:", error); // Log for debugging
-    Alert.alert("Error", "Failed to open link.");
-  }
-};
-
+  };
 
   const handleLinkLongPress = (url) => {
     dispatch(openBottomSheet());
     dispatch(setBottomSheetURL(url));
-    if (url.startsWith("mailto:")) {
-      setDropDownType("email");
+    if (url.startsWith(markdownLinks.email)) {
+      setDropDownType(stringConstants.email);
     }
-      else if (url.startsWith("tel:")) {
-        setDropDownType("phone");
-      }
+    else if (url.startsWith(markdownLinks.phone)) {
+      setDropDownType(stringConstants.phone);
+    }
     else {
-      setDropDownType("url");
+      setDropDownType(stringConstants.url);
     }
     setBottomSheetURL(url);
-
-    // Clipboard.setString(url);
-    // if(!Platform.OS == "ios") {
-    // setCopied(true);
-    // }
-    // setTimeout(() => setCopied(false), 1000);
   };
-
   const renderCustomLink = (children, href) => (
     <TouchableWithoutFeedback
       onPressIn={() => {
@@ -93,9 +81,9 @@ const MarkdownComponent = ({ markdownText, setCopied, setDropDownType }) => {
       <Text style={markdownStyles.link}>{children}</Text>
     </TouchableWithoutFeedback>
   );
-const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
+  const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
   return (
-    <View style={{ paddingHorizontal: spacing.space_s2 }}>
+    <View style={styles.container}>
       <Markdown
         style={markdownStyles}
         mergeStyle={true}
@@ -104,11 +92,19 @@ const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
             renderCustomLink(children, node.attributes.href),
         }}
       >
-     {sanitizedText}
+        {sanitizedText}
       </Markdown>
     </View>
   );
 };
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: spacing.space_s1,
+    borderRadius: borderRadius.borderRadius8,
+    alignSelf: 'flex-start',
+    maxWidth: size.hundredPercent,
+  }
+})
 
 const markdownStyles = {
   body: {
@@ -125,22 +121,22 @@ const markdownStyles = {
   list_item: {
     flexDirection: "row",
     flexWrap: "wrap",
-    width: "100%",
-    
-    },
+    width: size.hundredPercent,
+
+  },
   link: {
     color: colors.primaryColors.lightblue,
     textDecorationLine: "underline",
   },
   strong: {
-    fontWeight: Platform.OS === "ios" ? "600" : "bold",
+    fontWeight: Platform.OS === platformName.ios ? fontWeight.weight600 : fontWeight.weight400,
   },
   em: {
-    fontStyle: "italic",
+    fontStyle: fontType.italic,
   },
   code_inline: {
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-    backgroundColor: "#F1F1F1",
+    fontFamily: Platform.OS === platformName.ios ? fontType.Courier : fontType.monospace,
+    backgroundColor: colors.primaryColors.halfWhite,
     padding: spacing.space_s1,
     borderRadius: borderRadius.borderRadius4,
   },
@@ -153,11 +149,9 @@ const markdownStyles = {
     marginBottom: spacing.space_s3,
   },
 };
-
 MarkdownComponent.propTypes = {
   markdownText: PropTypes.string.isRequired,
   setCopied: PropTypes.func,
   setDropDownType: PropTypes.func,
 };
-
 export default MarkdownComponent;

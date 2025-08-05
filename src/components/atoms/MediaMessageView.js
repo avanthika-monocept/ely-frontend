@@ -20,17 +20,17 @@ import Video from "react-native-video";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ImageViewer from "react-native-image-zoom-viewer";
 import colors from "../../constants/Colors";
-import { borderRadius, spacing } from "../../constants/Dimensions";
+import { borderRadius, spacing, flex,size, imageSize, sizeWithoutScale } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
-import PropTypes from "prop-types";
+import PropTypes, { string } from "prop-types";
 import FileModal from "./FileModal";
 import RNFetchBlob from "react-native-blob-util";
 import VideoLoader from "./VideoLoader";
+import { platformName,stringConstants,share, mediaStrings,iconNames } from "../../constants/StringConstants";
 
 
 const screenWidth = Dimensions.get("window").width;
 const bubbleWidth = screenWidth * 0.8 - 12;
-
 const MediaMessageView = ({
   images = [],
   videos = [],
@@ -58,25 +58,20 @@ const MediaMessageView = ({
     isTextEmpty: PropTypes.bool,
     setReplyIndex: PropTypes.func,
   };
-
   MediaMessageView.defaultProps = {
     images: [],
     videos: [],
     copyToClipboard: () => { },
     handleReplyMessage: () => { },
-
     isTextEmpty: false,
   };
-
   const allMedia = [
-    ...images.map((url) => ({ type: "image", url })),
-    ...videos.map((url) => ({ type: "video", url })),
+    ...images.map((url) => ({ type: stringConstants.image, url })),
+    ...videos.map((url) => ({ type: stringConstants.video, url })),
   ];
-
   const MAX_MEDIA = 4;
   const displayMedia = allMedia.slice(0, MAX_MEDIA);
   const restCount = Math.max(allMedia.length - MAX_MEDIA, 0);
-
   const [isGridModalVisible, setIsGridModalVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
@@ -93,7 +88,6 @@ const MediaMessageView = ({
   const videoRef = useRef(null);
   const flatListRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
-
   const hideControlsAfterDelay = () => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -102,14 +96,12 @@ const MediaMessageView = ({
       setControlsVisible(false);
     }, 3000);
   };
-
   const toggleControls = () => {
     setControlsVisible((prev) => !prev);
     if (!paused && !controlsVisible) {
       hideControlsAfterDelay();
     }
   };
-
   const onVideoLoad = (data) => {
     setVideoLoading(false);
     setPaused(false);
@@ -118,11 +110,9 @@ const MediaMessageView = ({
       hideControlsAfterDelay();
     }
   };
-
   const onVideoProgress = (data) => {
     setProgress(data.currentTime / data.seekableDuration);
   };
-
   const handlePlayPause = () => {
     if (videoEnded) {
       videoRef.current?.seek(0);
@@ -132,7 +122,6 @@ const MediaMessageView = ({
     } else {
       setPaused((prev) => !prev);
     }
-
     if (paused || videoEnded) {
       setControlsVisible(true);
       hideControlsAfterDelay();
@@ -143,27 +132,22 @@ const MediaMessageView = ({
       setControlsVisible(true);
     }
   };
-
   const handleVideoDurationLoad = (data, url) => {
     setVideoDurations((prev) => ({
       ...prev,
       [url]: data.duration,
     }));
   };
-
   const handleMediaReply = () => {
     setReplyIndex(selectedMediaIndex);
     handleReplyMessage();
     closeModal();
   };
 
-
-
   const handleChatBubbleReply = () => {
     setReplyIndex(0);
     handleReplyMessage();
   };
-
   useEffect(() => {
     return () => {
       if (controlsTimeoutRef.current) {
@@ -171,7 +155,6 @@ const MediaMessageView = ({
       }
     };
   }, []);
-
   useEffect(() => {
     if (isOpen) {
       setPaused(true);
@@ -200,11 +183,9 @@ const MediaMessageView = ({
     setControlsVisible(true);
     hideControlsAfterDelay();
   };
-
   const openGridModal = () => {
     setIsGridModalVisible(true);
   };
-
   const closeModal = () => {
     setIsGridModalVisible(false);
     setIsModalVisible(false);
@@ -216,7 +197,6 @@ const MediaMessageView = ({
       clearTimeout(controlsTimeoutRef.current);
     }
   };
-
   const closeSingleMediaModal = () => {
     setIsModalVisible(false);
     setIsSingleMediaModalOpen(false);
@@ -231,68 +211,63 @@ const MediaMessageView = ({
       setIsGridModalVisible(false); // Close grid modal if not opened from grid
     }
   };
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
-
   const downloadMedia = async (mediaUrl, isVideo = false) => {
     try {
-      if (Platform.OS === "android") {
+      if (Platform.OS === platformName.android) {
         const permissionToRequest =
           Platform.Version >= 33
             ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
             : PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-
         const granted = await PermissionsAndroid.request(permissionToRequest, {
-          title: "Storage Permission Required",
-          message: "App needs access to your media to download files.",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK",
+          title: mediaStrings.storagePermission,
+          message: mediaStrings.needsAccess,
+          buttonNeutral: mediaStrings.askMeLater,
+          buttonNegative: mediaStrings.cancel,
+          buttonPositive: mediaStrings.ok,
         });
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           return proceedWithDownload(mediaUrl, isVideo);
         } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
           Alert.alert(
-            "Permission Blocked",
-            "You've previously denied this permission and chosen not to be asked again. Please enable it manually from app settings.",
+            mediaStrings.permissionBlocked,
+            mediaStrings.deniedPermission,
             [
-              { text: "Cancel", style: "cancel" },
+              { text: mediaStrings.cancel, style: "cancel" },
               {
-                text: "Open Settings", onPress: () => {
+                text: mediaStrings.openSettings, onPress: () => {
                   Linking.openSettings()
                     .then(() => {
-                      console.log("Settings opened successfully");
+                      console.log(mediaStrings.settingsOpen);
                     })
                     .catch((err) => {
-                      console.error("Error opening settings:", err);
+                      console.error(err);
                     });
                 },
               },
             ]
           );
         } else {
-          Alert.alert("Permission Denied", "Cannot download the file");
+          Alert.alert(mediaStrings.permissionBlocked);
         }
       } else {
         return proceedWithDownload(mediaUrl, isVideo);
       }
     } catch (err) {
-      console.log("Permission or download error:", err);
-      Alert.alert("Error", "Something went wrong while downloading.");
+    
+      Alert.alert(stringConstants.error);
     }
   };
-
   const proceedWithDownload = async (mediaUrl, isVideo) => {
     const { config, fs } = RNFetchBlob;
     const date = new Date();
-    const ext = isVideo ? "mp4" : "jpg";
+    const ext = isVideo ? share.mp4 : share.jpg;
     const dir = fs.dirs.DownloadDir;
-    const path = `${dir}/${isVideo ? "video" : "image"}_${Math.floor(date.getTime())}.${ext}`;
-
+    const path = `${dir}/${isVideo ? stringConstants.video : stringConstants.image}_${Math.floor(date.getTime())}.${ext}`;
     const options = {
       fileCache: true,
       appendExt: ext,
@@ -300,25 +275,18 @@ const MediaMessageView = ({
         useDownloadManager: true,
         notification: true,
         path,
-        description: isVideo ? "Video" : "Image",
-        mime: isVideo ? "video/mp4" : "image/jpeg",
+        description: isVideo ? stringConstants.video : stringConstants.image,
+        mime: isVideo ? share.defaultMileTypeVideo : share.defaultMileTypeImage,
       },
     };
-
     config(options)
-      .fetch("GET", mediaUrl)
+      .fetch(share.get, mediaUrl)
       .then((res) => {
-        Alert.alert("Download Success", `Saved to ${res.path()}`);
+        Alert.alert(share.downloadSuccess, `Saved to ${res.path()}`);
       })
       .catch((error) => {
-        console.log("Download error:", error);
-        Alert.alert(
-          "Download Failed",
-          "Something went wrong while downloading"
-        );
-      });
-  };
-
+       
+        Alert.alert(mediaStrings.downloadFail);});};
   const renderVideoPlayer = (uri) => (
     <View style={styles.videoPlayerContainer}>
       {videoLoading && (
@@ -347,7 +315,7 @@ const MediaMessageView = ({
           }
         }}
         controls={false}
-        onError={(error) => console.log("Video error:", error)}
+        onError={(error) => console.log(error)}
       />
       <TouchableOpacity style={styles.videoOverlay} onPress={toggleControls}>
         {controlsVisible && !videoLoading && (
@@ -356,8 +324,8 @@ const MediaMessageView = ({
             onPress={handlePlayPause}
           >
             <Ionicons
-              name={paused ? "play-circle" : "pause"}
-              size={60}
+              name={paused ? iconNames.playCircle : iconNames.pause}
+              size={sizeWithoutScale.width60}
               color={colors.primaryColors.white}
             />
           </TouchableOpacity>
@@ -370,13 +338,12 @@ const MediaMessageView = ({
               {formatTime(progress * duration)}
             </Text>
             <View style={styles.timeAndMuteContainer}>
-
               <TouchableOpacity
                 style={styles.muteButton}
                 onPress={() => setIsMuted((prev) => !prev)}
               >
                 <Ionicons
-                  name={isMuted ? "volume-mute" : "volume-high"}
+                  name={isMuted ? iconNames.volumeMute : iconNames.volumeHigh}
                   size={20}
                   color={colors.primaryColors.white}
                 />
@@ -393,7 +360,6 @@ const MediaMessageView = ({
       )}
     </View>
   );
-
   const renderMediaItem = (item, index, width) => {
     if (!item) return null;
     return (
@@ -406,7 +372,7 @@ const MediaMessageView = ({
         }}
       >
         <View style={[styles.halfImage, { width }]}>
-          {item.type === "image" ? (
+          {item.type === stringConstants.image ? (
             <Image source={{ uri: item.url }} style={styles.mediaThumbnail} />
           ) : (
             <>
@@ -418,7 +384,7 @@ const MediaMessageView = ({
                 onLoad={(data) => handleVideoDurationLoad(data, item.url)}
               />
               <View style={styles.videoOverlay}>
-                <Ionicons name="play-circle" size={30} color="white" />
+                <Ionicons name={iconNames.playCircle} size={sizeWithoutScale.height30} color={colors.primaryColors.white} />
               </View>
             </>
           )}
@@ -426,18 +392,14 @@ const MediaMessageView = ({
       </TouchableWithoutFeedback>
     );
   };
-
   const renderMediaGrid = () => {
     if (allMedia.length === 0) return null;
-
     const count = displayMedia.length;
     const halfWidth = (bubbleWidth - 6) / 2;
-
     switch (count) {
       case 1: {
         const item = displayMedia[0];
         const duration = videoDurations[item.url] || 0;
-
         return (
           <View style={styles.row}>
             <TouchableOpacity
@@ -448,7 +410,7 @@ const MediaMessageView = ({
               }}
             >
               <View style={styles.imgContainer}>
-                {item.type === "image" ? (
+                {item.type === stringConstants.image ? (
                   <Image source={{ uri: item.url }} style={styles.fullImage} />
                 ) : (
                   <View style={styles.fullImage}>
@@ -460,10 +422,10 @@ const MediaMessageView = ({
                       onLoad={(data) => handleVideoDurationLoad(data, item.url)}
                     />
                     <View style={styles.videoOverlay}>
-                      <Ionicons name="play-circle" size={40} color="white" />
+                      <Ionicons name={iconNames.playCircle} size={spacing.space_l2} color={colors.primaryColors.white} />
                     </View>
                     <View style={styles.videoInfo}>
-                      <Ionicons name="videocam" size={14} color="white" />
+                      <Ionicons name={iconNames.videocam} size={sizeWithoutScale.height14} color={colors.primaryColors.white}  />
                       <Text style={styles.durationText}>
                         {formatTime(duration)}
                       </Text>
@@ -478,9 +440,9 @@ const MediaMessageView = ({
                   }}
                 >
                   <Ionicons
-                    name="ellipsis-vertical"
-                    size={20}
-                    color="#FFFFFF"
+                    name={iconNames.ellipsisVertical}
+                    size={imageSize.width20}
+                    color={colors.primaryColors.white}
                   />
                 </TouchableOpacity>
               </View>
@@ -488,7 +450,6 @@ const MediaMessageView = ({
           </View>
         );
       }
-
       case 2:
         return (
           <View style={styles.row}>
@@ -497,7 +458,6 @@ const MediaMessageView = ({
             )}
           </View>
         );
-
       case 3:
         return (
           <>
@@ -511,7 +471,6 @@ const MediaMessageView = ({
             </View>
           </>
         );
-
       default:
         return (
           <>
@@ -530,7 +489,7 @@ const MediaMessageView = ({
                 }}
               >
                 <View style={[styles.halfImage, { width: halfWidth - 10 }]}>
-                  {displayMedia[3].type === "image" ? (
+                  {displayMedia[3].type === stringConstants.image ? (
                     <Image
                       source={{ uri: displayMedia[3].url }}
                       style={styles.imageWithOverlay}
@@ -547,7 +506,7 @@ const MediaMessageView = ({
                         }
                       />
                       <View style={styles.videoInfo}>
-                        <Ionicons name="videocam" size={14} color="white" />
+                        <Ionicons name={iconNames.videocam} size={sizeWithoutScale.height14} color={colors.primaryColors.white} />
                         <Text style={styles.durationText}>
                           {formatTime(videoDurations[displayMedia[3].url] || 0)}
                         </Text>
@@ -566,13 +525,12 @@ const MediaMessageView = ({
         );
     }
   };
-
   const renderSingleMediaModal = () => {
     const selectedMedia = allMedia[selectedMediaIndex];
     if (!selectedMedia) return null;
-    const imageItems = allMedia.filter((m) => m.type === "image");
+    const imageItems = allMedia.filter((m) => m.type === stringConstants.image);
     const currentImageIndex = imageItems.findIndex(
-      (img) => img.url === selectedMedia.url && selectedMedia.type === "image"
+      (img) => img.url === selectedMedia.url && selectedMedia.type === stringConstants.image
     );
     const handleImageChange = (index) => {
       if (index !== undefined) {
@@ -583,7 +541,6 @@ const MediaMessageView = ({
         setSelectedMediaIndex(newIndex);
       }
     };
-
     return (
       <Modal
         visible={isModalVisible}
@@ -595,8 +552,8 @@ const MediaMessageView = ({
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={closeSingleMediaModal}>
               <Ionicons
-                name="arrow-back"
-                size={24}
+                name={iconNames.arrowBack}
+                size={spacing.space_m4}
                 color={colors.primaryColors.white}
               />
             </TouchableOpacity>
@@ -606,12 +563,11 @@ const MediaMessageView = ({
                 setMessageObjectId(messageId);
               }}
             >
-              <Ionicons name="ellipsis-vertical" size={23} color="#FFFFFF" />
+              <Ionicons name={iconNames.ellipsisVertical} size={spacing.space_m4} color={colors.primaryColors.white} />
             </TouchableOpacity>
           </View>
-
           <View style={styles.singleMediaContainer}>
-            {selectedMedia.type === "image" ? (
+            {selectedMedia.type === stringConstants.image ? (
               <ImageViewer
                 imageUrls={imageItems.map((img, idx) => ({
                   url: img.url,
@@ -638,7 +594,6 @@ const MediaMessageView = ({
       </Modal>
     );
   };
-
   const renderGridModal = () => (
     <Modal
       visible={isGridModalVisible}
@@ -647,9 +602,9 @@ const MediaMessageView = ({
       onRequestClose={closeModal}
     >
       <SafeAreaView style={styles.modalContainer}>
-        <View style={[styles.modalHeader, { paddingTop: 10 }]}>
+        <View style={[styles.modalHeader, { paddingTop: spacing.space_10 }]}>
           <TouchableOpacity onPress={closeModal}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <Ionicons name={iconNames.arrowBack} size={sizeWithoutScale.width24} color={colors.primaryColors.white} />
           </TouchableOpacity>
         </View>
         <FlatList
@@ -657,7 +612,6 @@ const MediaMessageView = ({
           data={allMedia}
           renderItem={({ item, index }) => {
             const duration = videoDurations[item.url] || 0;
-
             return (
               <View style={{ marginBottom: "1%" }}>
                 <TouchableWithoutFeedback
@@ -666,7 +620,7 @@ const MediaMessageView = ({
                   }}
                 >
                   <View style={styles.gridItem}>
-                    {item.type === "image" ? (
+                    {item.type === stringConstants.image ? (
                       <Image
                         source={{ uri: item.url }}
                         style={styles.gridImage}
@@ -685,13 +639,13 @@ const MediaMessageView = ({
                         />
                         <View style={styles.videoOverlay}>
                           <Ionicons
-                            name="play-circle"
-                            size={30}
-                            color="white"
+                            name={iconNames.playCircle}
+                            size={sizeWithoutScale.height30}
+                            color={colors.primaryColors.white} 
                           />
                         </View>
                         <View style={styles.videoInfo}>
-                          <Ionicons name="videocam" size={14} color="white" />
+                          <Ionicons name={iconNames.videocam} size={sizeWithoutScale.height14} color={colors.primaryColors.white} />
                           <Text style={styles.durationText}>
                             {formatTime(duration)}
                           </Text>
@@ -710,7 +664,7 @@ const MediaMessageView = ({
           maxToRenderPerBatch={5}
           windowSize={10}
           removeClippedSubviews={true}
-          ListFooterComponent={<View style={{ height: 20 }} />}
+          ListFooterComponent={<View style={{ height: spacing.space_m4 }} />}
         />
       </SafeAreaView>
     </Modal>
@@ -718,11 +672,11 @@ const MediaMessageView = ({
   const determineFileType = () => {
     const mediaType = allMedia[selectedMediaIndex]?.type;
     if (isSingleMediaModalOpen) {
-      return mediaType === "video" ? "video" : "image";
+      return mediaType === stringConstants.video ? stringConstants.video : stringConstants.image;
     } else if (isTextEmpty) {
-      return mediaType === "video" ? "video" : "image";
+      return mediaType === stringConstants.video ? stringConstants.video : stringConstants.image;
     } else {
-      return mediaType === "video" ? "videoWithText" : "imageWithText";
+      return mediaType === stringConstants.video ? stringConstants.videoWithText : stringConstants.imageWithText;
     }
   };
   return (
@@ -747,7 +701,7 @@ const MediaMessageView = ({
         downloadMedia={() => {
           const media = allMedia[selectedMediaIndex];
           if (media) {
-            downloadMedia(media.url, media.type === "video");
+            downloadMedia(media.url, media.type === stringConstants.video);
           }
         }}
       />
@@ -756,11 +710,10 @@ const MediaMessageView = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     marginTop: spacing.space_s0,
-    gap: 6,
+    gap: spacing.space_s3,
   },
   row: {
     flexDirection: "row",
@@ -768,11 +721,11 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   halfImage: {
-    height: 100,
+    height: sizeWithoutScale.height100,
     borderRadius: borderRadius.borderRadius8,
     overflow: "hidden",
     position: "relative",
-    marginHorizontal: 3,
+    marginHorizontal: sizeWithoutScale.width3,
   },
   imgContainer: {
     position: "relative",
@@ -784,28 +737,28 @@ const styles = StyleSheet.create({
     right: spacing.space_s1,
     top: spacing.space_s3,
     zIndex: 1,
-    backgroundColor: "#171A2133",
-    borderRadius: 25,
-    padding: 5,
+    backgroundColor:colors.darkNeutrals.n400,
+    borderRadius: borderRadius.borderRadius25,
+    padding: sizeWithoutScale.width5,
   },
   fullImage: {
-    width: bubbleWidth - 10,
-    height: 100,
-    borderRadius: 8,
+    width: bubbleWidth - spacing.space_10,
+    height: sizeWithoutScale.height100,
+    borderRadius: spacing.space_base,
     overflow: "hidden",
   },
   mediaThumbnail: {
-    width: "100%",
-    height: "100%",
+    width: size.hundredPercent,
+    height: size.hundredPercent,
   },
   imageWithOverlay: {
-    width: "100%",
-    height: "100%",
+    width: size.hundredPercent,
+    height: size.hundredPercent,
     borderRadius: borderRadius.borderRadius8,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: colors.primaryColors.black,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: borderRadius.borderRadius8,
@@ -815,28 +768,28 @@ const styles = StyleSheet.create({
     ...fontStyle.bodyBold0,
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    flex: flex.one,
+    backgroundColor: colors.primaryColors.black,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 70 : StatusBar.currentHeight + 10,
-    paddingBottom: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    width: size.hundredPercent,
+    paddingHorizontal: spacing.space_m3,
+    paddingTop: Platform.OS === platformName.ios ? size.width_70 : StatusBar.currentHeight + spacing.space_10,
+    paddingBottom: spacing.space_10,
+    backgroundColor: colors.primaryColors.black,
   },
   singleMediaContainer: {
-    flex: 1,
+    flex: flex.one,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "black",
+    backgroundColor: colors.primaryColors.black,
   },
   modalImage: {
-    width: "100%",
-    height: screenWidth - 40,
+    width: size.hundredPercent,
+    height: screenWidth - spacing.space_l2,
   },
   gridContainer: {
     paddingVertical: spacing.space_10,
@@ -844,97 +797,96 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     marginBottom: spacing.space_10,
-    width: screenWidth - 20,
+    width: screenWidth - spacing.space_m3,
   },
   gridImage: {
-    width: "100%",
-    height: 300,
+    width: size.hundredPercent,
+    height: sizeWithoutScale.width300,
     borderRadius: borderRadius.borderRadius5_5,
   },
   videoPlayerContainer: {
-    flex: 1,
-    width: "100%",
+    flex: flex.one,
+    width: size.hundredPercent,
     justifyContent: "center",
-    backgroundColor: "black",
-    paddingBottom: 80,
+    backgroundColor: colors.primaryColors.black,
+    paddingBottom: sizeWithoutScale.width80,
   },
   fullVideo: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "black",
+    width: size.hundredPercent,
+    height: size.hundredPercent,
+    backgroundColor: colors.primaryColors.black,
   },
   videoOverlay: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: spacing.space_s0,
+    left: spacing.space_s0,
+    right: spacing.space_s0,
+    bottom: spacing.space_s0,
     justifyContent: "center",
     alignItems: "center",
   },
   playPauseButton: {
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 80,
+    paddingBottom: spacing.space_xl1,
   },
   videoControls: {
     position: "absolute",
-    bottom: 20,
-    left: 0,
-    right: 0,
+    bottom: spacing.space_m3,
+    left: spacing.space_s0,
+    right: spacing.space_s0,
     alignItems: "center",
-    paddingHorizontal: 0,
+    paddingHorizontal: spacing.space_s0,
   },
   timeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    paddingHorizontal: 10,
-    marginBottom: 5,
+    width: size.hundredPercent,
+    paddingHorizontal: spacing.space_10,
+    marginBottom: sizeWithoutScale.width5,
   },
   timeAndMuteContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   muteButton: {
-    marginLeft: 10,
-    paddingHorizontal: 5,
+    marginLeft: spacing.space_10,
+    paddingHorizontal: sizeWithoutScale.width5,
   },
   progressBar: {
-    width: "100%",
-    height: 5,
+    width: size.hundredPercent,
+    height: sizeWithoutScale.width5,
     backgroundColor: "rgba(255,255,255,0.5)",
   },
   progressFill: {
-    height: "100%",
-    backgroundColor: "#FF0000",
+    height: size.hundredPercent,
+    backgroundColor: colors.primaryColors.red,
   },
   timeText: {
-    color: "white",
-    fontSize: 12,
+    color: colors.primaryColors.white ,
+    fontSize: spacing.space_m1,
   },
   loader: {
     position: "absolute",
     alignSelf: "center",
-    top: "50%",
+    top: size.fiftyPercent,
     zIndex: 10,
   },
   videoInfo: {
     position: "absolute",
-    bottom: 5,
-    left: 5,
+    bottom: sizeWithoutScale.width5,
+    left: sizeWithoutScale.width5,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 5,
+    paddingHorizontal: sizeWithoutScale.width5,
+    paddingVertical: spacing.space_s1,
+    borderRadius: sizeWithoutScale.width5,
   },
   durationText: {
-    color: "white",
-    fontSize: 12,
-    marginLeft: 5,
+    color: colors.primaryColors.white,
+    fontSize: spacing.space_m1,
+    marginLeft: sizeWithoutScale.width5,
   },
 });
-
 export default MediaMessageView;

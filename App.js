@@ -12,7 +12,7 @@ import { loadFonts } from "./src/config/loadFonts";
 export default function App() {
   LogBox.ignoreAllLogs(true);
  
- 
+
  
   useEffect(() => {
     async function prepare() {

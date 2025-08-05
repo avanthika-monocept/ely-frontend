@@ -1,10 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import PropTypes from "prop-types";
-import { sizeWithoutScale, spacing } from "../../constants/Dimensions";
+import { flex, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
-
 export const ChatDateSeparator = ({ date }) => {
   ChatDateSeparator.propTypes = {
     date: PropTypes.string,
@@ -19,7 +18,6 @@ export const ChatDateSeparator = ({ date }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -28,7 +26,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.space_m4,
   },
   line: {
-    flex: 1,
+    flex: flex.one,
     height: sizeWithoutScale.height1,
     backgroundColor: colors.Extended_Palette.midnightBlue.mb200,
   },

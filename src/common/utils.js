@@ -1,6 +1,6 @@
 import { format, isToday, isYesterday, isSameYear, parseISO } from "date-fns";
 import uuid from "react-native-uuid"
-
+import { CHAT_MESSAGE_PROXY } from "../config/apiUrls";
 
 export const getFormattedDividerDate = (dateString) => {
     const date = parseISO(dateString);
@@ -129,7 +129,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
       },
     },
     socketPayload: {
-      action: "api/chatbot/message-proxy",
+      action: CHAT_MESSAGE_PROXY,
       token:token,
       message: {
       emailId: reconfigApiResponse?.userInfo?.email,
@@ -179,3 +179,37 @@ export const formatHistoryMessage = (apiMessage) => {
     },
   };
 };
+ export const getFileExtension = (url) => {
+      const cleanUrl = url.split("?")[0];
+      const parts = cleanUrl.split(".");
+      if (parts.length > 1) {
+        return parts.pop().toLowerCase();
+      }
+      return null;
+    };
+ export const isVideoFile = (url) => {
+    const ext = getFileExtension(url);
+    const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "3gp"];
+    return ext ? videoExtensions.includes(ext) : false;
+  };
+
+  export const getMimeType = (extension) => {
+  const mimeTypes = {
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png"
+  };
+  return mimeTypes[extension];
+};
+
+ 
+
+
+
+
+
+ 

@@ -23,12 +23,17 @@ import {
 import colors from "../../constants/Colors";
 import {
   borderRadius,
+  flex,
+  shadowOpacityElevation,
+  ShadowRadius,
+  size,
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import Clipboard from "@react-native-clipboard/clipboard";
+import { platformName, labels, stringConstants } from "../../constants/StringConstants";
 
 
 
@@ -79,7 +84,7 @@ const Dropdown = ({
 const handleCopyURL = () => {
   const androidVersion = parseInt(Platform.Version, 10);
     Clipboard.setString(url);
-    if((androidVersion < 33 || Platform.OS === "ios")) {
+    if((androidVersion < 33 || Platform.OS === platformName.ios)) {
     setCopied(true);
     }
     setTimeout(() => setCopied(false), 1000);
@@ -89,21 +94,9 @@ const handleOpenURL = () => {
 
     }
   const menuItems = [
-    {
-      type: "imageWithText",
-      label: "Open",
-      icon: <Group />,
-      action: handleClose,
-    },
-    {
-      type: "imageWithText",
-      label: "Preview",
-      icon: <Group />,
-      action: handleClose,
-    },
-     {
-      type: "url",
-      label: "Open URL",
+   {
+      type: stringConstants.url,
+      label: labels.openUrl,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -111,8 +104,8 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "url",
-      label: "Copy URL",
+      type: stringConstants.url,
+      label: labels.copyUrl,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -120,8 +113,8 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "email",
-      label: "Open Email",
+      type: stringConstants.email,
+      label: labels.openEmail,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -129,8 +122,8 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "email",
-      label: "Copy Email",
+      type: stringConstants.email,
+      label: labels.copyEmail,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -138,8 +131,8 @@ const handleOpenURL = () => {
       },
     },
      {
-      type: "phone",
-      label: "Call Number",
+      type: stringConstants.phone,
+      label: labels.callNumber,
       icon: <Vector />,
       action: () => {
         handleOpenURL();
@@ -147,8 +140,8 @@ const handleOpenURL = () => {
       },
     },
       {
-      type: "phone",
-      label: "Copy Number",
+      type: stringConstants.phone,
+      label: labels.copyNumber,
       icon: <Copy />,
       action: () => {
         handleCopyURL();
@@ -156,8 +149,8 @@ const handleOpenURL = () => {
       },
     },
     {
-      type: "text",
-      label: "Copy Text",
+      type: stringConstants.text,
+      label: labels.copyText,
       icon: <Copy />,
       action: () => {
         copyToClipboard();
@@ -165,42 +158,31 @@ const handleOpenURL = () => {
       },
     },
     {
-      type: "text",
-      label: "Reply-to",
+      type: stringConstants.text,
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
         handleReplyMessage();
         handleClose();
       },
     },
-    {
-      type: "imageWithText",
-      label: "Download",
-      icon: <Download />,
-      action: handleClose,
-    },
-    {
-      type: "imageWithText",
-      label: "Share",
-      icon: <Upload />,
-      action: handleClose,
-    },
+   
   ];
 
   const getFilteredMenuItems = (type) => {
     return menuItems.filter((item) => {
-      if ("textwithlink" === type) {
-        return item.type === "text" || item.type === "textwithlink";
-      } else if ("text" === type) {
-        return item.type === "text";
-        } else if ("url" === type) {
-        return item.type === "url";
+      if (stringConstants.textWithLink === type) {
+        return item.type === stringConstants.text || item.type === stringConstants.textwithlink;
+      } else if (stringConstants.text === type) {
+        return item.type === stringConstants.text;
+        } else if (stringConstants.url === type) {
+        return item.type === stringConstants.url;
         }
-        else if ("email" === type) {
-        return item.type === "email";
+        else if (stringConstants.email === type) {
+        return item.type === stringConstants.email;
         }
-          else if ("phone" === type) {
-        return item.type === "phone";
+          else if (stringConstants.phone === type) {
+        return item.type === stringConstants.phone;
       } else {
         return false;
       }
@@ -262,21 +244,21 @@ const handleOpenURL = () => {
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    flex: flex.one,
     backgroundColor: colors.rgba.modalOverlayColor,
     justifyContent: "flex-end",
   },
   dropdown: {
-    width: "100%",
+    width: size.hundredPercent,
     backgroundColor: colors.primaryColors.white,
     borderTopLeftRadius: borderRadius.borderRadius10,
     borderTopRightRadius: borderRadius.borderRadius10,
     overflow: "hidden",
-    elevation: 5,
+    elevation: shadowOpacityElevation.elevation5,
     shadowColor: colors.primaryColors.black,
-    shadowOffset: { width: sizeWithoutScale.width0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.5,
+    shadowOffset: { width: sizeWithoutScale.width0, height: sizeWithoutScale.height2 },
+    shadowOpacity: shadowOpacityElevation.opacity0_25,
+    shadowRadius: ShadowRadius.shadowRadius3,
   },
   list: {
     padding: spacing.space_m2,
@@ -292,7 +274,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: spacing.space_10,
-      width: 24,
+    width: sizeWithoutScale.width24,
     alignItems: 'left',
   },
   label: {

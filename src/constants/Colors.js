@@ -3,6 +3,7 @@ const colors = {
     orange: "#F27930",
     woodSmoke: "#171A21",
     white: "#FFFFFF",
+    halfWhite: "#F1F1F1",
     black: "#000000",
     green: "#099A4F",
     lightGreen: "#B3E796",
@@ -17,6 +18,12 @@ const colors = {
     red: "#ff0000",
     lightSurface: "#F4F6FA",
     borderTop: "#e0e0e0",
+    skyBlue: "#CDEAF8",
+    surface:"#97144D",
+    charcoalGray:"#424752",
+    lightYellow:"#FFF9E9",
+    digitalBlue:"#007BFF",
+    frostedBlue: "#E3F2FD",
   },
   secondaryColors: {
     summerSky: "#3597EC",
@@ -25,6 +32,7 @@ const colors = {
     cyberYellow: "#ffd639",
     punch: "#D93025",
     midnightBlue: "#143172",
+   
   },
   darkNeutrals: {
     n900: "#252931",
@@ -32,12 +40,16 @@ const colors = {
     n700: "#424752",
     n600: "#505662",
     n500: "#0000000D",
+    n400:"#171A2133",
+    n300:"#171A2133"
   },
   midNeutrals: {
+    n600:"#D0D0D0",
     n500: "#626772",
     n400: "#737881",
     n300: "#858991",
     n200: "#969AA1",
+    n100:"#E4E8F0",
   },
   lightNeutrals: {
     n100: "#A8ABB1",
@@ -51,7 +63,9 @@ const colors = {
   textShadowColor: {
     smartNudge: "rgba(0, 0, 0, 0.12)",
   },
-
+ loaderBackground: {
+  loaderBackgroundDark:"rgba(181, 178, 178, 0.5)",
+ },
   gradient: {
     primary: {
       jaffa: ["#D44300", "#F27930"],

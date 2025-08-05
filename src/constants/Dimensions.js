@@ -1,5 +1,6 @@
 import { moderateScale, verticalScale, scale } from "react-native-size-matters";
 import { Dimensions } from "react-native";
+import { shadow } from "react-native-paper";
 export const screenWidth = Dimensions.get("screen").width;
 export const screenHeight = Dimensions.get("screen").height;
 
@@ -15,6 +16,7 @@ export const spacing = {
   space_m2: 16,
   space_m3: 20,
   space_m4: 24,
+  space_l0:30,
   space_l1: 32,
   space_l2: 40,
   space_l3: 48,
@@ -159,6 +161,7 @@ export const size = {
   sixtySevenPercent: "67%",
   fortyNinePercent: "49%",
   fortyFivePercent: "45%",
+  fiftyPercent: "50%",
   fortytThreePercent: "43.8%",
   thirtyFivePercent: "35%",
   thirtyFourPercent: "34%",
@@ -185,11 +188,16 @@ export const size = {
   width_130: 130,
   width_167: 167,
   /** Scale */
+  width_2: scale(2),
+  width_8: scale(8),
+  width_30: scale(30),
+  width_32: scale(32),
   width_80: scale(80),
   width_140: scale(140),
   width_170: scale(170),
   width_213: scale(213),
   width_220: scale(220),
+  width224: scale(224),
   width_312: scale(312),
   width_328: scale(328),
   width_16: scale(16),
@@ -229,6 +237,9 @@ export const size = {
   height213: verticalScale(213),
   height606: verticalScale(606),
   height640: verticalScale(640),
+  height_8: scale(8),
+  height_32:scale(32),
+  height_30: scale(30),
 
   height_42: 42,
   height52: 52,
@@ -253,6 +264,7 @@ export const sizeWithoutScale = {
   width1: 1,
   width2: 2,
   width4: 4,
+  width5: 5,
   width3: 3,
   width8: 8,
   width10: 10,
@@ -285,11 +297,13 @@ export const sizeWithoutScale = {
   width80: 80,
   width84: 84,
   width97: 97,
+  width100:100,
   width110: 110,
   width112: 112,
   width120: 120,
   width164: 164,
   width131: 131,
+  width135:135,
   width137: 137,
   width144: 144,
   width150: 150,
@@ -313,10 +327,12 @@ export const sizeWithoutScale = {
   width300: 300,
   width360: 360,
   width328: 328,
-
+  height0: 0,
   height1: 1,
+  height2: 2,
   height3: 3,
   height4: 4,
+  height5: 5,
   height6: 6,
   height7: 7,
   height8: 8,
@@ -341,6 +357,7 @@ export const sizeWithoutScale = {
   height42: 42,
   height45: 45,
   height48: 48,
+  height50:50,
   height52: 52,
   height53: 53,
   height54: 54,
@@ -375,6 +392,7 @@ export const sizeWithoutScale = {
 };
 
 export const borderRadius = {
+  borderRadius3: 3,
   borderRadius4: 4,
   borderRadius5: 5,
   borderRadius5_5: 5.5,
@@ -510,7 +528,10 @@ export const extraSpacing = {
 };
 export const shadowOpacityElevation = {
   opacity0: 0,
+  opacity0_1: 0.1,
+  opacity0_2: 0.2,
   opacity0_5: 0.5,
+  opacity0_25: 0.25,
   opacity1: 1,
   elevation1: 1,
   elevation2: 2,
@@ -523,6 +544,7 @@ export const shadowOpacityElevation = {
 export const ShadowRadius = {
   shadowRadius3: 3,
   shadowRadius4: 4,
+  shadowRadius8: 8,
   shadowRadius12: 12,
   shadowRadius15: 15,
   shadowRadius16: 16,

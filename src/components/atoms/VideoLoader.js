@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 import { Animated, Easing, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-
 const VideoLoader = () => {
   const spinValue = new Animated.Value(0);
-
   useEffect(() => {
     Animated.loop(
       Animated.timing(spinValue, {
@@ -15,12 +13,10 @@ const VideoLoader = () => {
       })
     ).start();
   }, []);
-
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
-
   return (
     <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ transform: [{ rotate: spin }] }}>
@@ -47,5 +43,4 @@ const VideoLoader = () => {
     </View>
   );
 };
-
 export default VideoLoader;

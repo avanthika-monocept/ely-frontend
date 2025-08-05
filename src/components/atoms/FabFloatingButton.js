@@ -1,11 +1,12 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import Chevron from "../../../assets/Chevron.svg"; // Ensure the path is correct
-import ChevronDown from "../../../assets/ChevronDown.svg"; // Ensure the path is correct
+import Chevron from "../../../assets/Chevron.svg"; 
+import ChevronDown from "../../../assets/ChevronDown.svg";
 import {
   borderRadius,
   borderWidth,
   imageSize,
+  shadowOpacityElevation,
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
@@ -35,7 +36,7 @@ const FabFloatingButton = ({
           onPress={onClick}
           accessibilityRole="button"
         >
-          <ChevronDown width={12} height={12}/>
+          <ChevronDown width={sizeWithoutScale.width12} height={sizeWithoutScale.height12}/>
           <Text style={styles.newMessageText}>
             {count} new message{count !== 1 ? "s" : ""}
           </Text>
@@ -48,7 +49,7 @@ const FabFloatingButton = ({
           onPress={onClick}
           accessibilityRole="button"
         >
-          <Chevron width={20} height={20} />
+          <Chevron width={sizeWithoutScale.width20} height={sizeWithoutScale.height20} />
         </TouchableOpacity>
       )}
     </View>
@@ -59,8 +60,7 @@ const styles = StyleSheet.create({
   fab: {
     justifyContent: "center",
     alignItems: "center",
-    opacity: 1,
-    transition: "opacity 0.3s ease-in-out",
+    opacity: shadowOpacityElevation.opacity1,
   },
   extendedFab: {
     width: sizeWithoutScale.width137,
@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.space_10,
   },
   roundedFab: {
-    width: 40,
-    height: 40,
+    width: imageSize.width40,
+    height: imageSize.height40,
     backgroundColor: colors.primaryColors.white,
     borderRadius: borderRadius.borderRadius50,
     borderColor: colors.lightNeutrals.n100,
@@ -81,12 +81,12 @@ const styles = StyleSheet.create({
   },
   newMessageText: {
     color: colors.primaryColors.white,
-    padding: "8px",
+    paddingHorizontal: spacing.space_s2,
     marginLeft: spacing.space_s3,
     ...fontStyle.bodySmallMedium,
   },
   replyMargin: {
-    marginBottom: 10,
+    marginBottom: spacing.space_10,
   },
 });
 

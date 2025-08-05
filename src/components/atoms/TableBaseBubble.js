@@ -1,12 +1,13 @@
 import {
   View,
   Modal,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Platform,
   StatusBar,
-  Dimensions,
+  Alert,
+  Text,
+  ScrollView,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { captureRef } from "react-native-view-shot";
@@ -17,107 +18,81 @@ import FileModal from "./FileModal";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { spacing } from "../../constants/Dimensions";
+import { borderRadius, borderWidth, flex, size, sizeWithoutScale, spacing, shadowOpacityElevation, spacingVerticalScale } from "../../constants/Dimensions";
 import RNFS from "react-native-fs";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+import Popover from "react-native-popover-view";
+import { iconNames, stringConstants } from "../../constants/StringConstants";
+import { fontType } from "../../constants/Fonts";
+ 
 
 const TableBaseBubble = ({
   apiText,
   isOpen,
   setIsOpen,
-  handleReplyMessage,
-  copyToClipboard,
-  setMessageObjectId,
+  handleReplyMessage = () => { },
+  copyToClipboard = () => { },
+  setMessageObjectId = () => { },
   messageId,
+  setType = () => { },
   type,
-  setType,
-  reply,
-  isTextEmpty,
-  text,
+  reply = false,
+  isTextEmpty = false,
+  text = "",
 }) => {
   const viewRef = useRef();
+  const anchorRef = useRef();
   const [imageUri, setImageUri] = useState(null);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [isModalVisible, setModalVisible] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-
-  // In TableBaseBubble.js, modify the captureMarkdown function:
-  const captureMarkdown = async () => {
-    if (isCapturing || !viewRef.current) return;
-    setIsCapturing(true);
-
-    try {
-      // Add a small delay to ensure the view is ready
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const uri = await captureRef(viewRef, {
-        format: "png",
-        quality: 1,
-        result: "tmpfile",
-        width: screenWidth * 1.2,
-        height: screenHeight * 0.5,
-      });
-
-      const newPath = `${RNFS.DocumentDirectoryPath}/captured_table_image_${Date.now()}.png`;
-      await RNFS.moveFile(uri, newPath);
-      setImageUri(`file://${newPath}`);
-    } catch (error) {
-      console.error("Error capturing markdown:", error);
-      setImageUri(null); // Reset on error
-    } finally {
-      setIsCapturing(false);
-    }
+  const [isPopoverVisible, setPopoverVisible] = useState(false);
+ const [loaddata, setLoadData] = useState();
+ 
+ 
+ 
+  const openImageModal = async (apiText) => {
+    setModalVisible(true);
+    setLoadData(apiText)
   };
-
-  useEffect(() => {
-    if (!imageUri && !isCapturing) {
-      const timer = setTimeout(() => {
-        captureMarkdown();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [apiText, imageUri, isCapturing]);
-
-  useEffect(() => {
-    if (imageUri) {
-      Image.getSize(
-        imageUri,
-        (width, height) => {
-          const aspectRatio = height / width;
-          let scaledWidth;
-          if (reply) {
-            scaledWidth = 50;
-          } else if (isTextEmpty) {
-            scaledWidth = 250;
-          } else {
-            scaledWidth = screenWidth * 0.7;
-          }
-
-          const scaledHeight = scaledWidth * aspectRatio;
-
-          setImageSize({
-            width: scaledWidth,
-            height: scaledHeight,
+ 
+  const handleShare = async () => {
+    try {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+ 
+      setTimeout(async () => {
+        try {
+          const uri = await captureRef(viewRef, {
+            format: "png",
+            quality: 1,
+            result: "tmpfile",
           });
-        },
-        (err) => console.log("Image size error:", err)
-      );
-    }
-  }, [imageUri, reply, isTextEmpty]);
-
+ 
+          const newPath = `${RNFS.DocumentDirectoryPath}/table_share_${Date.now()}.png`;
+          await RNFS.moveFile(uri, newPath);
+          const imageFilePath = `file://${newPath}`;
+ 
+          setImageUri(imageFilePath);
+          setIsOpen(true);
+          setMessageObjectId(messageId);
+          setType(isTextEmpty ? stringConstants.table : stringConstants.tableWithText);
+        } catch (innerErr) {
+          Alert.alert(stringConstants.error);
+          console.error(stringConstants.error, innerErr);
+        }
+      }, 100);
+    } catch (err) {
+      Alert.alert(stringConstants.error);
+      }
+  };
+ 
   const closeFullScreen = () => {
     setModalVisible(false);
   };
-
-  // Force recapture when styles change
+ 
   useEffect(() => {
-    if (imageUri) {
-      setImageUri(null);
-      captureMarkdown();
+    if (!reply) {
+      setIsOpen(false);
     }
-  }, [markdownStyles]);
-
+  }, [reply]);
+ 
   return (
     <View>
       <FileModal
@@ -125,7 +100,7 @@ const TableBaseBubble = ({
         onClose={() => {
           setIsOpen(false);
           setMessageObjectId(null);
-          setType("tableWithText");
+          setType(stringConstants.tableWithText);
         }}
         type={type}
         setTableModal={setModalVisible}
@@ -134,65 +109,43 @@ const TableBaseBubble = ({
         file={imageUri}
         text={text}
       />
-
-      {!imageUri && (
-        <View
-          ref={viewRef}
-          testID="markdown-view" // ✅ Add this line
-          style={{
-            position: "absolute",
-            top: -9999,
-            left: -9999,
-            opacity: Platform.OS === "ios" ? 1 : 0,
-            zIndex: -1,
-            backgroundColor: "white",
-            flexShrink: 1,
-            alignSelf: "flex-start",
-            paddingVertical: 10,
+ 
+      <View ref={anchorRef} collapsable={false}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => {
+            if (!reply) openImageModal(apiText);
           }}
         >
-          <Markdown style={markdownStyles}>{apiText}</Markdown>
+          <View ref={viewRef} collapsable={false} style={[styles.tableContainer, reply && styles.tableContainerReply]}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator
+              contentContainerStyle={{ flexGrow: flex.one }}
+              collapsable={false}
+            >
+              <ScrollView
+                showsVerticalScrollIndicator
+                contentContainerStyle={{ flexGrow: flex.one }}
+                collapsable={false}
+              >
+                <Markdown style={reply ? markdownStylesReply : markdownStyles}>
+                  {apiText?.replace(/<br\s*\/?>/gi, "\n")}
+                </Markdown>
+              </ScrollView>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </View>
+ 
+      {!reply && (
+        <View style={styles.iconGroup}>
+          <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
+            <Ionicons name={iconNames.ellipsisVertical} size={18} color={colors.primaryColors.white} />
+          </TouchableOpacity>
         </View>
       )}
-
-      {imageUri && (
-        <TouchableOpacity
-          testID="image-container"
-          onLongPress={() => {
-            setIsOpen(true);
-            setMessageObjectId(messageId);
-            const tableType = isTextEmpty ? "table" : "tableWithText";
-            setType(tableType);
-          }}
-          onPress={() => setModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <Image
-            testID="captured-image" // ✅ Already present? If not, add this
-            source={{ uri: imageUri }}
-            style={{
-              width: imageSize.width,
-              height: imageSize.height,
-              resizeMode: "contain",
-              backgroundColor: "white",
-            }}
-          />
-          {!reply && (
-            <TouchableOpacity
-              style={styles.iconContainer}
-              onPress={() => {
-                setIsOpen(true);
-                setMessageObjectId(messageId);
-                const tableType = isTextEmpty ? "table" : "tableWithText";
-                setType(tableType);
-              }}
-            >
-              <Ionicons name="ellipsis-vertical" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
-        </TouchableOpacity>
-      )}
-
+ 
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -202,110 +155,148 @@ const TableBaseBubble = ({
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={closeFullScreen}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={colors.primaryColors.white}
-              />
+            <TouchableOpacity style={styles.backButton} onPress={closeFullScreen}>
+              <Ionicons name={iconNames.arrowBack} size={24} color={colors.primaryColors.white} />
             </TouchableOpacity>
           </View>
           <View style={styles.modalImageContainer}>
-            <Image
-              source={{ uri: imageUri }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
+            <ScrollView horizontal contentContainerStyle={styles.horizontalScrollContent}>
+              <ScrollView contentContainerStyle={styles.verticalScrollContent}>
+                <Markdown style={reply ? markdownStylesReply : markdownStyles}>
+                  {loaddata?.replace(/<br\s*\/?>/gi, "\n")}
+                </Markdown>
+              </ScrollView>
+            </ScrollView>
           </View>
         </SafeAreaView>
       </Modal>
+ 
+      <Popover
+        isVisible={isPopoverVisible}
+        from={<View />}
+        onRequestClose={() => setPopoverVisible(false)}
+        placement="auto"
+      >
+        <View style={styles.popoverContent}>
+          <TouchableOpacity
+            onPress={() => {
+              setPopoverVisible(false);
+              copyToClipboard();
+            }}
+          >
+            <Text style={styles.popoverItem}>📋 Copy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setPopoverVisible(false);
+              handleReplyMessage();
+            }}
+          >
+            <Text style={styles.popoverItem}>💬 Reply</Text>
+          </TouchableOpacity>
+        </View>
+      </Popover>
     </View>
   );
 };
-
+ 
+const baseTableCell = {
+  padding: spacing.space_s3,
+  textAlign: "center",
+  borderWidth: borderWidth.borderWidth0_3,
+  borderColor: colors.midNeutrals.n600,
+  fontFamily: fontType.roboto,
+  width: size.width_100,
+  minWidth: size.width_100,
+  maxWidth: size.width_100,
+};
+ 
 const markdownStyles = StyleSheet.create({
   body: {
-    color: "#000",
-    margin: 0,
-    padding: 0,
-    backgroundColor: "white",
+    color: colors.primaryColors.black,
+    backgroundColor: colors.primaryColors.white,
   },
   table: {
-    // borderWidth: 0.5,
-    // borderColor: "#E0E0E0",
-    borderColor: "white",
-    minWidth: 250,
-    margin: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    borderCollapse: "collapse",
-  },
-  thead: {
-    borderBottomWidth: 0,
-    borderColor: "#E0E0E0",
+    borderColor: colors.primaryColors.borderTop,
+    borderWidth: sizeWithoutScale.width1,
+    padding: sizeWithoutScale.width5,
   },
   th: {
+    ...baseTableCell,
     fontWeight: "bold",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    textAlign: "center",
-    textAlignVertical: "center",
-    borderWidth: 0.5,
-    borderColor: "#E0E0E0",
-    fontSize: 10, // Explicit font size
-    fontFamily: "Roboto", // Ensure font family
-    lineHeight: 12, // lineHeight should be slightly larger than font size
-    includeFontPadding: false, // Remove extra padding
-    margin: 0,
+    fontSize: spacing.space_m1,
   },
   td: {
-    paddingVertical: 3,
-    paddingHorizontal: 9,
-    textAlign: "center",
-    textAlignVertical: "center",
-    borderWidth: 0.5,
-    borderColor: "#E0E0E0",
-    fontSize: 10, // Explicit font size
-    fontFamily: "Roboto", // Ensure font family
-    lineHeight: 12, // lineHeight should be slightly larger than font size
-    includeFontPadding: false, // Remove extra padding
-    margin: 0,
-  },
-  tr: {
-    borderBottomWidth: 0,
-    borderColor: "#E0E0E0",
-  },
-  bullet_list: {
-    marginVertical: 2,
+    ...baseTableCell,
+    fontSize: spacing.space_m1,
   },
 });
-
+ 
+const markdownStylesReply = StyleSheet.create({
+  body: {
+    backgroundColor: "transparent",
+    height: sizeWithoutScale.height50,
+    width: sizeWithoutScale.width50,
+  },
+  table: {
+    borderColor: colors.midNeutrals.n600,
+    borderWidth: borderWidth.borderWidth1,
+    padding: spacing.space_s1,
+  },
+  th: {
+    ...baseTableCell,
+    fontWeight: "bold",
+    fontSize: spacing.space_s3,
+  },
+  td: {
+    ...baseTableCell,
+    fontSize: spacing.space_s3,
+  },
+});
+ 
+ 
 const styles = StyleSheet.create({
-  iconContainer: {
+  tableContainer: {
+    backgroundColor: colors.primaryColors.white,
+    borderRadius: spacing.space_s3,
+    elevation: shadowOpacityElevation.elevation2,
+    marginBottom: spacing.space_10,
+    maxHeight: sizeWithoutScale.width300,
+  },
+  tableContainerReply: {
+    width: sizeWithoutScale.width50,
+    height: sizeWithoutScale.height50,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  iconGroup: {
     position: "absolute",
     right: spacing.space_s1,
     top: spacing.space_s3,
+    flexDirection: "row",
+    gap: spacing.space_base,
     zIndex: 1,
-    backgroundColor: "#171A2133",
-    borderRadius: 25,
-    padding: 5,
+    backgroundColor: colors.darkNeutrals.n300,
+    borderRadius: borderRadius.borderRadius25,
+    padding: spacing.space_s2,
+  },
+  iconButton: {
+    padding: spacing.space_s2,
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: "black",
+    flex: flex.one,
+    backgroundColor: colors.primaryColors.black,
     justifyContent: "center",
   },
   modalHeader: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
+    top: spacing.space_s0,
+    left: spacing.space_s0,
+    right: spacing.space_s0,
     zIndex: 10,
-    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight + 10,
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? sizeWithoutScale.height50 : StatusBar.currentHeight + spacing.space_10,
+    paddingHorizontal: spacing.space_m3,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -313,35 +304,52 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     left: scale(16),
-    top: verticalScale(16),
+    top: spacingVerticalScale.space_m2,
     zIndex: 2,
-    elevation: 5,
-    paddingTop: Platform.OS === "ios" ? 30 : 4,
   },
   modalImageContainer: {
-    flex: 1,
+    height: size.fiftyPercent,
+    width: size.ninetyPercent,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: borderRadius.borderRadius12,
+  },
+ 
+  horizontalScrollContent: {
+    flexGrow: flex.one,
+    alignItems: "center",
+  },
+  verticalScrollContent: {
+    flexGrow: flex.one,
     justifyContent: "center",
     alignItems: "center",
   },
-  fullScreenImage: {
-    width: screenWidth,
-    height: screenHeight * 0.8,
+  popoverContent: {
+    padding: spacing.space_10,
+    backgroundColor: colors.primaryColors.white,
+    borderRadius: borderRadius.borderRadius8,
+  },
+  popoverItem: {
+    fontSize: sizeWithoutScale.height14,
+    paddingVertical: spacing.space_base,
+    paddingHorizontal: spacing.space_m1,
   },
 });
-
+ 
 TableBaseBubble.propTypes = {
   apiText: PropTypes.string.isRequired,
   isOpen: PropTypes.bool,
   setIsOpen: PropTypes.func,
   handleReplyMessage: PropTypes.func,
+  copyToClipboard: PropTypes.func,
   setMessageObjectId: PropTypes.func,
   messageId: PropTypes.number,
   setType: PropTypes.func,
   type: PropTypes.string,
-  copyToClipboard: PropTypes.func,
   reply: PropTypes.bool,
   isTextEmpty: PropTypes.bool,
   text: PropTypes.string,
 };
-
+ 
 export default TableBaseBubble;
