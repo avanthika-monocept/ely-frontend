@@ -71,6 +71,7 @@
     "react-native-paper": "^5.13.1",
     "react-native-pdf": "^6.7.7",
     "react-native-permissions": "^5.4.0",
+    "react-native-popover-view": "^6.1.0",
     "react-native-reanimated": "^3.17.1",
     "react-native-responsive-fontsize": "^0.5.1",
     "react-native-screens": "^4.10.0",
@@ -86,6 +87,5 @@
     "socket.io-client": "^4.8.1",
     "react-native-blob-util": "^0.21.2",
     "react-native-video": "^6.14.1",
-    "react-native-popover-view": "^6.1.0"
   }
 }

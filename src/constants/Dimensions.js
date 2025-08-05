@@ -16,6 +16,7 @@ export const spacing = {
   space_m2: 16,
   space_m3: 20,
   space_m4: 24,
+  space_l0:30,
   space_l1: 32,
   space_l2: 40,
   space_l3: 48,
@@ -263,6 +264,7 @@ export const sizeWithoutScale = {
   width1: 1,
   width2: 2,
   width4: 4,
+  width5: 5,
   width3: 3,
   width8: 8,
   width10: 10,
@@ -295,6 +297,7 @@ export const sizeWithoutScale = {
   width80: 80,
   width84: 84,
   width97: 97,
+  width100:100,
   width110: 110,
   width112: 112,
   width120: 120,
@@ -329,6 +332,7 @@ export const sizeWithoutScale = {
   height2: 2,
   height3: 3,
   height4: 4,
+  height5: 5,
   height6: 6,
   height7: 7,
   height8: 8,
@@ -353,6 +357,7 @@ export const sizeWithoutScale = {
   height42: 42,
   height45: 45,
   height48: 48,
+  height50:50,
   height52: 52,
   height53: 53,
   height54: 54,
@@ -387,6 +392,7 @@ export const sizeWithoutScale = {
 };
 
 export const borderRadius = {
+  borderRadius3: 3,
   borderRadius4: 4,
   borderRadius5: 5,
   borderRadius5_5: 5.5,

@@ -3,6 +3,7 @@ const colors = {
     orange: "#F27930",
     woodSmoke: "#171A21",
     white: "#FFFFFF",
+    halfWhite: "#F1F1F1",
     black: "#000000",
     green: "#099A4F",
     lightGreen: "#B3E796",
@@ -19,6 +20,10 @@ const colors = {
     borderTop: "#e0e0e0",
     skyBlue: "#CDEAF8",
     surface:"#97144D",
+    charcoalGray:"#424752",
+    lightYellow:"#FFF9E9",
+    digitalBlue:"#007BFF",
+    frostedBlue: "#E3F2FD",
   },
   secondaryColors: {
     summerSky: "#3597EC",
@@ -35,8 +40,11 @@ const colors = {
     n700: "#424752",
     n600: "#505662",
     n500: "#0000000D",
+    n400:"#171A2133",
+    n300:"#171A2133"
   },
   midNeutrals: {
+    n600:"#D0D0D0",
     n500: "#626772",
     n400: "#737881",
     n300: "#858991",

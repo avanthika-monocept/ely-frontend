@@ -1,12 +1,10 @@
 import {
   View,
   Modal,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Platform,
   StatusBar,
-  Dimensions,
   Alert,
   Text,
   ScrollView,
@@ -20,12 +18,13 @@ import FileModal from "./FileModal";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { spacing } from "../../constants/Dimensions";
+import { borderRadius, borderWidth, flex, size, sizeWithoutScale, spacing, shadowOpacityElevation, spacingVerticalScale } from "../../constants/Dimensions";
 import RNFS from "react-native-fs";
 import Popover from "react-native-popover-view";
+import { iconNames, stringConstants } from "../../constants/StringConstants";
+import { fontType } from "../../constants/Fonts";
  
-const { width: screenWidth } = Dimensions.get("window");
- 
+
 const TableBaseBubble = ({
   apiText,
   isOpen,
@@ -45,29 +44,13 @@ const TableBaseBubble = ({
   const [imageUri, setImageUri] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [isPopoverVisible, setPopoverVisible] = useState(false);
-  const [capturedSize, setCapturedSize] = useState({ width: 0, height: 0 });
+ const [loaddata, setLoadData] = useState();
  
-  console.log ('issuetext:',apiText)
  
-  const openImageModal = async () => {
-    try {
-      requestAnimationFrame(async () => {
-        const uri = await captureRef(viewRef, {
-          format: "png",
-          quality: 0.8,
-          result: "tmpfile",
-        });
  
-        const newPath = `${RNFS.DocumentDirectoryPath}/table_modal_${Date.now()}.png`;
-        await RNFS.moveFile(uri, newPath);
-        const imageFilePath = `file://${newPath}`;
-        setImageUri(imageFilePath);
-        setModalVisible(true);
-      });
-    } catch (err) {
-      Alert.alert("Error", "Failed to capture table image.");
-      console.error("Modal Image Error:", err);
-    }
+  const openImageModal = async (apiText) => {
+    setModalVisible(true);
+    setLoadData(apiText)
   };
  
   const handleShare = async () => {
@@ -87,19 +70,17 @@ const TableBaseBubble = ({
           const imageFilePath = `file://${newPath}`;
  
           setImageUri(imageFilePath);
-          setCapturedSize({ width: 0, height: 0 }); // optional: adjust if needed
           setIsOpen(true);
           setMessageObjectId(messageId);
-          setType(isTextEmpty ? "table" : "tableWithText");
+          setType(isTextEmpty ? stringConstants.table : stringConstants.tableWithText);
         } catch (innerErr) {
-          Alert.alert("Error", "Failed to capture table image.");
-          console.error("Capture Error:", innerErr);
+          Alert.alert(stringConstants.error);
+          console.error(stringConstants.error, innerErr);
         }
       }, 100);
     } catch (err) {
-      Alert.alert("Error", "Failed to initiate capture.");
-      console.error("Share Error:", err);
-    }
+      Alert.alert(stringConstants.error);
+      }
   };
  
   const closeFullScreen = () => {
@@ -119,7 +100,7 @@ const TableBaseBubble = ({
         onClose={() => {
           setIsOpen(false);
           setMessageObjectId(null);
-          setType("tableWithText");
+          setType(stringConstants.tableWithText);
         }}
         type={type}
         setTableModal={setModalVisible}
@@ -133,19 +114,19 @@ const TableBaseBubble = ({
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => {
-            if (!reply) openImageModal();
+            if (!reply) openImageModal(apiText);
           }}
         >
           <View ref={viewRef} collapsable={false} style={[styles.tableContainer, reply && styles.tableContainerReply]}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator
-              contentContainerStyle={{ flexGrow: 1 }}
+              contentContainerStyle={{ flexGrow: flex.one }}
               collapsable={false}
             >
               <ScrollView
                 showsVerticalScrollIndicator
-                contentContainerStyle={{ flexGrow: 1 }}
+                contentContainerStyle={{ flexGrow: flex.one }}
                 collapsable={false}
               >
                 <Markdown style={reply ? markdownStylesReply : markdownStyles}>
@@ -160,7 +141,7 @@ const TableBaseBubble = ({
       {!reply && (
         <View style={styles.iconGroup}>
           <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
-            <Ionicons name="ellipsis-vertical" size={18} color="#FFF" />
+            <Ionicons name={iconNames.ellipsisVertical} size={18} color={colors.primaryColors.white} />
           </TouchableOpacity>
         </View>
       )}
@@ -175,26 +156,24 @@ const TableBaseBubble = ({
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity style={styles.backButton} onPress={closeFullScreen}>
-              <Ionicons name="arrow-back" size={24} color={colors.primaryColors.white} />
+              <Ionicons name={iconNames.arrowBack} size={24} color={colors.primaryColors.white} />
             </TouchableOpacity>
           </View>
           <View style={styles.modalImageContainer}>
-            {imageUri && (
-              <ScrollView horizontal contentContainerStyle={styles.horizontalScrollContent}>
-                <ScrollView contentContainerStyle={styles.verticalScrollContent}>
-                  <Markdown style={reply ? markdownStylesReply : markdownStyles}>
-                    {apiText?.replace(/<br\s*\/?>/gi, "\n")}
-                  </Markdown>
-                </ScrollView>
+            <ScrollView horizontal contentContainerStyle={styles.horizontalScrollContent}>
+              <ScrollView contentContainerStyle={styles.verticalScrollContent}>
+                <Markdown style={reply ? markdownStylesReply : markdownStyles}>
+                  {loaddata?.replace(/<br\s*\/?>/gi, "\n")}
+                </Markdown>
               </ScrollView>
-            )}
+            </ScrollView>
           </View>
         </SafeAreaView>
       </Modal>
  
       <Popover
         isVisible={isPopoverVisible}
-        from={anchorRef?.current || <View />}
+        from={<View />}
         onRequestClose={() => setPopoverVisible(false)}
         placement="auto"
       >
@@ -222,75 +201,71 @@ const TableBaseBubble = ({
 };
  
 const baseTableCell = {
-  padding: 6,
+  padding: spacing.space_s3,
   textAlign: "center",
-  borderWidth: 0.5,
-  borderColor: "#D0D0D0",
-  fontFamily: "Roboto",
-  width: 100,
-  minWidth: 100,
-  maxWidth: 100,
+  borderWidth: borderWidth.borderWidth0_3,
+  borderColor: colors.midNeutrals.n600,
+  fontFamily: fontType.roboto,
+  width: size.width_100,
+  minWidth: size.width_100,
+  maxWidth: size.width_100,
 };
  
 const markdownStyles = StyleSheet.create({
   body: {
-    color: "#000",
-    backgroundColor: "#FFF",
+    color: colors.primaryColors.black,
+    backgroundColor: colors.primaryColors.white,
   },
   table: {
-    borderColor: "#E0E0E0",
-    borderWidth: 1,
-    padding: 5,
+    borderColor: colors.primaryColors.borderTop,
+    borderWidth: sizeWithoutScale.width1,
+    padding: sizeWithoutScale.width5,
   },
   th: {
     ...baseTableCell,
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: spacing.space_m1,
   },
   td: {
     ...baseTableCell,
-    fontSize: 12,
+    fontSize: spacing.space_m1,
   },
 });
  
 const markdownStylesReply = StyleSheet.create({
   body: {
     backgroundColor: "transparent",
-    height: 50,
-    width: 50,
+    height: sizeWithoutScale.height50,
+    width: sizeWithoutScale.width50,
   },
   table: {
-    borderColor: "#D0D0D0",
-    borderWidth: 1,
-    padding: 2,
+    borderColor: colors.midNeutrals.n600,
+    borderWidth: borderWidth.borderWidth1,
+    padding: spacing.space_s1,
   },
   th: {
     ...baseTableCell,
     fontWeight: "bold",
-    fontSize: 6,
+    fontSize: spacing.space_s3,
   },
   td: {
     ...baseTableCell,
-    fontSize: 6,
+    fontSize: spacing.space_s3,
   },
 });
  
  
 const styles = StyleSheet.create({
   tableContainer: {
-    backgroundColor: "#FFF",
-    borderRadius: 6,
-    elevation: 2,
-    marginBottom: 10,
-    maxHeight: 300,
-  },
-  scrollTableContent: {
-    maxHeight: 300,
-    padding: 5,
+    backgroundColor: colors.primaryColors.white,
+    borderRadius: spacing.space_s3,
+    elevation: shadowOpacityElevation.elevation2,
+    marginBottom: spacing.space_10,
+    maxHeight: sizeWithoutScale.width300,
   },
   tableContainerReply: {
-    width: 50,
-    height: 50,
+    width: sizeWithoutScale.width50,
+    height: sizeWithoutScale.height50,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -300,28 +275,28 @@ const styles = StyleSheet.create({
     right: spacing.space_s1,
     top: spacing.space_s3,
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.space_base,
     zIndex: 1,
-    backgroundColor: "#171A2133",
-    borderRadius: 25,
-    padding: 4,
+    backgroundColor: colors.darkNeutrals.n300,
+    borderRadius: borderRadius.borderRadius25,
+    padding: spacing.space_s2,
   },
   iconButton: {
-    padding: 4,
+    padding: spacing.space_s2,
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: "black",
+    flex: flex.one,
+    backgroundColor: colors.primaryColors.black,
     justifyContent: "center",
   },
   modalHeader: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
+    top: spacing.space_s0,
+    left: spacing.space_s0,
+    right: spacing.space_s0,
     zIndex: 10,
-    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight + 10,
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? sizeWithoutScale.height50 : StatusBar.currentHeight + spacing.space_10,
+    paddingHorizontal: spacing.space_m3,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -329,36 +304,36 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     left: scale(16),
-    top: verticalScale(16),
+    top: spacingVerticalScale.space_m2,
     zIndex: 2,
   },
   modalImageContainer: {
-    height: '50%',
-    width: '90%',
+    height: size.fiftyPercent,
+    width: size.ninetyPercent,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: borderRadius.borderRadius12,
   },
  
   horizontalScrollContent: {
-    flexGrow: 1,
+    flexGrow: flex.one,
     alignItems: "center",
   },
   verticalScrollContent: {
-    flexGrow: 1,
+    flexGrow: flex.one,
     justifyContent: "center",
     alignItems: "center",
   },
   popoverContent: {
-    padding: 10,
-    backgroundColor: "white",
-    borderRadius: 8,
+    padding: spacing.space_10,
+    backgroundColor: colors.primaryColors.white,
+    borderRadius: borderRadius.borderRadius8,
   },
   popoverItem: {
-    fontSize: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    fontSize: sizeWithoutScale.height14,
+    paddingVertical: spacing.space_base,
+    paddingHorizontal: spacing.space_m1,
   },
 });
  

@@ -4,7 +4,7 @@ import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
-
+import { socketConstants, stringConstants } from "../../constants/StringConstants";
 export const Reactions = ({
   options,
   onSelect,
@@ -16,7 +16,6 @@ export const Reactions = ({
   activity
 }) => {
   const [selected, setSelected] = useState(activity || null);
-
   const handleSelect = (id) => {
     const isSelected = selected === id;
     const newSelected = isSelected ? null : id;
@@ -26,20 +25,17 @@ export const Reactions = ({
     const message = {
       action: CHAT_MESSAGE_PROXY,
       token: token,
-
       message: {
-        emoji: id === "like" ? "U+1F44D" : "U+1F44E",
-        sendType: "REACTION",
-        action: newSelected === id ? "SELECTED" : "DESELECTED",
+        emoji: id === stringConstants.like ? stringConstants.thumbsUpEmoji :stringConstants.thumbsDownEmoji,
+        sendType: socketConstants.reaction,
+        action: newSelected === id ? socketConstants.selected : socketConstants.deselected,
         platform: platform,
         messageId: messageId,
         userId: agentId,
       }
     };
-
     socket.send(JSON.stringify(message));
   };
-
 
   return (
     <View style={styles.container}>
@@ -58,12 +54,7 @@ export const Reactions = ({
                 borderColor: selected === id ? colors.primaryColors.borderBlue : colors.Extended_Palette.midnightBlue.mb100,
                 backgroundColor:
                   selected === id
-                    ? `linear-gradient(
-    180deg,
-    rgba(51, 159, 226, 0.08) 0%,
-    rgba(255, 255, 255, 0.08) 100%
-  ),
-  #FFFFFF`
+                    ? `linear-gradient(180deg, rgba(51, 159, 226, 0.08) 0%, rgba(255, 255, 255, 0.08) 100%), #FFFFFF`
                     : "#FFF",
                 borderWidth: 1,
               },
@@ -77,7 +68,6 @@ export const Reactions = ({
     </View>
   );
 };
-
 Reactions.propTypes = {
   options: PropTypes.arrayOf(
     PropTypes.shape({
@@ -93,7 +83,6 @@ Reactions.propTypes = {
   platform: PropTypes.string,
   activity: PropTypes.string,
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",

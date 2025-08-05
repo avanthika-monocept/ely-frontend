@@ -146,7 +146,7 @@ export const ChatFooter = ({
             (
               <ReplyMessage
                 replyFrom={
-                  data?.messageTo?.toLowerCase() === "bot" ? "YOU" : "BOT"
+                  data?.messageTo?.toLowerCase() === stringConstants.bot ? stringConstants.you : stringConstants.botCaps
                 }
                 replyMessage={data.text}
                 media={data.media}

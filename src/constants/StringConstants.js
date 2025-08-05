@@ -1,5 +1,6 @@
 
 
+
 export const navigationscreen = {
   header: "header",
 };
@@ -34,18 +35,27 @@ export const stringConstants = {
   KeyboardPadding: "padding",
   table: "table",
   text: "text",
+  url:"url",
+  email: "email",
+  phone: "phone",
   tableWithText: "tableWithText",
   imageWithText: "imageWithText",
   videoWithText: "videoWithText",
+  textWithLink:"textwithlink",
   video: "video",
   image: "image",
-  bot:"bot",
+  bot: "bot",
   botCaps: "BOT",
-  you:"YOU",
+  you: "YOU",
+  ely:"ELY",
   copiedToClipboard: "Copied to Clipboard",
-  error:"Error",
-  success:"SUCCESS",
-  };
+  error: "Error",
+  success: "Success",
+  like:"like",
+  thumbsUpEmoji:"U+1F44D" ,
+  thumbsDownEmoji:"U+1F44E",
+ };
+
 
 export const timeoutConstants = {
   response: 60000,
@@ -58,6 +68,9 @@ export const socketConstants = {
   acknowledgement: "ACKNOWLEDGEMENT",
   read: "READ",
   received: "RECEIVED",
+  reaction:"REACTION",
+  selected:"SELECTED",
+  deselected:"DESELECTED",
 };
 
 export const socketMessageTypes = {
@@ -67,21 +80,74 @@ export const socketMessageTypes = {
   replyToLandingPage: "REPLY_TO_LANDING_PAGE",
   quickReply: "QUICK_REPLY",
 };
-export const share= {
-    title: "Share Media",
-    error: "Failed to share file.",
-    videoTitle: "Share Video",
-    imageTitle: "Share Image",
-    invalidUri: "Invalid URI",
-   
-  }
-  export const labels= {
-    preview: "Preview",
-    reply: "Reply-to",
-    download: "Download",
-    share: "Share",
-    copyText: "Copy Text"
-  }
+export const share = {
+  title: "Share Media",
+  error: "Failed to share file.",
+  videoTitle: "Share Video",
+  imageTitle: "Share Image",
+  invalidUri: "Invalid URI",
+  downloadingVideo: "downloading file...",
+  downloadSuccess:"Download success",
+  mp4: "mp4",
+  jpg:"jpg",
+  fileStartCheck: "file://",
+  http: "http://",
+  https: "https://",
+  get: "GET",
+  defaultMileTypeVideo: "video/mp4",
+  defaultMileTypeImage: "image/jpeg",
+  
+}
+export const labels = {
+  preview: "Preview",
+  reply: "Reply-to",
+  download: "Download",
+  share: "Share",
+  copyText: "Copy Text",
+  open: "Open",
+  openUrl: "Open URL",
+  copyUrl: "Copy URL",
+  openEmail: "Open Email",
+  copyEmail: "Copy Email",
+  callNumber: "Call Number",
+  copyNumber: "Copy Number",
+}
+export const loaderConfig = {
+  textCycleInterval: 1300,
+  dotCount: 5,
+  dotAnimationDelay: 200,
+  DotAnimationDuration: 600,
+  messages: ["", "ELY is thinking", "", "ELY is typing"]
+};
+
+export const markdownLinks={
+   phone :"tel:",
+   email: "mailto:",
+}
+
+export const mediaStrings={
+  storagePermission:"Storage Permission Required",
+  needsAccess:"App needs access to your media to download files.",
+  askMeLater: "Ask Me Later",
+  cancel:"Cancel",
+  ok:"OK",
+  permissionBlocked:"Permission Blocked",
+  deniedPermission:"You've previously denied this permission and chosen not to be asked again. Please enable it manually from app settings.",
+  settingsOpen :"Settings opened successfully",
+  openSettings:"Open Settings",
+  downloadFail:"Download Failed",
+}
+export const iconNames={
+  arrowBack:"arrow-back",
+  playCircle:"play-circle",
+  ellipsisVertical:"ellipsis-vertical",
+  videocam:"videocam",
+  volumeMute:"volume-mute",
+  volumeHigh:"volume-high",
+  pause:"pause" 
+}
+
+
 
 
 
