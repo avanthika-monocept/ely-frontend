@@ -244,7 +244,7 @@ export const ChatPage = ({ route }) => {
   //     return;
   //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: userInfo.agentId || "hom5750", platform: platform || "MSPACE"})
+        getData({ token: newToken, agentId: "hom5750", platform: "MSPACE"})
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         dispatch(clearMessages());
