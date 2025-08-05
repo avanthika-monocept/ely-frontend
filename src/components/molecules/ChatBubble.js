@@ -25,10 +25,10 @@ import {
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
-import PropTypes, { string } from "prop-types";
+import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
-export const ChatBubble = ({
+const ChatBubble = React.memo(({
   isBot,
   options,
   text,
@@ -275,7 +275,7 @@ const isImageOnly = useMemo(() => {
       </View>
     </TouchableWithoutFeedback>
   );
-};
+});
   ChatBubble.propTypes = {
     isBot: PropTypes.bool.isRequired,
     options: PropTypes.array,

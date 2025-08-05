@@ -7,7 +7,7 @@ import {
   View,
   Text,
 } from "react-native";
-import { ChatBubble } from "../molecules/ChatBubble";
+import  ChatBubble  from "../molecules/ChatBubble";
 import { useSelector } from "react-redux";
 import { ChatDateSeparator } from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
