@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import  ChatBubble  from "../molecules/ChatBubble";
 import { useSelector } from "react-redux";
-import { ChatDateSeparator } from "../atoms/ChatDateSeparator";
+import  ChatDateSeparator  from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
