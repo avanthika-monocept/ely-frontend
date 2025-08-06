@@ -229,7 +229,7 @@ export const ChatPage = ({ route }) => {
       cogToken,
       platform,
       {
-        agentId: userInfo?.agentId,
+        agentId: userInfo?.agentId.toLowerCase(),
         userName: userInfo?.userName,
         email: userInfo?.email,
         role: userInfo?.role,
@@ -377,7 +377,7 @@ export const ChatPage = ({ route }) => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
+          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : undefined}
           style={{ flex: flex.one }}
         >
           <View style={styles.content}>
