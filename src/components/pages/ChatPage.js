@@ -8,10 +8,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   AppState,
+  InteractionManager
 } from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
-import { ChatFooter } from "../organims/ChatFooter";
-import { ChatBody } from "../organims/ChatBody";
+import  ChatFooter  from "../organims/ChatFooter";
+import  ChatBody  from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -138,10 +139,18 @@ export const ChatPage = ({ route }) => {
   setNewMessageCount(0);
 };
  
-  const scrollToDown = () => {
+const scrollToDown = () => {
+  InteractionManager.runAfterInteractions(() => {
     resetNewMessageState();
-    scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToOffset({
+        offset: 0,
+        animated: true,
+        duration:900
+      });
+    }
+  });
+};
   const loadChatHistory = async (agentId, page, message, newToken) => {
     setHasMore(true);
     if (!hasMore) return;

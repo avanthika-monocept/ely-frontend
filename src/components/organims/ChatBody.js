@@ -93,7 +93,7 @@ MessageItem.propTypes = {
   reconfigApiResponse: PropTypes.object.isRequired,
   setCopied: PropTypes.func.isRequired
 };
-export const ChatBody = ({
+const ChatBody =React.memo(({
   scrollViewRef,
   handleScroll,
   setDropDownType,
@@ -293,6 +293,8 @@ export const ChatBody = ({
       contentContainerStyle={styles.chatBodyContent}
       showsVerticalScrollIndicator={true}
       inverted={true}
+      scrollEventThrottle={16}
+      windowSize={21}
       onScroll={handleScroll}
       onEndReachedThreshold={0.5}
       onEndReached={() =>
@@ -319,7 +321,7 @@ export const ChatBody = ({
       }
     />
   );
-};
+});
 const styles = StyleSheet.create({
   chatBodyContent: {
     paddingBottom: spacing.space_m3,

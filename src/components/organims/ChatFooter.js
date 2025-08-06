@@ -13,7 +13,7 @@ import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
-export const ChatFooter = ({
+ const ChatFooter = React.memo(({
   copied,
   dropDownType,
   replyMessageId,
@@ -189,7 +189,7 @@ export const ChatFooter = ({
       )}
     </View>
   );
-};
+});
 const styles = StyleSheet.create({
   containerHead: {
     backgroundColor: colors.primaryColors.lightSurface,
@@ -210,3 +210,5 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
 });
+
+export default ChatFooter;
