@@ -77,7 +77,7 @@ export const ChatFooter = ({
       reply
     );
     return () => clearPlaceholderInterval();
-  }, [reconfigApiResponse, isLoading, reply]);
+  }, [isLoading, reply]);
   const handleChange = (text) => {
     setValue(text);
   };

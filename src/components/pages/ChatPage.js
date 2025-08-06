@@ -222,6 +222,7 @@ export const ChatPage = ({ route }) => {
   const initialize = async () => {
     try {
       setIsInitializing(true);
+      dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
     //   const validationResponse = await validateJwtToken(
@@ -247,7 +248,6 @@ export const ChatPage = ({ route }) => {
         getData({ token: newToken, agentId: "hom5750", platform: "MSPACE"})
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        dispatch(clearMessages());
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
