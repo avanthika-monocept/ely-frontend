@@ -338,13 +338,13 @@ const styles = StyleSheet.create({
 });
  
 TableBaseBubble.propTypes = {
-  apiText: PropTypes.string.isRequired,
+  apiText: PropTypes.string,
   isOpen: PropTypes.bool,
   setIsOpen: PropTypes.func,
   handleReplyMessage: PropTypes.func,
   copyToClipboard: PropTypes.func,
   setMessageObjectId: PropTypes.func,
-  messageId: PropTypes.number,
+  messageId: PropTypes.string,
   setType: PropTypes.func,
   type: PropTypes.string,
   reply: PropTypes.bool,
