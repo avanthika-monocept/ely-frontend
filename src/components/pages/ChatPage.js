@@ -63,6 +63,7 @@ export const ChatPage = ({ route }) => {
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const [historyLoading, sethistoryLoading] = useState(false)
   const messages = useSelector((state) => state.chat.messages);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -155,13 +156,16 @@ const scrollToDown = () => {
     setHasMore(true);
     if (!hasMore) return;
     try {
+      sethistoryLoading(true)
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
       const formattedMessages = newMessages.map(msg =>
         formatHistoryMessage(msg)
       );
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
+      sethistoryLoading(false)
     } catch (err) {
+      sethistoryLoading(false)
       console.error(stringConstants.failToLoad, err);
     }
   };
@@ -418,6 +422,7 @@ const scrollToDown = () => {
                 copyToClipboard={copyToClipboard}
                 setCopied={setCopied}
                 token={token}
+                historyLoading={historyLoading}
               />
             )}
           </View>

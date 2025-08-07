@@ -15,6 +15,7 @@ import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
 import { stringConstants } from "../../constants/StringConstants";
 import { fontStyle } from "../../constants/Fonts";
+import ChatSkeletonLoader from "../atoms/ChatSkeletonLoader";
 const MessageItem = React.memo(({
   item,
   index,
@@ -29,7 +30,8 @@ const MessageItem = React.memo(({
   copyToClipboard,
   socket,
   reconfigApiResponse,
-  setCopied
+  setCopied,
+  
 }) => {
   const replyMessageObj = React.useMemo(() => 
     item?.replyId ? messages.find((msg) => msg?.messageId === item.replyId) : null,
@@ -107,6 +109,7 @@ const ChatBody =React.memo(({
   setCopied,
   token,
   setReplyIndex,
+  historyLoading,
 }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
@@ -122,6 +125,7 @@ const ChatBody =React.memo(({
     setCopied: PropTypes.func,
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
+    historyLoading:PropTypes.bool
   };
   const messages = useSelector((state) => state.chat.messages);
   const isLoading = useSelector((state) => state.loader.isLoading);
@@ -319,6 +323,13 @@ const ChatBody =React.memo(({
           </View>
         ) : null
       }
+      ListFooterComponent={
+    historyLoading ? (
+      <View style={styles.historyLoaderContainer}>
+        <ChatSkeletonLoader />
+      </View>
+    ) : null
+  }
     />
   );
 });
