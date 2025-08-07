@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
-const MessageBanner = ({ text = "info", icon }) => {
+const MessageBanner = React.memo(({ text = "info", icon }) => {
   return (
     <View style={styles.container}>
       <View style={styles.innerContainer}>
@@ -13,7 +13,7 @@ const MessageBanner = ({ text = "info", icon }) => {
       </View>
     </View>
   );
-};
+});
 MessageBanner.propTypes = {
   text: PropTypes.string.isRequired,
   icon: PropTypes.element,

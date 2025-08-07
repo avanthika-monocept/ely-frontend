@@ -28,13 +28,7 @@ const chatSlice = createSlice({
     },
 
     addChatHistory: (state, action) => {
-      const newMessages = action.payload.map(msg => {
-       return {
-          ...msg,
-          status: 'READ', 
-          
-        };
-      });
+      const newMessages = action.payload;
       const existingIds = new Set(state.messages.map((msg) => msg.messageId));
       newMessages.forEach((msg) => {
         const id = String(msg.messageId);

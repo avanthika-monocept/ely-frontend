@@ -25,10 +25,10 @@ import {
   sizeWithoutScale,
   spacing,
 } from "../../constants/Dimensions";
-import PropTypes, { string } from "prop-types";
+import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
-export const ChatBubble = ({
+const ChatBubble = React.memo(({
   isBot,
   options,
   text,
@@ -65,14 +65,14 @@ export const ChatBubble = ({
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
-const RotatedThumb = () => <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>;
-  const reactionOptions = [
-    { id: "like", svg: <Text>👍</Text> },
-    {
-      id: "dislike",
-      svg: <RotatedThumb/>,
-    },
-  ];
+const RotatedThumb = React.memo(() => (
+  <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>
+));
+
+const reactionOptions = useMemo(() => [
+  { id: "like", svg: <Text>👍</Text> },
+  { id: "dislike", svg: <RotatedThumb /> },
+], []);
   const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
@@ -275,7 +275,7 @@ const isImageOnly = useMemo(() => {
       </View>
     </TouchableWithoutFeedback>
   );
-};
+});
   ChatBubble.propTypes = {
     isBot: PropTypes.bool.isRequired,
     options: PropTypes.array,

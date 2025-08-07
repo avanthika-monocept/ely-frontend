@@ -8,10 +8,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   AppState,
+  InteractionManager
 } from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
-import { ChatFooter } from "../organims/ChatFooter";
-import { ChatBody } from "../organims/ChatBody";
+import  ChatFooter  from "../organims/ChatFooter";
+import  ChatBody  from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -62,6 +63,7 @@ export const ChatPage = ({ route }) => {
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const [historyLoading, sethistoryLoading] = useState(false)
   const messages = useSelector((state) => state.chat.messages);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -138,21 +140,32 @@ export const ChatPage = ({ route }) => {
   setNewMessageCount(0);
 };
  
-  const scrollToDown = () => {
+const scrollToDown = () => {
+  InteractionManager.runAfterInteractions(() => {
     resetNewMessageState();
-    scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
-  };
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToOffset({
+        offset: 0,
+        animated: true,
+        duration:900
+      });
+    }
+  });
+};
   const loadChatHistory = async (agentId, page, message, newToken) => {
     setHasMore(true);
     if (!hasMore) return;
     try {
+      sethistoryLoading(true)
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
       const formattedMessages = newMessages.map(msg =>
         formatHistoryMessage(msg)
       );
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
+      sethistoryLoading(false)
     } catch (err) {
+      sethistoryLoading(false)
       console.error(stringConstants.failToLoad, err);
     }
   };
@@ -222,6 +235,7 @@ export const ChatPage = ({ route }) => {
   const initialize = async () => {
     try {
       setIsInitializing(true);
+      dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
     //   const validationResponse = await validateJwtToken(
@@ -244,10 +258,9 @@ export const ChatPage = ({ route }) => {
   //     return;
   //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: userInfo.agentId || "hom5750", platform: platform || "MSPACE"})
+        getData({ token: newToken, agentId: "hom5750", platform: "MSPACE"})
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        dispatch(clearMessages());
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
@@ -352,7 +365,7 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (messages.length > prevMessagesLength) {
-      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom) {
+      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status!== socketConstants.read) {
         setShowNewMessageAlert(true);
       }
       setPrevMessagesLength(messages.length);
@@ -409,6 +422,7 @@ export const ChatPage = ({ route }) => {
                 copyToClipboard={copyToClipboard}
                 setCopied={setCopied}
                 token={token}
+                historyLoading={historyLoading}
               />
             )}
           </View>

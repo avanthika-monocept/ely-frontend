@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import { flex, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
-export const ChatDateSeparator = ({ date }) => {
+const ChatDateSeparator = React.memo(({ date }) => {
   ChatDateSeparator.propTypes = {
     date: PropTypes.string,
   };
@@ -17,7 +17,7 @@ export const ChatDateSeparator = ({ date }) => {
       <View testID="chat-date-separator-line" style={styles.line} />
     </View>
   );
-};
+});
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -36,3 +36,4 @@ const styles = StyleSheet.create({
     ...fontStyle.bodyBold2,
   },
 });
+export default ChatDateSeparator;
