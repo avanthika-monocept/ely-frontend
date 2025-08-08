@@ -258,7 +258,7 @@ const scrollToDown = () => {
   //     return;
   //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: "hom5750", platform: "MSPACE"})
+        getData({ token: newToken, agentId: "76361b", platform: "MSPACE"})
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);

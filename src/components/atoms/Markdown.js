@@ -90,8 +90,9 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
         rules={{
           link: (node, children, parent, styles) =>
             renderCustomLink(children, node.attributes.href),
-        }}
-      >
+      
+  
+ }} >
         {sanitizedText}
       </Markdown>
     </View>
@@ -118,12 +119,39 @@ const markdownStyles = {
     marginBottom: spacing.space_s0,
     padding: spacing.space_s0,
   },
-  list_item: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    width: size.hundredPercent,
+  // list_item: {
+  //   flexDirection: "row",
+  //   flexWrap: "wrap",
+  //   width: size.hundredPercent,
 
-  },
+  // },
+  list_item: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  alignItems: "flex-start",
+  flexShrink: 1,
+  maxWidth: "100%",
+},
+
+bullet_list: {
+  paddingLeft: spacing.space_s3,
+  flexShrink: 1,
+  maxWidth: "100%",
+},
+
+ordered_list: {
+  paddingLeft: spacing.space_s3,
+  flexShrink: 1,
+  maxWidth: "100%",
+},
+
+// Ensures list text doesn't overflow
+list_item_text: {
+  flexShrink: 1,
+  flexWrap: "wrap",
+  maxWidth: "100%",
+},
+
   link: {
     color: colors.primaryColors.lightblue,
     textDecorationLine: "underline",
