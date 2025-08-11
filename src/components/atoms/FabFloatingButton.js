@@ -28,6 +28,7 @@ const FabFloatingButton = ({
     showNewMessageAlert: PropTypes.bool,
     reply: PropTypes.bool,
   };
+  
   return (
     <View>
       {showNewMessageAlert && (
