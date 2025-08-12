@@ -431,8 +431,8 @@ export const ChatPage = ({ route }) => {
               <View
                 style={{
                   position: "absolute",
-                  bottom:10,
-                  right: 20,
+                  bottom:spacing.space_10,
+                  right: spacing.space_m3,
                 }}
               >
                 <FabFloatingButton
@@ -490,13 +490,7 @@ const styles = StyleSheet.create({
   content: {
     flex: flex.one,
   },
-  fabIcon: {
-    position: "absolute",
-    right: spacing.space_m2,
-    zIndex: 9999,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
+ 
   loaderContainer: {
     position: 'absolute',
     top: spacing.space_s0,
