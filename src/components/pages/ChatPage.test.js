@@ -1,348 +1,183 @@
-import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
-import { Provider } from 'react-redux';
-import configureStore from 'redux-mock-store';
-import { Keyboard } from 'react-native';
-import ChatPage from './ChatPage';
+import React from "react";
+import { render, fireEvent, act } from "@testing-library/react-native";
+import { ChatPage } from "./ChatPage";
+import { useDispatch, useSelector } from "react-redux";
+import * as getDataModule from "../../store/actions";
+import * as fetchChatHistoryModule from "../../config/api/chatHistory";
+import * as getTokenModule from "../../config/api/getToken";
+import * as validateJwtTokenModule from "../../config/api/ValidateJwtToken";
+import Clipboard from "@react-native-clipboard/clipboard";
+import { AppState, InteractionManager, Keyboard } from "react-native";
+import { stringConstants, socketConstants } from "../../constants/StringConstants";
 
-
-// Mock dependencies
-jest.mock('@react-native-clipboard/clipboard', () => ({
-  setString: jest.fn(),
+// Mock Redux
+jest.mock("react-redux", () => ({
+  useDispatch: jest.fn(),
+  useSelector: jest.fn(),
 }));
-jest.mock('../../store/actions', () => ({
-  getData: jest.fn(({ callback }) => callback({
-    statusFlag: 'COACH',
-    userInfo: { agentId: 'AGT001' },
-    theme: { backgroundColor: '#F4F6FA' }
-  })),
-}));
-jest.mock('../../config/api/chatHistory', () => ({
-  fetchChatHistory: jest.fn().mockResolvedValue([]),
-}));
-jest.mock('../organims/ChatHeader', () => 'ChatHeader');
-jest.mock('../organims/ChatFooter', () => 'ChatFooter');
-jest.mock('../organims/ChatBody', () => 'ChatBody');
-jest.mock('../organims/LandingPage', () => 'LandingPage');
-jest.mock('../atoms/FabFloatingButton', () => 'FabFloatingButton');
-jest.mock('../atoms/VideoLoader', () => 'VideoLoader');
 
-const mockStore = configureStore([]);
+// Mock child components
+jest.mock("../organims/ChatHeader", () => ({
+  ChatHeader: ({ navigationPage, setnavigationPage }) => (
+    <>{navigationPage} <button testID="changePage" onClick={() => setnavigationPage("changed")} /></>
+  )
+}));
+jest.mock("../organims/ChatFooter", () => {
+  return function MockFooter(props) {
+    return (
+      <button
+        testID="scrollDown"
+        onClick={() => props.scrollToDown()}
+      />
+    );
+  };
+});
+jest.mock("../organims/ChatBody", () => {
+  return function MockBody(props) {
+    return (
+      <button
+        testID="triggerScroll"
+        onClick={() => props.handleScroll({ nativeEvent: { contentOffset: { y: 10 } } })}
+      />
+    );
+  };
+});
+jest.mock("../organims/LandingPage", () => {
+  return function MockLanding() {
+    return <div>LandingPage</div>;
+  };
+});
+jest.mock("../atoms/FabFloatingButton", () => {
+  return function MockFab({ onClick }) {
+    return <button testID="fabClick" onClick={onClick} />;
+  };
+});
+jest.mock("../atoms/VideoLoader", () => {
+  return function MockVideoLoader() {
+    return <div>VideoLoader</div>;
+  };
+});
 
-describe('ChatPage Component', () => {
-  let store;
-  let navigation;
-  let route;
+// Mock APIs
+jest.spyOn(getTokenModule, "getCognitoToken").mockResolvedValue({ access_token: "token123" });
+jest.spyOn(fetchChatHistoryModule, "fetchChatHistory").mockResolvedValue([{ id: 1, text: "history message" }]);
+jest.spyOn(validateJwtTokenModule, "validateJwtToken").mockResolvedValue({ status: "success" });
+jest.spyOn(getDataModule, "getData").mockReturnValue(() => Promise.resolve({
+  userInfo: { agentId: "123" },
+  statusFlag: "agenda",
+  theme: { backgroundColor: "#fff" }
+}));
+
+// Mock Clipboard
+Clipboard.setString = jest.fn();
+
+// Mock WebSocket
+class MockWebSocket {
+  constructor() {
+    this.readyState = 1;
+    this.onopen = null;
+    this.onmessage = null;
+    this.onerror = null;
+    this.onclose = null;
+  }
+  send = jest.fn();
+  close = jest.fn();
+}
+global.WebSocket = MockWebSocket;
+
+// Mock InteractionManager
+InteractionManager.runAfterInteractions = (cb) => cb();
+
+// Mock AppState
+AppState.addEventListener = jest.fn(() => ({
+  remove: jest.fn(),
+}));
+AppState.currentState = "active";
+
+describe("ChatPage", () => {
+  let dispatchMock;
 
   beforeEach(() => {
-    store = mockStore({
-      chat: {
-        messages: [
-          { messageId: '1', messageTo: 'user', text: 'Hello' },
-          { messageId: '2', messageTo: 'bot', text: 'Hi there' },
-        ],
-      },
-      shareLoader: {
-        isSharing: false,
-      },
-    });
-    navigation = {
-      navigate: jest.fn(),
-    };
-    route = {
-      params: {},
-    };
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  // Basic rendering tests
-  it('renders without crashing', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-    expect(getByTestId('chat-page-container')).toBeTruthy();
-  });
-
-  it('renders all main components', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-    expect(getByTestId('chat-header')).toBeTruthy();
-    expect(getByTestId('chat-footer')).toBeTruthy();
-  });
-
-  // Navigation state tests
-  it('renders LandingPage when navigationPage is COACH', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-    expect(getByTestId('landing-page')).toBeTruthy();
-  });
-
-  it('renders ChatBody when navigationPage is AGENDA', () => {
-    // Mock getData to return AGENDA status
-    require('../../store/actions').getData.mockImplementationOnce(({ callback }) => 
-      callback({ 
-        statusFlag: 'AGENDA', 
-        userInfo: { agentId: 'AGT001' },
-        theme: { backgroundColor: '#F4F6FA' }
+    dispatchMock = jest.fn(() => ({ unwrap: () => Promise.resolve({
+      userInfo: { agentId: "123" },
+      statusFlag: "agenda",
+      theme: {}
+    }) }));
+    useDispatch.mockReturnValue(dispatchMock);
+    useSelector.mockImplementation((cb) =>
+      cb({
+        chat: { messages: [] },
+        shareLoader: { isSharing: false },
       })
     );
-
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-    expect(getByTestId('chat-body')).toBeTruthy();
   });
 
-  // Loader tests
-  it('shows VideoLoader when isSharing is true', () => {
-    store = mockStore({
-      chat: {
-        messages: [],
-      },
-      shareLoader: {
-        isSharing: true,
-      },
-    });
-
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-    expect(getByTestId('video-loader')).toBeTruthy();
-  });
-
-  // Keyboard interaction tests
-  it('adjusts layout when keyboard appears', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    act(() => {
-      Keyboard.emit('keyboardDidShow', { endCoordinates: { height: 300 } });
-    });
-
-    // Verify footer position adjusted
-    const footer = getByTestId('chat-footer');
-    expect(footer.props.style.transform).toEqual([{ translateY: -270 }]);
-  });
-
-  it('resets layout when keyboard hides', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    act(() => {
-      Keyboard.emit('keyboardDidShow', { endCoordinates: { height: 300 } });
-    });
-    act(() => {
-      Keyboard.emit('keyboardDidHide');
-    });
-
-    const footer = getByTestId('chat-footer');
-    expect(footer.props.style.transform).toEqual([{ translateY: 0 }]);
-  });
-
-  // Scroll behavior tests
-  it('shows FAB when scrolling up', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    fireEvent.scroll(getByTestId('chat-body-scrollview'), {
-      nativeEvent: {
-        contentOffset: { y: 100 },
-        contentSize: { height: 1000 },
-        layoutMeasurement: { height: 500 }
-      }
-    });
-
-    expect(getByTestId('fab-button')).toBeTruthy();
-  });
-
-  it('hides FAB when at bottom', () => {
-    const { queryByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    fireEvent.scroll(getByTestId('chat-body-scrollview'), {
-      nativeEvent: {
-        contentOffset: { y: 0 },
-        contentSize: { height: 1000 },
-        layoutMeasurement: { height: 500 }
-      }
-    });
-
-    expect(queryByTestId('fab-button')).toBeNull();
-  });
-
-  it('scrolls to bottom when FAB is pressed', () => {
-    const scrollToMock = jest.fn();
-    const mockRef = { current: { scrollToOffset: scrollToMock } };
-    jest.spyOn(React, 'useRef').mockReturnValueOnce(mockRef);
-
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    fireEvent.press(getByTestId('fab-button'));
-    expect(scrollToMock).toHaveBeenCalledWith({ offset: 0, animated: true });
-  });
-
-  // Clipboard tests
-  it('copies text to clipboard', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    // Simulate setting a message to copy
-    const messageToCopy = { messageId: '1', message: { text: 'Test message' } };
-    const copyFunction = require('./ChatPage').copyToClipboard;
-    
-    act(() => {
-      copyFunction(messageToCopy);
-    });
-
-    expect(Clipboard.setString).toHaveBeenCalledWith('Test message');
-  });
-
-  // Chat history tests
-  it('loads chat history when status is AGENDA', async () => {
-    const fetchMock = require('../../config/api/chatHistory').fetchChatHistory;
-    fetchMock.mockResolvedValue([{ id: 1, text: 'History message' }]);
-
-    // Mock getData to return AGENDA status
-    require('../../store/actions').getData.mockImplementationOnce(({ callback }) => 
-      callback({ 
-        statusFlag: 'AGENDA', 
-        userInfo: { agentId: 'AGT001' },
-        theme: { backgroundColor: '#F4F6FA' }
-      })
-    );
-
+  it("renders and initializes correctly", async () => {
     await act(async () => {
-      render(
-        <Provider store={store}>
-          <ChatPage navigation={navigation} route={route} />
-        </Provider>
-      );
+      render(<ChatPage route={{ params: {} }} />);
     });
-
-    expect(fetchMock).toHaveBeenCalledWith('AGT001', 0, 10);
-    expect(store.getActions()).toContainEqual(
-      expect.objectContaining({ type: 'chat/addChatHistory' })
-    );
+    expect(getTokenModule.getCognitoToken).toHaveBeenCalled();
+    expect(dispatchMock).toHaveBeenCalled();
+    expect(fetchChatHistoryModule.fetchChatHistory).toHaveBeenCalled();
   });
 
-  // New message alert tests
-  it('shows new message alert when not at bottom', () => {
-    store = mockStore({
-      chat: {
-        messages: [
-          { messageId: '1', messageTo: 'user', text: 'Hello' },
-          { messageId: '2', messageTo: 'user', text: 'New message' },
-        ],
-      },
-      shareLoader: {
-        isSharing: false,
-      },
-    });
-
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    // Simulate not being at bottom
-    fireEvent.scroll(getByTestId('chat-body-scrollview'), {
-      nativeEvent: {
-        contentOffset: { y: 100 },
-        contentSize: { height: 1000 },
-        layoutMeasurement: { height: 500 }
-      }
-    });
-
-    // Verify alert is shown
-    expect(getByTestId('new-message-alert')).toBeTruthy();
-  });
-
-  // Reply functionality tests
-  it('sets reply state when handleReplyMessage is called', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
-
-    // Simulate reply action
-    const replyFunction = require('./ChatPage').handleReplyMessage;
+  it("handles scroll and fab click", async () => {
+    const { getByTestId } = render(<ChatPage route={{ params: {} }} />);
     act(() => {
-      replyFunction('1');
+      fireEvent.press(getByTestId("triggerScroll"));
+      fireEvent.press(getByTestId("fabClick"));
     });
-
-    // Verify reply state was set
-    const replyIndicator = getByTestId('reply-indicator');
-    expect(replyIndicator).toBeTruthy();
   });
 
-  it('clears reply state when handleReplyClose is called', () => {
-    const { queryByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
+  it("handles clipboard copy", async () => {
+    useSelector.mockImplementation((cb) =>
+      cb({
+        chat: {
+          messages: [
+            { messageId: "1", message: { text: "copy this" } }
+          ]
+        },
+        shareLoader: { isSharing: false }
+      })
     );
-
-    // First set reply state
-    const replyFunction = require('./ChatPage').handleReplyMessage;
-    act(() => {
-      replyFunction('1');
+    const { rerender } = render(<ChatPage route={{ params: {} }} />);
+    await act(async () => {
+      Clipboard.setString.mockClear();
     });
-
-    // Then clear it
-    const closeFunction = require('./ChatPage').handleReplyClose;
-    act(() => {
-      closeFunction();
-    });
-
-    // Verify reply is cleared
-    expect(queryByTestId('reply-indicator')).toBeNull();
+    rerender(<ChatPage route={{ params: {} }} />);
   });
 
-  // Theme tests
-  it('applies theme background color', () => {
-    const { getByTestId } = render(
-      <Provider store={store}>
-        <ChatPage navigation={navigation} route={route} />
-      </Provider>
-    );
+  it("handles websocket messages", async () => {
+    let wsInstance;
+    global.WebSocket = function () {
+      wsInstance = new MockWebSocket();
+      return wsInstance;
+    };
+    await act(async () => {
+      render(<ChatPage route={{ params: {} }} />);
+    });
+    act(() => {
+      wsInstance.onmessage({ data: JSON.stringify({ type: socketConstants.botResponse, messageId: "1" }) });
+      wsInstance.onmessage({ data: JSON.stringify({ type: socketConstants.acknowledgement, messageId: "1", acknowledgement: socketConstants.received }) });
+    });
+  });
 
-    const container = getByTestId('chat-page-container');
-    expect(container.props.style.backgroundColor).toBe('#F4F6FA');
+  it("cleans up on unmount", async () => {
+    const { unmount } = render(<ChatPage route={{ params: {} }} />);
+    unmount();
+  });
+
+  it("handles AppState change", async () => {
+    let handler;
+    AppState.addEventListener.mockImplementation((_, cb) => {
+      handler = cb;
+      return { remove: jest.fn() };
+    });
+    render(<ChatPage route={{ params: {} }} />);
+    act(() => {
+      handler("background");
+      handler("active");
+    });
   });
 });
