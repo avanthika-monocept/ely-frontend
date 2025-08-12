@@ -82,13 +82,20 @@ const Dropdown = ({
     dispatch(closeBottomSheet());
   };
 const handleCopyURL = () => {
+  let textToCopy = url;
+  if (url.startsWith('mailto:')) {
+    textToCopy = url.replace('mailto:', '');
+  } else if (url.startsWith('tel:')) {
+    textToCopy = url.replace('tel:', '');
+  }
+  
+  Clipboard.setString(textToCopy);
   const androidVersion = parseInt(Platform.Version, 10);
-    Clipboard.setString(url);
-    if((androidVersion < 33 || Platform.OS === platformName.ios)) {
+  if ((androidVersion < 33 || Platform.OS === platformName.ios)) {
     setCopied(true);
-    }
-    setTimeout(() => setCopied(false), 1000);
-  };
+  }
+  setTimeout(() => setCopied(false), 1000);
+};
 const handleOpenURL = () => {
    Linking.openURL(url);
 

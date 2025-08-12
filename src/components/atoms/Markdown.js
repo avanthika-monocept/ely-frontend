@@ -64,6 +64,25 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
     }
     setBottomSheetURL(url);
   };
+  const formatTextWithLinks = (text) => {
+    // Convert emails
+    let formattedText = text.replace(
+      /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi,
+      '[$1](mailto:$1)'
+    );
+    
+    // Convert phone numbers
+    formattedText = formattedText.replace(
+      /(\+?\d[\d -]{7,}\d)/g,
+      (match) => {
+        // Remove all non-digit characters except leading +
+        const phoneNumber = match.replace(/[^\d+]/g, '');
+        return `[${match}](tel:${phoneNumber})`;
+      }
+    );
+    
+    return formattedText;
+  };
   const renderCustomLink = (children, href) => (
     <TouchableWithoutFeedback
       onPressIn={() => {
@@ -82,6 +101,7 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
     </TouchableWithoutFeedback>
   );
   const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
+  const formattedText = formatTextWithLinks(sanitizedText);
   return (
     <View style={styles.container}>
       <Markdown
@@ -93,7 +113,7 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
       
   
  }} >
-        {sanitizedText}
+        {formattedText}
       </Markdown>
     </View>
   );
@@ -119,12 +139,7 @@ const markdownStyles = {
     marginBottom: spacing.space_s0,
     padding: spacing.space_s0,
   },
-  // list_item: {
-  //   flexDirection: "row",
-  //   flexWrap: "wrap",
-  //   width: size.hundredPercent,
-
-  // },
+  
   list_item: {
   flexDirection: "row",
   flexWrap: "wrap",
@@ -151,11 +166,20 @@ list_item_text: {
   flexWrap: "wrap",
   maxWidth: "100%",
 },
-
-  link: {
-    color: colors.primaryColors.lightblue,
-    textDecorationLine: "underline",
-  },
+link: {
+  color: colors.primaryColors.lightblue,
+  textDecorationLine: "underline",
+  // Add platform-specific selection properties
+  ...Platform.select({
+    ios: {
+      userSelect: 'text',
+      WebkitUserSelect: 'text',
+    },
+    android: {
+      selectable: true,
+    },
+  }),
+},
   strong: {
     fontWeight: Platform.OS === platformName.ios ? fontWeight.weight600 : fontWeight.weight400,
   },
