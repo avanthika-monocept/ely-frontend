@@ -153,10 +153,11 @@ export const formatHistoryMessage = (apiMessage) => {
   const isBot = apiMessage.messageTo === stringConstants.botCaps;
    let activity = null;
   if (apiMessage.emoji && apiMessage.action) {
-    if (apiMessage.emoji === stringConstants.thumbsUpEmoji) { // thumbs up
+    if (apiMessage.emoji === stringConstants.thumbsUpEmoji) {
       activity = apiMessage.action === socketConstants.selected ? stringConstants.like : null;
-    } else if (apiMessage.emoji === stringConstants.thumbsDownEmoji) { // thumbs down
-      activity = apiMessage.action === socketConstants.deselected ? stringConstants.dislike : null;
+    }
+    else if(apiMessage.emoji === stringConstants.thumbsDownEmoji) {
+      activity = apiMessage.action === socketConstants.selected ? stringConstants.dislike : null;
     }
   }
   return {

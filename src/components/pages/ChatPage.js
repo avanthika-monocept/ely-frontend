@@ -11,8 +11,8 @@ import {
   InteractionManager
 } from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
-import  ChatFooter  from "../organims/ChatFooter";
-import  ChatBody  from "../organims/ChatBody";
+import ChatFooter from "../organims/ChatFooter";
+import ChatBody from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -33,10 +33,10 @@ import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 export const ChatPage = ({ route }) => {
-   const {
-    jwtToken,    
-    cogToken,      
-    userInfo,    
+  const {
+    jwtToken,
+    cogToken,
+    userInfo,
     platform
   } = route.params || {};
   const dispatch = useDispatch();
@@ -93,10 +93,10 @@ export const ChatPage = ({ route }) => {
     (msg) => msg?.messageId === messageObjectId
   );
   const startResponseTimeout = () => {
-     if (responseTimeout) {
+    if (responseTimeout) {
       clearTimeout(responseTimeout);
     }
-   
+
     const timeoutId = setTimeout(() => {
       dispatch(hideLoader());
     }, timeoutConstants.response);
@@ -135,23 +135,23 @@ export const ChatPage = ({ route }) => {
     }
   };
   const resetNewMessageState = () => {
-  setShowFab(false);
-  setShowNewMessageAlert(false);
-  setNewMessageCount(0);
-};
- 
-const scrollToDown = () => {
-  InteractionManager.runAfterInteractions(() => {
-    resetNewMessageState();
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToOffset({
-        offset: 0,
-        animated: true,
-        duration:900
-      });
-    }
-  });
-};
+    setShowFab(false);
+    setShowNewMessageAlert(false);
+    setNewMessageCount(0);
+  };
+
+  const scrollToDown = () => {
+    InteractionManager.runAfterInteractions(() => {
+      resetNewMessageState();
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollToOffset({
+          offset: 0,
+          animated: true,
+          duration: 900
+        });
+      }
+    });
+  };
   const loadChatHistory = async (agentId, page, message, newToken) => {
     setHasMore(true);
     if (!hasMore) return;
@@ -169,7 +169,7 @@ const scrollToDown = () => {
       console.error(stringConstants.failToLoad, err);
     }
   };
-  const connectWebSocket = (agentId,token) => {
+  const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
@@ -238,27 +238,27 @@ const scrollToDown = () => {
       dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
-    //   const validationResponse = await validateJwtToken(
-    //   newToken,
-    //   jwtToken,
-    //   cogToken,
-    //   platform,
-    //   {
-    //     agentId: userInfo?.agentId,
-    //     userName: userInfo?.userName,
-    //     email: userInfo?.email,
-    //     role: userInfo?.role,
-    //     firebaseId: userInfo?.firebaseId,
-    //     deviceId: userInfo?.deviceId,
-    //   }
-    // );
-  //  if (!validationResponse || validationResponse.status !== stringConstants.success) {
-  //     console.warn(ApiResponseConstant.fail, validationResponse.message);
-  //     setIsInitializing(false);
-  //     return;
-  //   }
+      //   const validationResponse = await validateJwtToken(
+      //   newToken,
+      //   jwtToken,
+      //   cogToken,
+      //   platform,
+      //   {
+      //     agentId: userInfo?.agentId,
+      //     userName: userInfo?.userName,
+      //     email: userInfo?.email,
+      //     role: userInfo?.role,
+      //     firebaseId: userInfo?.firebaseId,
+      //     deviceId: userInfo?.deviceId,
+      //   }
+      // );
+      //  if (!validationResponse || validationResponse.status !== stringConstants.success) {
+      //     console.warn(ApiResponseConstant.fail, validationResponse.message);
+      //     setIsInitializing(false);
+      //     return;
+      //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: "hom5750", platform: "MSPACE"})
+        getData({ token: newToken, agentId: "76361b", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
@@ -273,14 +273,14 @@ const scrollToDown = () => {
     } finally {
       setIsInitializing(false);
     }
-   
+
   };
   const safelyCleanupSocket = () => {
-  cleanupWebSocket(true);
-  clearResponseTimeout();
-  dispatch(hideLoader());
-};
- 
+    cleanupWebSocket(true);
+    clearResponseTimeout();
+    dispatch(hideLoader());
+  };
+
   useEffect(() => {
     initialize();
     return () => {
@@ -325,9 +325,9 @@ const scrollToDown = () => {
       setShowNewMessageAlert(true);
       setNewMessageCount((prev) => prev + 1);
     }
-     else {
-    setNewMessageCount(0);
-  }
+    else {
+      setNewMessageCount(0);
+    }
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
   };
@@ -365,7 +365,7 @@ const scrollToDown = () => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (messages.length > prevMessagesLength) {
-      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status!== socketConstants.read) {
+      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status !== socketConstants.read) {
         setShowNewMessageAlert(true);
       }
       setPrevMessagesLength(messages.length);
@@ -427,24 +427,24 @@ const scrollToDown = () => {
             )}
           </View>
           {navigationPage !== stringConstants.coach && showFab && (
-            <View
-              style={[
-                styles.fabIcon,
-                {
-                  bottom:
-                    (Platform.OS ===  platformName.ios ? keyboardOffset : spacing.space_s0) +
-                    (reply ? size.width_130 : spacing.space_xl1 + (inputHeight - spacing.space_m4)),
-                },
-              ]}
-            >
-              <FabFloatingButton
-                onClick={scrollToDown}
-                showFab={showFab}
-                showNewMessageAlert={showNewMessageAlert}
-                count={newMessageCount}
-                reply={reply}
-              />
-            </View>
+            <KeyboardAvoidingView>
+              <View
+                style={{
+                  position: "absolute",
+                  bottom:spacing.space_10,
+                  right: spacing.space_m3,
+                }}
+              >
+                <FabFloatingButton
+                  onClick={scrollToDown}
+                  showFab={showFab}
+                  showNewMessageAlert={showNewMessageAlert}
+                  count={newMessageCount}
+                  reply={reply}
+                />
+              </View>
+            </KeyboardAvoidingView>
+
           )}
           <ChatFooter
             copied={copied}
@@ -490,13 +490,7 @@ const styles = StyleSheet.create({
   content: {
     flex: flex.one,
   },
-  fabIcon: {
-    position: "absolute",
-    right: spacing.space_m2,
-    zIndex: 9999,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
+ 
   loaderContainer: {
     position: 'absolute',
     top: spacing.space_s0,
@@ -509,7 +503,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
 });
- 
+
 ChatPage.propTypes = {
   route: PropTypes.shape({
     params: PropTypes.shape({
