@@ -77,7 +77,6 @@ const DynamicTextInput = ({
           style={[styles.input, { height: inputHeight, maxHeight: DEFAULT_HEIGHT * rows }]}
           value={value}
           onChangeText={onChange}
-          editable={!disabled}
           multiline
           onContentSizeChange={handleContentSizeChange}
           onFocus={() => setIsFocused(true)}

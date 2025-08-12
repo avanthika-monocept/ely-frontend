@@ -52,6 +52,7 @@ export const stringConstants = {
   error: "Error",
   success: "SUCCESS",
   like:"like",
+  dislike:"dislike",
   thumbsUpEmoji:"U+1F44D" ,
   thumbsDownEmoji:"U+1F44E",
  };

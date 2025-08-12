@@ -8,10 +8,11 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   AppState,
+  InteractionManager
 } from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
-import { ChatFooter } from "../organims/ChatFooter";
-import { ChatBody } from "../organims/ChatBody";
+import ChatFooter from "../organims/ChatFooter";
+import ChatBody from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -29,7 +30,8 @@ import VideoLoader from "../atoms/VideoLoader";
 import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
-import PropTypes, { string } from "prop-types";import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
+import PropTypes from "prop-types";
+import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 export const ChatPage = ({ route }) => {
    const { 
     jwtToken,     
@@ -61,6 +63,7 @@ export const ChatPage = ({ route }) => {
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
+  const [historyLoading, sethistoryLoading] = useState(false)
   const messages = useSelector((state) => state.chat.messages);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -90,10 +93,10 @@ export const ChatPage = ({ route }) => {
     (msg) => msg?.messageId === messageObjectId
   );
   const startResponseTimeout = () => {
-     if (responseTimeout) {
+    if (responseTimeout) {
       clearTimeout(responseTimeout);
     }
-    
+
     const timeoutId = setTimeout(() => {
       dispatch(hideLoader());
     }, timeoutConstants.response);
@@ -132,30 +135,41 @@ export const ChatPage = ({ route }) => {
     }
   };
   const resetNewMessageState = () => {
-  setShowFab(false);
-  setShowNewMessageAlert(false);
-  setNewMessageCount(0);
-};
+    setShowFab(false);
+    setShowNewMessageAlert(false);
+    setNewMessageCount(0);
+  };
 
   const scrollToDown = () => {
-    resetNewMessageState();
-    scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
+    InteractionManager.runAfterInteractions(() => {
+      resetNewMessageState();
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollToOffset({
+          offset: 0,
+          animated: true,
+          duration: 900
+        });
+      }
+    });
   };
   const loadChatHistory = async (agentId, page, message, newToken) => {
     setHasMore(true);
     if (!hasMore) return;
     try {
+      sethistoryLoading(true)
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
       const formattedMessages = newMessages.map(msg =>
         formatHistoryMessage(msg)
       );
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
+      sethistoryLoading(false)
     } catch (err) {
+      sethistoryLoading(false)
       console.error(stringConstants.failToLoad, err);
     }
   };
-  const connectWebSocket = (agentId,token) => {
+  const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
@@ -221,6 +235,7 @@ export const ChatPage = ({ route }) => {
   const initialize = async () => {
     try {
       setIsInitializing(true);
+      dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
       const validationResponse = await validateJwtToken(
@@ -246,7 +261,6 @@ export const ChatPage = ({ route }) => {
         getData({ token: newToken, agentId:userInfo?.agentId?.toLowerCase(), platform: platform })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        dispatch(clearMessages());
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
@@ -262,10 +276,10 @@ export const ChatPage = ({ route }) => {
     
   };
   const safelyCleanupSocket = () => {
-  cleanupWebSocket(true);
-  clearResponseTimeout();
-  dispatch(hideLoader());
-};
+    cleanupWebSocket(true);
+    clearResponseTimeout();
+    dispatch(hideLoader());
+  };
 
   useEffect(() => {
     initialize();
@@ -311,9 +325,9 @@ export const ChatPage = ({ route }) => {
       setShowNewMessageAlert(true);
       setNewMessageCount((prev) => prev + 1);
     }
-     else {
-    setNewMessageCount(0); 
-  }
+    else {
+      setNewMessageCount(0);
+    }
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
   };
@@ -351,7 +365,7 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (messages.length > prevMessagesLength) {
-      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom) {
+      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status !== socketConstants.read) {
         setShowNewMessageAlert(true);
       }
       setPrevMessagesLength(messages.length);
@@ -377,7 +391,7 @@ export const ChatPage = ({ route }) => {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : undefined}
+          behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
           style={{ flex: flex.one }}
         >
           <View style={styles.content}>
@@ -408,28 +422,29 @@ export const ChatPage = ({ route }) => {
                 copyToClipboard={copyToClipboard}
                 setCopied={setCopied}
                 token={token}
+                historyLoading={historyLoading}
               />
             )}
           </View>
           {navigationPage !== stringConstants.coach && showFab && (
-            <View
-              style={[
-                styles.fabIcon,
-                {
-                  bottom:
-                    (Platform.OS ===  platformName.ios ? keyboardOffset : spacing.space_s0) +
-                    (reply ? size.width_130 : spacing.space_xl1 + (inputHeight - spacing.space_m4)),
-                },
-              ]}
-            >
-              <FabFloatingButton
-                onClick={scrollToDown}
-                showFab={showFab}
-                showNewMessageAlert={showNewMessageAlert}
-                count={newMessageCount}
-                reply={reply}
-              />
-            </View>
+            <KeyboardAvoidingView>
+              <View
+                style={{
+                  position: "absolute",
+                  bottom:spacing.space_10,
+                  right: spacing.space_m3,
+                }}
+              >
+                <FabFloatingButton
+                  onClick={scrollToDown}
+                  showFab={showFab}
+                  showNewMessageAlert={showNewMessageAlert}
+                  count={newMessageCount}
+                  reply={reply}
+                />
+              </View>
+            </KeyboardAvoidingView>
+
           )}
           <ChatFooter
             copied={copied}
@@ -475,13 +490,7 @@ const styles = StyleSheet.create({
   content: {
     flex: flex.one,
   },
-  fabIcon: {
-    position: "absolute",
-    right: spacing.space_m2,
-    zIndex: 9999,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
+ 
   loaderContainer: {
     position: 'absolute',
     top: spacing.space_s0,

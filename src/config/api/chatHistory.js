@@ -4,7 +4,7 @@ import { baseUrl ,X_API_KEY} from "../../constants/constants";
 
 
 
-export const fetchChatHistory = async (agentId, page = 0, size = 10,token) => {
+export const fetchChatHistory = async (agentId, page = 0, size = 5,token) => {
 
   try {
     const response = await apiCall({

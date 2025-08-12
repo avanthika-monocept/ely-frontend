@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -7,15 +7,95 @@ import {
   View,
   Text,
 } from "react-native";
-import { ChatBubble } from "../molecules/ChatBubble";
+import  ChatBubble  from "../molecules/ChatBubble";
 import { useSelector } from "react-redux";
-import { ChatDateSeparator } from "../atoms/ChatDateSeparator";
+import  ChatDateSeparator  from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
 import { stringConstants } from "../../constants/StringConstants";
 import { fontStyle } from "../../constants/Fonts";
-export const ChatBody = ({
+import ChatSkeletonLoader from "../atoms/ChatSkeletonLoader";
+const MessageItem = React.memo(({
+  item,
+  index,
+  messages,
+  animatedValues,
+  formatTime,
+  setDropDownType,
+  setMessageObjectId,
+  handleReplyMessage,
+  token,
+  setReplyIndex,
+  copyToClipboard,
+  socket,
+  reconfigApiResponse,
+  setCopied,
+  
+}) => {
+  const replyMessageObj = React.useMemo(() => 
+    item?.replyId ? messages.find((msg) => msg?.messageId === item.replyId) : null,
+    [item.replyId, messages]
+  );
+
+  const replyMessage = replyMessageObj?.message?.text || replyMessageObj?.text || null;
+  const replyFrom = replyMessageObj?.messageTo.toLowerCase() || "";
+  const isBot = item?.messageTo?.toLowerCase() === stringConstants.user;
+  const translateX = animatedValues[item.messageId] || new Animated.Value(0);
+
+  return (
+    <Animated.View
+      style={[
+        isBot ? styles.messageContainer : styles.messageContainerUser,
+        { transform: [{ translateX }] },
+      ]}
+    >
+      <ChatBubble
+        text={item?.message?.text || item?.text}
+        isBot={isBot}
+        time={formatTime(item?.dateTime || item?.createdAt)}
+        status={item?.status}
+        replyMessage={replyMessage}
+        replyFrom={replyFrom}
+        index={index}
+        media={item.media}
+        isCopied={false}
+        activity={item.activity}
+        botOption={item?.message?.botOption || false}
+        options={item?.message?.botOption ? item.message.options : []}
+        setDropDownType={setDropDownType}
+        setMessageObjectId={setMessageObjectId}
+        messageId={item.messageId}
+        handleReplyMessage={handleReplyMessage}
+        token={token}
+        replyIndex={item.replyIndex || 0}
+        setReplyIndex={setReplyIndex}
+        copyToClipboard={copyToClipboard}
+        replyMessageObj={replyMessageObj}
+        socket={socket}
+        reconfigApiResponse={reconfigApiResponse}
+        setCopied={setCopied}
+      />
+    </Animated.View>
+  );
+});
+MessageItem.propTypes = {
+  item: PropTypes.object.isRequired,
+  index: PropTypes.number.isRequired,
+  messages: PropTypes.array.isRequired,
+  animatedValues: PropTypes.object.isRequired,
+  formatTime: PropTypes.func.isRequired,
+  setDropDownType: PropTypes.func.isRequired,
+  setMessageObjectId: PropTypes.func.isRequired,
+  handleReplyMessage: PropTypes.func.isRequired,
+  token: PropTypes.string,
+  setReplyIndex: PropTypes.func.isRequired,
+  copyToClipboard: PropTypes.func,
+  socket: PropTypes.object,
+  reconfigApiResponse: PropTypes.object.isRequired,
+  setCopied: PropTypes.func.isRequired
+};
+const ChatBody =React.memo(({
   scrollViewRef,
   handleScroll,
   setDropDownType,
@@ -29,6 +109,7 @@ export const ChatBody = ({
   setCopied,
   token,
   setReplyIndex,
+  historyLoading,
 }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
@@ -44,6 +125,7 @@ export const ChatBody = ({
     setCopied: PropTypes.func,
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
+    historyLoading:PropTypes.bool
   };
   const messages = useSelector((state) => state.chat.messages);
   const isLoading = useSelector((state) => state.loader.isLoading);
@@ -63,22 +145,20 @@ export const ChatBody = ({
       }
     });
   }, [messages]);
-  const formatTime = (dateTime) => {
+  const formatTime = useCallback((dateTime) => {
     let date;
     if (typeof dateTime === "string") {
       date = new Date(dateTime);
-    }
-    else if (typeof dateTime === "number") {
+    } else if (typeof dateTime === "number") {
       date = new Date(dateTime * 1000);
-    }
-    else {
+    } else {
       return "Invalid Time";
     }
     if (isNaN(date.getTime())) {
       return "Invalid Time";
     }
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  }, []);
   const formatSeparatorDate = (dateObj) => {
     const today = new Date();
     const yesterday = new Date();
@@ -108,7 +188,7 @@ export const ChatBody = ({
     const year = dateObj.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
-  const generateChatDataWithSeparators = (messages = []) => {
+  const generateChatDataWithSeparators = useCallback((messages = []) => {
     const result = [];
     const sortedMessages = [...messages].sort((a, b) => {
       const aTime = new Date(a.dateTime || a.createdAt).getTime();
@@ -150,11 +230,11 @@ export const ChatBody = ({
       }
     }
     return result;
-  };
+  },[]);
   const chatWithSeparators = React.useMemo(() => {
     return generateChatDataWithSeparators(messages);
   }, [messages]);
-  const renderItem = ({ item, index }) => {
+  const renderItem = useCallback(({ item, index }) => {
     if (item.type === stringConstants.separator) {
       return <ChatDateSeparator date={item.date} />;
     }
@@ -174,50 +254,40 @@ export const ChatBody = ({
         </View>
       );
     }
-    const isBot = item?.messageTo?.toLowerCase() === stringConstants.user;
-    const replyMessageObj = item?.replyId
-      ? messages.find((msg) => msg?.messageId === item.replyId)
-      : null;
-    const replyMessage =
-      replyMessageObj?.message?.text || replyMessageObj?.text || null;
-    const replyFrom = replyMessageObj?.messageTo.toLowerCase() || "";
-    const translateX = animatedValues[item.messageId] || new Animated.Value(0);
-    return (
-      <Animated.View
-        style={[
-          isBot ? styles.messageContainer : styles.messageContainerUser,
-          { transform: [{ translateX }] },
-        ]}
-      >
-        <ChatBubble
-          text={item?.message?.text || item?.text}
-          isBot={isBot}
-          time={formatTime(item?.dateTime || item?.createdAt)}
-          status={item?.status}
-          replyMessage={replyMessage}
-          replyFrom={replyFrom}
-          index={index}
-          media={item.media}
-          isCopied={false}
-          activity={item.activity}
-          botOption={item?.message?.botOption || false}
-          options={item?.message?.botOption ? item.message.options : []}
-          setDropDownType={setDropDownType}
-          setMessageObjectId={setMessageObjectId}
-          messageId={item.messageId}
-          handleReplyMessage={handleReplyMessage}
-          token={token}
-          replyIndex={item.replyIndex || 0}
-          setReplyIndex={setReplyIndex}
-          copyToClipboard={copyToClipboard}
-          replyMessageObj={replyMessageObj}
-          socket={socket}
-          reconfigApiResponse={reconfigApiResponse}
-          setCopied={setCopied}
-        />
-      </Animated.View>
+
+  return (
+      <MessageItem
+        item={item}
+        index={index}
+        messages={messages}
+        animatedValues={animatedValues}
+        formatTime={formatTime}
+        setDropDownType={setDropDownType}
+        setMessageObjectId={setMessageObjectId}
+        handleReplyMessage={handleReplyMessage}
+        token={token}
+        setReplyIndex={setReplyIndex}
+        copyToClipboard={copyToClipboard}
+        socket={socket}
+        reconfigApiResponse={reconfigApiResponse}
+        setCopied={setCopied}
+      />
     );
-  };
+  }, [
+    messages,
+    animatedValues,
+    formatTime,
+    setDropDownType,
+    setMessageObjectId,
+    handleReplyMessage,
+    token,
+    setReplyIndex,
+    copyToClipboard,
+    socket,
+    reconfigApiResponse,
+    setCopied
+  ]);
+
   return (
     <FlatList
       ref={scrollViewRef}
@@ -227,11 +297,15 @@ export const ChatBody = ({
       contentContainerStyle={styles.chatBodyContent}
       showsVerticalScrollIndicator={true}
       inverted={true}
+      scrollEventThrottle={16}
+      windowSize={21}
       onScroll={handleScroll}
-      onEndReachedThreshold={1.0}
+      onEndReachedThreshold={0.5}
       onEndReached={() =>
-        loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 10, token)
+        loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
+      initialNumToRender={5}
+      removeClippedSubviews={true}
       maxToRenderPerBatch={5}
       updateCellsBatchingPeriod={50}
       ListHeaderComponent={
@@ -249,9 +323,16 @@ export const ChatBody = ({
           </View>
         ) : null
       }
+      ListFooterComponent={
+    historyLoading ? (
+      <View style={styles.historyLoaderContainer}>
+        <ChatSkeletonLoader />
+      </View>
+    ) : null
+  }
     />
   );
-};
+});
 const styles = StyleSheet.create({
   chatBodyContent: {
     paddingBottom: spacing.space_m3,

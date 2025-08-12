@@ -25,6 +25,7 @@ export const LandingPage = ({
   token,
 }) => {
   let scrollViewRef = null;
+  const firstName=reconfigApiResponse?.userInfo?.userName?.split(" ")[0]
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
@@ -53,7 +54,7 @@ export const LandingPage = ({
             <View style={styles.textContainer}>
               <Text style={styles.hiTextStyle}>
                 {stringConstants.hiThere}{" "}
-                {reconfigApiResponse?.userInfo?.userName}
+                {firstName}
                 {stringConstants.hiName}
               </Text>
               <View style={{ marginTop: spacing.space_base }}>

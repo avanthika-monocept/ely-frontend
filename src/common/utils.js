@@ -1,6 +1,7 @@
 import { format, isToday, isYesterday, isSameYear, parseISO } from "date-fns";
 import uuid from "react-native-uuid"
 import { CHAT_MESSAGE_PROXY } from "../config/apiUrls";
+import { socketConstants, socketMessageTypes, stringConstants } from "../constants/StringConstants";
 
 export const getFormattedDividerDate = (dateString) => {
     const date = parseISO(dateString);
@@ -91,7 +92,7 @@ export const getFormattedDividerDate = (dateString) => {
     export const formatBotMessage = (data) => {
   return {
     messageId: data?.messageId,
-    messageTo: "user",
+    messageTo: stringConstants.user,
     dateTime: new Date().toISOString(),
     activity: null,
     replyId: null,
@@ -111,7 +112,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
   return {
      message: {
       messageId,
-      messageTo: "bot",
+      messageTo: stringConstants.bot,
       dateTime: new Date().toISOString(),
       activity: null,
       status: "SENT",
@@ -137,8 +138,8 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
       messageId,
       platform: reconfigApiResponse?.theme?.platform,
       sendType: "MESSAGE",
-      messageTo: "BOT",
-      messageType: messageType || "TEXT",
+      messageTo: stringConstants.botCaps,
+      messageType: messageType || socketMessageTypes.text,
       text: text.trim(),
       replyToMessageId: replyMessageId,
       }
@@ -149,23 +150,24 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
 // utils/messageFormatter.js
 
 export const formatHistoryMessage = (apiMessage) => {
-  const isBot = apiMessage.messageTo === "BOT";
+  const isBot = apiMessage.messageTo === stringConstants.botCaps;
    let activity = null;
   if (apiMessage.emoji && apiMessage.action) {
-    if (apiMessage.emoji === "U+1F44D") { // thumbs up
-      activity = apiMessage.action === "SELECTED" ? "like" : null;
-    } else if (apiMessage.emoji === "U+1F44E") { // thumbs down
-      activity = apiMessage.action === "SELECTED" ? "dislike" : null;
+    if (apiMessage.emoji === stringConstants.thumbsUpEmoji) {
+      activity = apiMessage.action === socketConstants.selected ? stringConstants.like : null;
+    }
+    else if(apiMessage.emoji === stringConstants.thumbsDownEmoji) {
+      activity = apiMessage.action === socketConstants.selected ? stringConstants.dislike : null;
     }
   }
   return {
     messageId: apiMessage.messageId,
-    messageTo: isBot ? "bot" : "user",
+    messageTo: isBot ? stringConstants.bot : stringConstants.user,
     dateTime: new Date(apiMessage.createdAt * 1000).toISOString(),
     activity: activity, 
     replyId: apiMessage.replyToMessageId, 
     conversationEnded: false, 
-    status: apiMessage.status || "RECEIVED",
+    status: socketConstants.read,
     message: {
       text: apiMessage.text,
       table: null, 
