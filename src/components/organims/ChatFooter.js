@@ -164,7 +164,7 @@ import colors from "../../constants/Colors";
               placeholder={dynamicPlaceholder}
               rows={3}
               fullWidth
-              disabled={isLoading}
+              // disabled={isLoading}
               onInputHeightChange={onInputHeightChange}
             />
           </View>
