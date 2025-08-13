@@ -119,15 +119,23 @@ export const ChatPage = ({ route }) => {
       console.error(err);
     }
   };
+
   const handleScroll = (event) => {
     const { contentOffset } = event.nativeEvent;
-    const isBottom = contentOffset.y <= 50;
-    setShowFab(!isBottom);
-    setIsAtBottom(isBottom);
-    if (isBottom) {
-      setShowNewMessageAlert(false);
-    }
+    const isBottom = contentOffset.y <= 0;
+
+    setIsAtBottom((prev) => {
+      if (prev !== isBottom) {
+        setShowFab(!isBottom);
+        if (isBottom) {
+          setShowNewMessageAlert(false);
+        }
+        return isBottom;
+      }
+      return prev;
+    });
   };
+
   const handleReplyMessage = () => {
     if (messageObjectId) {
       setReplyMessageId(messageObjectId);
@@ -431,7 +439,7 @@ export const ChatPage = ({ route }) => {
               <View
                 style={{
                   position: "absolute",
-                  bottom:spacing.space_10,
+                  bottom: spacing.space_10,
                   right: spacing.space_m3,
                 }}
               >
@@ -490,7 +498,7 @@ const styles = StyleSheet.create({
   content: {
     flex: flex.one,
   },
- 
+
   loaderContainer: {
     position: 'absolute',
     top: spacing.space_s0,
