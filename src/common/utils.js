@@ -88,7 +88,7 @@ export const getFormattedDividerDate = (dateString) => {
    export const generateUniqueId = () => {
     return uuid.v4();
   };
-  //will be used after websocket integration
+  
     export const formatBotMessage = (data) => {
   return {
     messageId: data?.messageId,
