@@ -28,6 +28,7 @@ import {
 import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
 const ChatBubble = React.memo(({
   isBot,
   options,
@@ -105,7 +106,8 @@ const reactionOptions = useMemo(() => [
       
     );
     dispatch(addMessage(message));
-    socket.send(JSON.stringify(socketPayload));
+    const encryptedPayload = encryptSocketPayload(socketPayload);
+    socket.send(JSON.stringify(encryptedPayload));
   };
 const { tablePart, textPart } = useMemo(() => {
   return splitMarkdownIntoTableAndText(text);

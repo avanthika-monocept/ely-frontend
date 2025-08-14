@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { socketConstants, stringConstants } from "../../constants/StringConstants";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
 export const Reactions = ({
   options,
   onSelect,
@@ -34,7 +35,8 @@ export const Reactions = ({
         userId: agentId,
       }
     };
-    socket.send(JSON.stringify(message));
+    const encryptedPayload = encryptSocketPayload(message);
+    socket.send(JSON.stringify(encryptedPayload));
   };
 
   return (

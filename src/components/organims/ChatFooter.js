@@ -13,6 +13,7 @@ import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
  const ChatFooter = React.memo(({
   copied,
   dropDownType,
@@ -116,9 +117,10 @@ import colors from "../../constants/Colors";
         messageType = socketMessageTypes.text;
       }
       const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, token, replyMessageId, replyIndex);
+      const encryptedPayload = encryptSocketPayload(socketPayload);
       dispatch(addMessage(message));
       setValue("");
-      socket.send(JSON.stringify(socketPayload));
+      socket.send(JSON.stringify(encryptedPayload));
       resetReplyState();
     } catch (error) {
 

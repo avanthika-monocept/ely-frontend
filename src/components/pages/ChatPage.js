@@ -32,6 +32,7 @@ import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
+import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
@@ -183,21 +184,37 @@ export const ChatPage = ({ route }) => {
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected)
     };
-    ws.current.onmessage = (event) => {
-      try {
-        if (!event.data) {
-          return;
-        }
-        const data = JSON.parse(event.data);
-        if (data.type === socketConstants.botResponse) {
-          handleBotMessage(data);
-        } else if (data.type === socketConstants.acknowledgement) {
-          handleAcknowledgement(data);
-        }
-      } catch (err) {
-        console.error(event.data, err);
+   ws.current.onmessage = (event) => {
+  try {
+    if (!event.data) return;
+    
+    const data = JSON.parse(event.data);
+    
+    // Handle encrypted payload
+    if (data.payload) {
+      const decryptedData = decryptSocketPayload(data);
+      
+      if (decryptedData.type === socketConstants.botResponse) {
+        handleBotMessage(decryptedData);
+      } 
+      else if (decryptedData.type === socketConstants.acknowledgement) {
+        handleAcknowledgement(decryptedData);
       }
-    };
+    }
+    // Fallback for unencrypted messages (remove in production)
+    else {
+      console.warn('Received unencrypted message:', data);
+      if (data.type === socketConstants.botResponse) {
+        handleBotMessage(data);
+      }
+      else if (data.type === socketConstants.acknowledgement) {
+        handleAcknowledgement(data);
+      }
+    }
+  } catch (err) {
+    console.error('Message processing error:', err);
+  }
+};
     ws.current.onerror = (error) => {
       clearResponseTimeout();
     };
@@ -237,7 +254,8 @@ export const ChatPage = ({ route }) => {
           platform: currentConfig?.theme?.platform,
         }
       };
-      ws.current.send(JSON.stringify(payload));
+      const encryptedPayload = encryptSocketPayload(payload);
+      ws.current.send(JSON.stringify(encryptedPayload));
     }
   };
   const initialize = async () => {

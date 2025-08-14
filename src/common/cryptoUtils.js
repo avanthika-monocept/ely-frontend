@@ -41,3 +41,25 @@ export const decResPayload = (resPayload) => {
   const decryptedResponseObject = JSON.parse(decryptedRes);
   return decryptedResponseObject;
 };
+
+export const encryptSocketPayload = (payload) => {
+  const { action, token, ...rest } = payload;
+  const encryptedMessage = encrypt(JSON.stringify(rest), ENCRYPT_KEY_VALUE, ENCRYPT_IV_VALUE_);
+  return {
+    action, 
+    token,
+    payload: encryptedMessage
+  };
+};
+
+export const decryptSocketPayload = (encryptedPayload) => {
+  try {
+    const { payload } = encryptedPayload;
+    const decrypted = decrypt(payload, ENCRYPT_KEY_VALUE, ENCRYPT_IV_VALUE_);
+    const parsed = JSON.parse(decrypted);
+    return parsed;
+  } catch (error) {
+    console.error("WebSocket decryption failed:", error);
+    return encryptedPayload;
+  }
+};
