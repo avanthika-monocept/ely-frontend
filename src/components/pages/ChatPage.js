@@ -32,6 +32,7 @@ import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
+import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 export const ChatPage = ({ route }) => {
    const { 
     jwtToken,     
@@ -119,15 +120,23 @@ export const ChatPage = ({ route }) => {
       console.error(err);
     }
   };
+
   const handleScroll = (event) => {
     const { contentOffset } = event.nativeEvent;
-    const isBottom = contentOffset.y <= 50;
-    setShowFab(!isBottom);
-    setIsAtBottom(isBottom);
-    if (isBottom) {
-      setShowNewMessageAlert(false);
-    }
+    const isBottom = contentOffset.y <= 0;
+
+    setIsAtBottom((prev) => {
+      if (prev !== isBottom) {
+        setShowFab(!isBottom);
+        if (isBottom) {
+          setShowNewMessageAlert(false);
+        }
+        return isBottom;
+      }
+      return prev;
+    });
   };
+
   const handleReplyMessage = () => {
     if (messageObjectId) {
       setReplyMessageId(messageObjectId);
@@ -177,17 +186,33 @@ export const ChatPage = ({ route }) => {
     };
     ws.current.onmessage = (event) => {
       try {
-        if (!event.data) {
-          return;
-        }
+        if (!event.data) return;
+
         const data = JSON.parse(event.data);
-        if (data.type === socketConstants.botResponse) {
-          handleBotMessage(data);
-        } else if (data.type === socketConstants.acknowledgement) {
-          handleAcknowledgement(data);
+
+        // Handle encrypted payload
+        if (data.payload) {
+          const decryptedData = decryptSocketPayload(data);
+
+          if (decryptedData.type === socketConstants.botResponse) {
+            handleBotMessage(decryptedData);
+          }
+          else if (decryptedData.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(decryptedData);
+          }
+        }
+        // Fallback for unencrypted messages (remove in production)
+        else {
+          console.warn('Received unencrypted message:', data);
+          if (data.type === socketConstants.botResponse) {
+            handleBotMessage(data);
+          }
+          else if (data.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(data);
+          }
         }
       } catch (err) {
-        console.error(event.data, err);
+        console.error('Message processing error:', err);
       }
     };
     ws.current.onerror = (error) => {
@@ -218,18 +243,20 @@ export const ChatPage = ({ route }) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const currentConfig = reconfigApiResponseRef.current;
       const payload = {
+        messageId: messageId,
+        status: socketConstants.read,
+        sendType: socketConstants.acknowledgement,
+        userId: currentConfig?.userInfo?.agentId,
+        emailId: currentConfig?.userInfo?.email,
+        platform: currentConfig?.theme?.platform,
+      };
+      const encryptedPayload = encryptSocketPayload(payload);
+      const finalPayload = {
         action: CHAT_MESSAGE_PROXY,
         token: token,
-        message: {
-          messageId: messageId,
-          status: socketConstants.read,
-          sendType: socketConstants.acknowledgement,
-          userId: currentConfig?.userInfo?.agentId,
-          emailId: currentConfig?.userInfo?.email,
-          platform: currentConfig?.theme?.platform,
-        }
+        payload: encryptedPayload
       };
-      ws.current.send(JSON.stringify(payload));
+      ws.current.send(JSON.stringify(finalPayload));
     }
   };
   const initialize = async () => {
@@ -384,7 +411,7 @@ export const ChatPage = ({ route }) => {
           <VideoLoader />
         </View>
       )}
-      <TouchableWithoutFeedback
+      {/* <TouchableWithoutFeedback
         onPress={() => {
           setKeyboardOffset(0);
           Keyboard.dismiss();
@@ -393,7 +420,7 @@ export const ChatPage = ({ route }) => {
         <KeyboardAvoidingView
           behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
           style={{ flex: flex.one }}
-        >
+        > */}
           <View style={styles.content}>
             {!isInitializing && navigationPage === stringConstants.coach && (
               <LandingPage
@@ -431,7 +458,7 @@ export const ChatPage = ({ route }) => {
               <View
                 style={{
                   position: "absolute",
-                  bottom:spacing.space_10,
+                  bottom: spacing.space_10,
                   right: spacing.space_m3,
                 }}
               >
@@ -477,8 +504,8 @@ export const ChatPage = ({ route }) => {
             clearResponseTimeout={clearResponseTimeout}
             token={token}
           />
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+        {/* </KeyboardAvoidingView>
+      </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };
@@ -490,7 +517,7 @@ const styles = StyleSheet.create({
   content: {
     flex: flex.one,
   },
- 
+
   loaderContainer: {
     position: 'absolute',
     top: spacing.space_s0,

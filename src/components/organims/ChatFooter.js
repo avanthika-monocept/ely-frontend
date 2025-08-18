@@ -13,6 +13,7 @@ import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
  const ChatFooter = React.memo(({
   copied,
   dropDownType,
@@ -116,9 +117,19 @@ import colors from "../../constants/Colors";
         messageType = socketMessageTypes.text;
       }
       const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, token, replyMessageId, replyIndex);
+      const socketToken = socketPayload.token;
+      const action = socketPayload.action;
+      const payload = socketPayload.message;
+      const encryptedPayload = encryptSocketPayload(payload);
+      const finalPayload = {
+        action,
+        token: socketToken,
+        payload: encryptedPayload
+      };
+      console.log("Final Payload:", finalPayload);
       dispatch(addMessage(message));
       setValue("");
-      socket.send(JSON.stringify(socketPayload));
+      socket.send(JSON.stringify(finalPayload));
       resetReplyState();
     } catch (error) {
 
@@ -164,7 +175,7 @@ import colors from "../../constants/Colors";
               placeholder={dynamicPlaceholder}
               rows={3}
               fullWidth
-              disabled={isLoading}
+              // disabled={isLoading}
               onInputHeightChange={onInputHeightChange}
             />
           </View>

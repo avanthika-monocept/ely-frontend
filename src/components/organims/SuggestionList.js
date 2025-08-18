@@ -14,7 +14,7 @@ import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import { formatUserMessage } from "../../common/utils";
-
+import { encryptSocketPayload } from "../../common/cryptoUtils";
 export const SuggestionList = ({
   setnavigationPage,
   reconfigApiResponse,
@@ -36,7 +36,17 @@ export const SuggestionList = ({
       0
     );
     dispatch(addMessage(message));
-    socket.send(JSON.stringify(socketPayload));
+    const socketToken = socketPayload.token;
+    const action = socketPayload.action;
+    const payload = socketPayload.message;
+    const encryptedPayload = encryptSocketPayload(payload);
+    const finalPayload = {
+      action,
+      token: socketToken,
+      payload: encryptedPayload
+    };
+
+    socket.send(JSON.stringify(finalPayload));
   };
   const renderItem = ({ item, index }) => {
     const isSelected = (index) => selectedItemId === index;
