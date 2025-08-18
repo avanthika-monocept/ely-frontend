@@ -6,8 +6,8 @@ const encrypt = (data1, keyValue, ivValue) => {
   const key = CryptoJS.enc.Latin1.parse(keyValue);
   const iv = CryptoJS.enc.Latin1.parse(ivValue);
 
-  const data = JSON.stringify(data1);
-  const encrypted = CryptoJS.AES.encrypt(data, key, {
+  const dataToEncrypt = typeof data1 === 'string' ? data1 : JSON.stringify(data1);
+  const encrypted = CryptoJS.AES.encrypt(dataToEncrypt, key, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.ZeroPadding,
@@ -22,7 +22,7 @@ const decrypt = (encrypted, keyValue, ivValue) => {
   const iv = CryptoJS.enc.Latin1.parse(ivValue);
   const decrypted = CryptoJS.AES.decrypt(encrypted.trim(), key, {
     iv: iv,
-    padding: CryptoJS.pad.ZeroPadding,
+    padding: CryptoJS.pad.Pkcs7,
   });
   return decrypted.toString(CryptoJS.enc.Utf8);
 };
@@ -40,4 +40,21 @@ export const decResPayload = (resPayload) => {
   decryptedRes = decryptedRes.replace(/[^\x20-\x7E]+$/, "");
   const decryptedResponseObject = JSON.parse(decryptedRes);
   return decryptedResponseObject;
+};
+
+export const encryptSocketPayload = (payload) => {
+  const encryptedMessage = encrypt(payload, ENCRYPT_KEY_VALUE, ENCRYPT_IV_VALUE_);
+  return encryptedMessage;
+};
+
+export const decryptSocketPayload = (encryptedPayload) => {
+  try {
+    const { payload } = encryptedPayload;
+    const decrypted = decrypt(payload, ENCRYPT_KEY_VALUE, ENCRYPT_IV_VALUE_);
+    const parsed = JSON.parse(decrypted);
+    return parsed;
+  } catch (error) {
+    console.error("WebSocket decryption failed:", error);
+    return encryptedPayload;
+  }
 };

@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { borderRadius, borderWidth, spacing } from "../../constants/Dimensions";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { socketConstants, stringConstants } from "../../constants/StringConstants";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
 export const Reactions = ({
   options,
   onSelect,
@@ -21,20 +22,21 @@ export const Reactions = ({
     const newSelected = isSelected ? null : id;
     setSelected(newSelected);
     onSelect?.(newSelected, messageId);
-    
     const message = {
-      action: CHAT_MESSAGE_PROXY,
-      token: token,
-      message: {
-        emoji: id === stringConstants.like ? stringConstants.thumbsUpEmoji :stringConstants.thumbsDownEmoji,
+      emoji: id === stringConstants.like ? stringConstants.thumbsUpEmoji : stringConstants.thumbsDownEmoji,
         sendType: socketConstants.reaction,
         action: newSelected === id ? socketConstants.selected : socketConstants.deselected,
         platform: platform,
         messageId: messageId,
         userId: agentId,
       }
+    const encryptedPayload = encryptSocketPayload(message);
+    const finalPayload = {
+      action: CHAT_MESSAGE_PROXY,
+      token: token,
+      payload: encryptedPayload
     };
-    socket.send(JSON.stringify(message));
+    socket.send(JSON.stringify(finalPayload));
   };
 
   return (
