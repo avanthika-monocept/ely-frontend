@@ -22,21 +22,21 @@ export const Reactions = ({
     const newSelected = isSelected ? null : id;
     setSelected(newSelected);
     onSelect?.(newSelected, messageId);
-    
     const message = {
-      action: CHAT_MESSAGE_PROXY,
-      token: token,
-      message: {
-        emoji: id === stringConstants.like ? stringConstants.thumbsUpEmoji :stringConstants.thumbsDownEmoji,
+      emoji: id === stringConstants.like ? stringConstants.thumbsUpEmoji : stringConstants.thumbsDownEmoji,
         sendType: socketConstants.reaction,
         action: newSelected === id ? socketConstants.selected : socketConstants.deselected,
         platform: platform,
         messageId: messageId,
         userId: agentId,
       }
-    };
     const encryptedPayload = encryptSocketPayload(message);
-    socket.send(JSON.stringify(encryptedPayload));
+    const finalPayload = {
+      action: CHAT_MESSAGE_PROXY,
+      token: token,
+      payload: encryptedPayload
+    };
+    socket.send(JSON.stringify(finalPayload));
   };
 
   return (

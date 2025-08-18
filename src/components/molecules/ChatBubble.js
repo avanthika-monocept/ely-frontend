@@ -54,7 +54,7 @@ const ChatBubble = React.memo(({
   replyIndex,
   activity,
 }) => {
- const LONG_PRESS_THRESHOLD = 500;
+  const LONG_PRESS_THRESHOLD = 500;
   const [isOpen, setIsOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState("");
@@ -66,14 +66,14 @@ const ChatBubble = React.memo(({
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
-const RotatedThumb = React.memo(() => (
-  <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>
-));
+  const RotatedThumb = React.memo(() => (
+    <Text style={{ transform: [{ rotate: "180deg" }] }}>👍</Text>
+  ));
 
-const reactionOptions = useMemo(() => [
-  { id: "like", svg: <Text>👍</Text> },
-  { id: "dislike", svg: <RotatedThumb /> },
-], []);
+  const reactionOptions = useMemo(() => [
+    { id: "like", svg: <Text>👍</Text> },
+    { id: "dislike", svg: <RotatedThumb /> },
+  ], []);
   const onLongPressBubble = (value, markdownText, media, table, text) => {
     if (isLoader && isBot) return;
     setMessageObjectId(value);
@@ -103,21 +103,30 @@ const reactionOptions = useMemo(() => [
       token,
       null,
       0,
-      
+
     );
     dispatch(addMessage(message));
-    const encryptedPayload = encryptSocketPayload(socketPayload);
-    socket.send(JSON.stringify(encryptedPayload));
+    const socketToken = socketPayload.token;
+    const action = socketPayload.action;
+    const payload = socketPayload.message;
+    const encryptedPayload = encryptSocketPayload(payload);
+    const finalPayload = {
+      action,
+      token: socketToken,
+      payload: encryptedPayload
+    };
+
+    socket.send(JSON.stringify(finalPayload));
   };
-const { tablePart, textPart } = useMemo(() => {
-  return splitMarkdownIntoTableAndText(text);
-}, [text]);
-const isImageOnly = useMemo(() => {
-  return isBot &&
-    media?.image?.length > 0 &&
-    (text === "" || text === undefined || text === null) &&
-    (tablePart === "" || tablePart === undefined || tablePart === null);
-}, [isBot, media, text, tablePart]);
+  const { tablePart, textPart } = useMemo(() => {
+    return splitMarkdownIntoTableAndText(text);
+  }, [text]);
+  const isImageOnly = useMemo(() => {
+    return isBot &&
+      media?.image?.length > 0 &&
+      (text === "" || text === undefined || text === null) &&
+      (tablePart === "" || tablePart === undefined || tablePart === null);
+  }, [isBot, media, text, tablePart]);
   return (
     <TouchableWithoutFeedback
       onLongPress={() =>
@@ -144,7 +153,7 @@ const isImageOnly = useMemo(() => {
                 />
               )}
               {isLoader ? (
-                <View style={{ minHeight: sizeWithoutScale.height30  }}>
+                <View style={{ minHeight: sizeWithoutScale.height30 }}>
                   <Loader />
                 </View>
               ) : (
@@ -168,20 +177,20 @@ const isImageOnly = useMemo(() => {
                   {(media?.image?.[0]?.mediaUrl?.length > 0 ||
                     media?.video?.[0]?.mediaUrl?.length > 0) && (
                       //need to implement fallback for media after testing
-                       <React.Suspense fallback={<View style={styles.mediaPlaceholder} />}>
-                      <MediaMessageView
-                        images={media?.image?.[0]?.mediaUrl || []}
-                        videos={media?.video?.[0]?.mediaUrl || []}
-                        setIsOpen={setIsOpen}
-                        isOpen={isOpen}
-                        copyToClipboard={copyToClipboard}
-                        handleReplyMessage={handleReplyMessage}
-                        setMessageObjectId={setMessageObjectId}
-                        setReplyIndex={setReplyIndex}
-                        messageId={messageId}
-                        isTextEmpty={!text}
-                        text={textPart}
-                      />
+                      <React.Suspense fallback={<View style={styles.mediaPlaceholder} />}>
+                        <MediaMessageView
+                          images={media?.image?.[0]?.mediaUrl || []}
+                          videos={media?.video?.[0]?.mediaUrl || []}
+                          setIsOpen={setIsOpen}
+                          isOpen={isOpen}
+                          copyToClipboard={copyToClipboard}
+                          handleReplyMessage={handleReplyMessage}
+                          setMessageObjectId={setMessageObjectId}
+                          setReplyIndex={setReplyIndex}
+                          messageId={messageId}
+                          isTextEmpty={!text}
+                          text={textPart}
+                        />
                       </React.Suspense>
                     )}
                   <MarkdownComponent
@@ -278,31 +287,31 @@ const isImageOnly = useMemo(() => {
     </TouchableWithoutFeedback>
   );
 });
-  ChatBubble.propTypes = {
-    isBot: PropTypes.bool.isRequired,
-    options: PropTypes.array,
-    text: PropTypes.string.isRequired,
-    time: PropTypes.string,
-    status: PropTypes.string,
-    media: PropTypes.object,
-    isLoader: PropTypes.bool,
-    replyMessage: PropTypes.string,
-    setDropDownType: PropTypes.func,
-    setMessageObjectId: PropTypes.func,
-    messageId: PropTypes.string.isRequired,
-    botOption: PropTypes.bool,
-    replyFrom: PropTypes.string.isRequired,
-    socket: PropTypes.object,
-    handleReplyMessage: PropTypes.func,
-    copyToClipboard: PropTypes.func,
-    replyMessageObj: PropTypes.object,
-    reconfigApiResponse: PropTypes.object,
-    setCopied: PropTypes.func,
-    token: PropTypes.string,
-    setReplyIndex: PropTypes.func,
-    replyIndex: PropTypes.number,
-    activity: PropTypes.string,
-  };
+ChatBubble.propTypes = {
+  isBot: PropTypes.bool.isRequired,
+  options: PropTypes.array,
+  text: PropTypes.string.isRequired,
+  time: PropTypes.string,
+  status: PropTypes.string,
+  media: PropTypes.object,
+  isLoader: PropTypes.bool,
+  replyMessage: PropTypes.string,
+  setDropDownType: PropTypes.func,
+  setMessageObjectId: PropTypes.func,
+  messageId: PropTypes.string.isRequired,
+  botOption: PropTypes.bool,
+  replyFrom: PropTypes.string.isRequired,
+  socket: PropTypes.object,
+  handleReplyMessage: PropTypes.func,
+  copyToClipboard: PropTypes.func,
+  replyMessageObj: PropTypes.object,
+  reconfigApiResponse: PropTypes.object,
+  setCopied: PropTypes.func,
+  token: PropTypes.string,
+  setReplyIndex: PropTypes.func,
+  replyIndex: PropTypes.number,
+  activity: PropTypes.string,
+};
 const styles = StyleSheet.create({
   chatBubbleContainer: {
     maxWidth: "80%",

@@ -117,10 +117,19 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
         messageType = socketMessageTypes.text;
       }
       const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, token, replyMessageId, replyIndex);
-      const encryptedPayload = encryptSocketPayload(socketPayload);
+      const socketToken = socketPayload.token;
+      const action = socketPayload.action;
+      const payload = socketPayload.message;
+      const encryptedPayload = encryptSocketPayload(payload);
+      const finalPayload = {
+        action,
+        token: socketToken,
+        payload: encryptedPayload
+      };
+      console.log("Final Payload:", finalPayload);
       dispatch(addMessage(message));
       setValue("");
-      socket.send(JSON.stringify(encryptedPayload));
+      socket.send(JSON.stringify(finalPayload));
       resetReplyState();
     } catch (error) {
 

@@ -184,37 +184,37 @@ export const ChatPage = ({ route }) => {
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected)
     };
-   ws.current.onmessage = (event) => {
-  try {
-    if (!event.data) return;
-    
-    const data = JSON.parse(event.data);
-    
-    // Handle encrypted payload
-    if (data.payload) {
-      const decryptedData = decryptSocketPayload(data);
-      
-      if (decryptedData.type === socketConstants.botResponse) {
-        handleBotMessage(decryptedData);
-      } 
-      else if (decryptedData.type === socketConstants.acknowledgement) {
-        handleAcknowledgement(decryptedData);
+    ws.current.onmessage = (event) => {
+      try {
+        if (!event.data) return;
+
+        const data = JSON.parse(event.data);
+
+        // Handle encrypted payload
+        if (data.payload) {
+          const decryptedData = decryptSocketPayload(data);
+
+          if (decryptedData.type === socketConstants.botResponse) {
+            handleBotMessage(decryptedData);
+          }
+          else if (decryptedData.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(decryptedData);
+          }
+        }
+        // Fallback for unencrypted messages (remove in production)
+        else {
+          console.warn('Received unencrypted message:', data);
+          if (data.type === socketConstants.botResponse) {
+            handleBotMessage(data);
+          }
+          else if (data.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(data);
+          }
+        }
+      } catch (err) {
+        console.error('Message processing error:', err);
       }
-    }
-    // Fallback for unencrypted messages (remove in production)
-    else {
-      console.warn('Received unencrypted message:', data);
-      if (data.type === socketConstants.botResponse) {
-        handleBotMessage(data);
-      }
-      else if (data.type === socketConstants.acknowledgement) {
-        handleAcknowledgement(data);
-      }
-    }
-  } catch (err) {
-    console.error('Message processing error:', err);
-  }
-};
+    };
     ws.current.onerror = (error) => {
       clearResponseTimeout();
     };
@@ -243,19 +243,20 @@ export const ChatPage = ({ route }) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const currentConfig = reconfigApiResponseRef.current;
       const payload = {
-        action: CHAT_MESSAGE_PROXY,
-        token: token,
-        message: {
-          messageId: messageId,
-          status: socketConstants.read,
-          sendType: socketConstants.acknowledgement,
-          userId: currentConfig?.userInfo?.agentId,
-          emailId: currentConfig?.userInfo?.email,
-          platform: currentConfig?.theme?.platform,
-        }
+        messageId: messageId,
+        status: socketConstants.read,
+        sendType: socketConstants.acknowledgement,
+        userId: currentConfig?.userInfo?.agentId,
+        emailId: currentConfig?.userInfo?.email,
+        platform: currentConfig?.theme?.platform,
       };
       const encryptedPayload = encryptSocketPayload(payload);
-      ws.current.send(JSON.stringify(encryptedPayload));
+      const finalPayload = {
+        action: CHAT_MESSAGE_PROXY,
+        token: token,
+        payload: encryptedPayload
+      };
+      ws.current.send(JSON.stringify(finalPayload));
     }
   };
   const initialize = async () => {

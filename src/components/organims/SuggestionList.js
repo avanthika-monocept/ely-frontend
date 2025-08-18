@@ -36,8 +36,17 @@ export const SuggestionList = ({
       0
     );
     dispatch(addMessage(message));
-    const encryptedPayload = encryptSocketPayload(socketPayload);
-    socket.send(JSON.stringify(encryptedPayload));
+    const socketToken = socketPayload.token;
+    const action = socketPayload.action;
+    const payload = socketPayload.message;
+    const encryptedPayload = encryptSocketPayload(payload);
+    const finalPayload = {
+      action,
+      token: socketToken,
+      payload: encryptedPayload
+    };
+
+    socket.send(JSON.stringify(finalPayload));
   };
   const renderItem = ({ item, index }) => {
     const isSelected = (index) => selectedItemId === index;
