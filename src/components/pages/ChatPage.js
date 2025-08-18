@@ -392,7 +392,7 @@ export const ChatPage = ({ route }) => {
           <VideoLoader />
         </View>
       )}
-      <TouchableWithoutFeedback
+      {/* <TouchableWithoutFeedback
         onPress={() => {
           setKeyboardOffset(0);
           Keyboard.dismiss();
@@ -401,7 +401,7 @@ export const ChatPage = ({ route }) => {
         <KeyboardAvoidingView
           behavior={Platform.OS === platformName.ios ? stringConstants.KeyboardPadding : platform ? "height" : undefined}
           style={{ flex: flex.one }}
-        >
+        > */}
           <View style={styles.content}>
             {!isInitializing && navigationPage === stringConstants.coach && (
               <LandingPage
@@ -485,8 +485,8 @@ export const ChatPage = ({ route }) => {
             clearResponseTimeout={clearResponseTimeout}
             token={token}
           />
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+        {/* </KeyboardAvoidingView>
+      </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };
