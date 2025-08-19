@@ -7,16 +7,17 @@ import {
   Animated,
   Easing,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/appNavigator";
 import { loadFonts } from "./src/config/loadFonts";
-
+ 
 export default function App(props) {
   LogBox.ignoreAllLogs(true);
-
+ 
   const keyboardOffset = useRef(new Animated.Value(0)).current;
-
+ 
   useEffect(() => {
     async function prepare() {
       try {
@@ -26,51 +27,61 @@ export default function App(props) {
       }
     }
     prepare();
-
-    const showSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
+ 
+    if (Platform.OS === "android") {
+      // Only handle manual animation for Android
+      const onKeyboardShow = () => {
         Animated.timing(keyboardOffset, {
-          toValue: -30, // move content up by 50
+          toValue: -30,
           duration: 250,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }).start();
-      }
-    );
-
-    const hideSub = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
+      };
+ 
+      const onKeyboardHide = () => {
         Animated.timing(keyboardOffset, {
-          toValue: 0, // reset to original position
+          toValue: 0,
           duration: 250,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }).start();
-      }
-    );
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+      };
+ 
+      const showSub = Keyboard.addListener("keyboardDidShow", onKeyboardShow);
+      const hideSub = Keyboard.addListener("keyboardDidHide", onKeyboardHide);
+ 
+      return () => {
+        showSub.remove();
+        hideSub.remove();
+      };
+    }
   }, []);
-
+ 
   return (
     <GestureHandlerRootView style={styles.container}>
       <StatusBar style="auto" />
-      <Animated.View
-        style={[
-          styles.innerContainer,
-          { transform: [{ translateY: keyboardOffset }] },
-        ]}
-      >
-        <AppNavigator standalone={true} props={props} />
-      </Animated.View>
+      {Platform.OS === "ios" ? (
+        <KeyboardAvoidingView
+          style={styles.innerContainer}
+          behavior="height" // iOS automatically adjusts height
+        >
+          <AppNavigator standalone={true} props={props} />
+        </KeyboardAvoidingView>
+      ) : (
+        <Animated.View
+          style={[
+            styles.innerContainer,
+            { transform: [{ translateY: keyboardOffset }] },
+          ]}
+        >
+          <AppNavigator standalone={true} props={props} />
+        </Animated.View>
+      )}
     </GestureHandlerRootView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -79,3 +90,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+ 
