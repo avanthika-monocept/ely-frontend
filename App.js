@@ -8,6 +8,7 @@ import {
   Easing,
   Platform,
   KeyboardAvoidingView,
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/appNavigator";
@@ -29,7 +30,6 @@ export default function App(props) {
     prepare();
  
     if (Platform.OS === "android") {
-      // Only handle manual animation for Android
       const onKeyboardShow = () => {
         Animated.timing(keyboardOffset, {
           toValue: -30,
@@ -60,11 +60,18 @@ export default function App(props) {
  
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar style="auto" />
+      {/* Fixed StatusBar on Android */}
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
+ 
       {Platform.OS === "ios" ? (
         <KeyboardAvoidingView
           style={styles.innerContainer}
-          behavior="height" // iOS automatically adjusts height
+          behavior="padding"
+          keyboardVerticalOffset={0}
         >
           <AppNavigator standalone={true} props={props} />
         </KeyboardAvoidingView>
@@ -72,7 +79,7 @@ export default function App(props) {
         <Animated.View
           style={[
             styles.innerContainer,
-            { transform: [{ translateY: keyboardOffset }] },
+            { transform: [{ translateY: keyboardOffset }], paddingTop: StatusBar.currentHeight },
           ]}
         >
           <AppNavigator standalone={true} props={props} />
@@ -90,4 +97,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
- 

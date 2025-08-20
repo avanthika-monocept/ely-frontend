@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Markdown from "react-native-markdown-display";
 import {
   View,
@@ -7,7 +7,8 @@ import {
   Platform,
   Text,
   TouchableWithoutFeedback,
-  StyleSheet
+  StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 import { fontStyle, fontType, fontWeight } from "../../constants/Fonts";
 import PropTypes from "prop-types";
@@ -19,10 +20,12 @@ import { platformName, share, markdownLinks, stringConstants } from "../../const
 
 
 const LONG_PRESS_THRESHOLD = 500;
+const CHAR_LIMIT = 350;
 const MarkdownComponent = ({ markdownText, setDropDownType }) => {
   const dispatch = useDispatch();
   const longPressTimer = useRef(null);
   const isLongPressTriggered = useRef(false);
+  const [expanded, setExpanded] = useState(false);
   const handleLinkPress = async (url) => {
     if (isLongPressTriggered.current) return;
     if (url.startsWith(markdownLinks.phone)) {
@@ -83,7 +86,30 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
     
     return formattedText;
   };
-  const renderCustomLink = (children, href) => (
+ const renderCustomLink = (children, href) => {
+  if (href === "action://readmore") {
+    return (
+      <Text
+        style={styles.readMoreText}
+        onPress={() => setExpanded(true)}
+      >
+        {children}
+      </Text>
+    );
+  }
+  if (href === "action://readless") {
+    return (
+      <Text
+        style={styles.readMoreText}
+        onPress={() => setExpanded(false)}
+      >
+        {children}
+      </Text>
+    );
+  }
+
+  // normal link handling (your old logic)
+  return (
     <TouchableWithoutFeedback
       onPressIn={() => {
         isLongPressTriggered.current = false;
@@ -100,8 +126,15 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
       <Text style={markdownStyles.link}>{children}</Text>
     </TouchableWithoutFeedback>
   );
+};
+
   const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
   const formattedText = formatTextWithLinks(sanitizedText);
+const displayText = expanded
+  ? formattedText + " [Read less](action://readless)"
+  : formattedText.length > CHAR_LIMIT
+  ? formattedText.substring(0, CHAR_LIMIT) + "... [Read more](action://readmore)"
+  : formattedText;
   return (
     <View style={styles.container}>
       <Markdown
@@ -113,8 +146,9 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
       
   
  }} >
-        {formattedText}
+        {displayText}
       </Markdown>
+      
     </View>
   );
 };
@@ -124,6 +158,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.borderRadius8,
     alignSelf: 'flex-start',
     maxWidth: size.hundredPercent,
+  },
+   readMoreText: {
+    color: colors.primaryColors.lightblue,
+    marginTop: 4,
+    fontWeight: "500",
   }
 })
 
