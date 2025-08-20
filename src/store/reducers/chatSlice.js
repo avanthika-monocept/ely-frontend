@@ -44,9 +44,7 @@ const chatSlice = createSlice({
       // Message doesn't exist, add it
       state.messages.unshift(newMsg);
     } else {
-      // Message exists, UPDATE it (especially activity)
-      console.log("Updating existing message activity:", 
-        state.messages[existingIndex].activity, "->", newMsg.activity);
+     
       
       state.messages[existingIndex] = {
         ...state.messages[existingIndex],

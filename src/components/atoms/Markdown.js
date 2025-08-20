@@ -67,25 +67,35 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
     }
     setBottomSheetURL(url);
   };
-  const formatTextWithLinks = (text) => {
-    // Convert emails
-    let formattedText = text.replace(
-      /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi,
-      '[$1](mailto:$1)'
-    );
-    
-    // Convert phone numbers
-    formattedText = formattedText.replace(
-      /(\+?\d[\d -]{7,}\d)/g,
-      (match) => {
-        // Remove all non-digit characters except leading +
-        const phoneNumber = match.replace(/[^\d+]/g, '');
-        return `[${match}](tel:${phoneNumber})`;
-      }
-    );
-    
-    return formattedText;
-  };
+ const formatTextWithLinks = (text) => {
+  // Convert emails
+  let formattedText = text.replace(
+    /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi,
+    '[$1](mailto:$1)'
+  );
+
+  // Convert phone numbers
+  formattedText = formattedText.replace(
+    /(\+?\d[\d -]{7,}\d)/g,
+    (match) => {
+      const phoneNumber = match.replace(/[^\d+]/g, ''); // keep only digits + leading +
+      return `[${match}](tel:${phoneNumber})`;
+    }
+  );
+
+  // Convert URLs
+  formattedText = formattedText.replace(
+    /\b((?:https?:\/\/|www\.)[^\s]+)\b/gi,
+    (match) => {
+      // If it starts with www, prepend https://
+      const url = match.startsWith("http") ? match : `https://${match}`;
+      return `[${match}](${url})`;
+    }
+  );
+
+  return formattedText;
+};
+
  const renderCustomLink = (children, href) => {
   if (href === "action://readmore") {
     return (
