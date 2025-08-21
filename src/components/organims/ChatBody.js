@@ -31,7 +31,7 @@ const MessageItem = React.memo(({
   socket,
   reconfigApiResponse,
   setCopied,
-  
+ 
 }) => {
   const replyMessageObj = React.useMemo(() => 
     item?.replyId ? messages.find((msg) => msg?.messageId === item.replyId) : null,
@@ -110,6 +110,7 @@ const ChatBody =React.memo(({
   token,
   setReplyIndex,
   historyLoading,
+  hasMore,
 }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
@@ -125,7 +126,8 @@ const ChatBody =React.memo(({
     setCopied: PropTypes.func,
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
-    historyLoading:PropTypes.bool
+    historyLoading:PropTypes.bool,
+    hasMore: PropTypes.bool,
   };
   const messages = useSelector((state) => state.chat.messages);
   const isLoading = useSelector((state) => state.loader.isLoading);
@@ -302,6 +304,7 @@ const ChatBody =React.memo(({
       onScroll={handleScroll}
       onEndReachedThreshold={0.5}
       onEndReached={() =>
+        hasMore && !historyLoading &&
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
       initialNumToRender={5}

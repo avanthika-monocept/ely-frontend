@@ -167,6 +167,11 @@ export const ChatPage = ({ route }) => {
     try {
       sethistoryLoading(true)
       const newMessages = await fetchChatHistory(agentId, page, message, newToken);
+       if (!newMessages || newMessages.length === 0) {
+      setHasMore(false);
+      sethistoryLoading(false);
+      return;
+    }
       const formattedMessages = newMessages.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -457,6 +462,7 @@ export const ChatPage = ({ route }) => {
                 setCopied={setCopied}
                 token={token}
                 historyLoading={historyLoading}
+                hasMore={hasMore}
               />
             )}
           </View>
