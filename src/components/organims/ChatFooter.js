@@ -126,7 +126,6 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
         token: socketToken,
         payload: encryptedPayload
       };
-      console.log("Final Payload:", finalPayload);
       dispatch(addMessage(message));
       setValue("");
       socket.send(JSON.stringify(finalPayload));

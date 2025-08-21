@@ -178,6 +178,10 @@ export const ChatPage = ({ route }) => {
       console.error(stringConstants.failToLoad, err);
     }
   };
+
+  const reconnectWebSocket = () => {
+  connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, token);
+};
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     ws.current = new WebSocket(WEBSOCKET_URL);
@@ -219,8 +223,10 @@ export const ChatPage = ({ route }) => {
       clearResponseTimeout();
     };
     ws.current.onclose = (e) => {
+      console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
       setPage(0);
       clearResponseTimeout();
+      if (AppState.currentState === "active") reconnectWebSocket();
     };
   };
   const cleanupWebSocket = (sendDisconnect = false) => {
@@ -231,6 +237,7 @@ export const ChatPage = ({ route }) => {
           action: socketConstants.disconnect,
           userId: reconfigApiResponseRef.current?.userInfo?.agentId,
         };
+        console.log(`Disconnecting WebSocket for agentId: ${reconfigApiResponseRef.current?.userInfo?.agentId}`);
         ws.current.send(JSON.stringify(disconnectPayload));
       }
     } catch (error) {
@@ -285,7 +292,7 @@ export const ChatPage = ({ route }) => {
       //     return;
       //   }
       const response = await dispatch(
-        getData({ token: newToken, agentId: "76361b", platform: "MSPACE" })
+        getData({ token: newToken, agentId: "10236a", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
