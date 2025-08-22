@@ -309,7 +309,7 @@ const ChatBody =React.memo(({
       onScroll={handleScroll}
       onEndReachedThreshold={0.5}
       onEndReached={() =>
-        hasMore && !historyLoading &&
+        hasMore && !historyLoading && reconfigApiResponse?.userInfo?.agentId &&
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
    onMomentumScrollEnd={handleScrollEnd}
