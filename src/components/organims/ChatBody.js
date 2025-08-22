@@ -112,8 +112,7 @@ const ChatBody =React.memo(({
   historyLoading,
   hasMore,
   handleScrollEnd,
-  isAutoScrollingRef
-}) => {
+  }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
     handleScroll: PropTypes.func.isRequired,
