@@ -170,6 +170,10 @@ export const ChatPage = ({ route }) => {
   };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
+    if(!agentId || !token) {
+      console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+      return;
+    }
     ws.current = new WebSocket(WEBSOCKET_URL);
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected)
@@ -257,6 +261,7 @@ export const ChatPage = ({ route }) => {
       dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
+      
       //   const validationResponse = await validateJwtToken(
       //   newToken,
       //   jwtToken,
