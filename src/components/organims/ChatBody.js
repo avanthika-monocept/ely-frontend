@@ -111,6 +111,8 @@ const ChatBody =React.memo(({
   setReplyIndex,
   historyLoading,
   hasMore,
+  handleScrollEnd,
+  isAutoScrollingRef
 }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
@@ -128,7 +130,10 @@ const ChatBody =React.memo(({
     token: PropTypes.string,
     historyLoading:PropTypes.bool,
     hasMore: PropTypes.bool,
+    handleScrollEnd: PropTypes.func,
+    isAutoScrollingRef: PropTypes.object,
   };
+  const SCROLL_BOTTOM_THRESHOLD = 10;
   const messages = useSelector((state) => state.chat.messages);
   const isLoading = useSelector((state) => state.loader.isLoading);
   const animatedValues = useRef({}).current;
@@ -307,6 +312,8 @@ const ChatBody =React.memo(({
         hasMore && !historyLoading &&
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
+   onMomentumScrollEnd={handleScrollEnd}
+
       initialNumToRender={5}
       removeClippedSubviews={true}
       maxToRenderPerBatch={5}

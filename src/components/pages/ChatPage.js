@@ -46,6 +46,8 @@ export const ChatPage = ({ route }) => {
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
   const reconfigApiResponseRef = useRef({});
+  const isAutoScrollingRef = useRef(false);
+
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -121,21 +123,22 @@ export const ChatPage = ({ route }) => {
     }
   };
 
-  const handleScroll = (event) => {
-    const { contentOffset } = event.nativeEvent;
-    const isBottom = contentOffset.y <= 0;
+const SCROLL_BOTTOM_THRESHOLD = 10;
 
-    setIsAtBottom((prev) => {
-      if (prev !== isBottom) {
-        setShowFab(!isBottom);
-        if (isBottom) {
-          setShowNewMessageAlert(false);
-        }
-        return isBottom;
-      }
-      return prev;
-    });
-  };
+const handleScroll = ({ nativeEvent }) => {
+  if (isAutoScrollingRef.current) return;
+  const isBottom = getIsAtBottom(nativeEvent.contentOffset);
+  setIsAtBottom(isBottom);
+  if (isBottom) {
+    setShowFab(false);
+    setShowNewMessageAlert(false);
+    setNewMessageCount(0);
+  } else {
+    setShowFab(true);
+  }
+};
+
+
 
   const handleReplyMessage = () => {
     if (messageObjectId) {
@@ -149,18 +152,31 @@ export const ChatPage = ({ route }) => {
     setNewMessageCount(0);
   };
 
-  const scrollToDown = () => {
-    InteractionManager.runAfterInteractions(() => {
-      resetNewMessageState();
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollToOffset({
-          offset: 0,
-          animated: true,
-          duration: 900
-        });
-      }
-    });
-  };
+
+
+
+
+ const scrollToDown = () => {
+  isAutoScrollingRef.current = true;
+  if (scrollViewRef.current) {
+    scrollViewRef.current.scrollToOffset({
+      offset: 0,
+      animated: true,
+  });
+  }
+};
+const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
+const onMomentumScrollEnd = ({ nativeEvent }) => {
+  const isBottom = getIsAtBottom(nativeEvent.contentOffset);
+  if (isAutoScrollingRef.current && isBottom) {
+    resetNewMessageState();
+    isAutoScrollingRef.current = false;
+  }
+  if (!isAutoScrollingRef.current && isBottom) {
+    resetNewMessageState();
+  }
+};
+
   const loadChatHistory = async (agentId, page, message, newToken) => {
     setHasMore(true);
     if (!hasMore) return;
@@ -463,6 +479,8 @@ export const ChatPage = ({ route }) => {
                 token={token}
                 historyLoading={historyLoading}
                 hasMore={hasMore}
+                handleScrollEnd={onMomentumScrollEnd}
+                isAutoScrollingRef={isAutoScrollingRef}
               />
             )}
           </View>
