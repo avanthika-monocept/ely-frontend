@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect,useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -43,6 +43,7 @@ export const ChatPage = ({ route }) => {
   const dispatch = useDispatch();
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
+  const isAtBottomRef = useRef(true);
   const reconfigApiResponseRef = useRef({});
   const isAutoScrollingRef = useRef(false);
   const [dropDownType, setDropDownType] = useState("");
@@ -52,7 +53,6 @@ export const ChatPage = ({ route }) => {
   const [reply, setReply] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [replyIndex, setReplyIndex] = useState(0);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -75,7 +75,7 @@ export const ChatPage = ({ route }) => {
   const messageObject = messages.find(
     (msg) => msg?.messageId === messageObjectId
   );
-  const startResponseTimeout = () => {
+  const startResponseTimeout = useCallback(() => {
     if (responseTimeout) {
       clearTimeout(responseTimeout);
     }
@@ -83,14 +83,14 @@ export const ChatPage = ({ route }) => {
       dispatch(hideLoader());
     }, timeoutConstants.response);
     setResponseTimeout(timeoutId);
-  };
+  },[]);
   
-  const clearResponseTimeout = () => {
+  const clearResponseTimeout = useCallback(() => {
     if (responseTimeout) {
       clearTimeout(responseTimeout);
       setResponseTimeout(null);
     }
-  };
+  },[]);
   const fetchToken = async () => {
     try {
       const response = await getCognitoToken();
@@ -103,27 +103,27 @@ export const ChatPage = ({ route }) => {
     }
   };
   const SCROLL_BOTTOM_THRESHOLD = 10;
-  const handleScroll = ({ nativeEvent }) => {
+  const handleScroll = useCallback(({ nativeEvent }) => {
     if (isAutoScrollingRef.current) return;
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
-    setIsAtBottom(isBottom);
+    isAtBottomRef.current = isBottom;
     if (isBottom) {
       setFabState(prev => ({ ...prev, showFab: true , showNewMessageAlert: false, newMessageCount: 0 }));
      } else {
       setFabState(prev => ({ ...prev, showFab: true }));
     }
-  };
+  },[]);
 
-  const handleReplyMessage = () => {
+  const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
       setReplyMessageId(messageObjectId);
       setReply(true);
     }
-  };
-  const resetNewMessageState = () => {
+  },[messageObjectId]);
+  const resetNewMessageState = useCallback(() => {
     setFabState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
-  };
-  const scrollToDown = () => {
+  },[]);
+  const scrollToDown = useCallback(() => {
     isAutoScrollingRef.current = true;
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToOffset({
@@ -131,7 +131,7 @@ export const ChatPage = ({ route }) => {
         animated: true,
       });
     }
-  };
+  },[]);
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -342,7 +342,7 @@ export const ChatPage = ({ route }) => {
     }, timeoutConstants.inactivity));
     sendAcknowledgement(data?.messageId);
     const botMessage = formatBotMessage(data);
-    if (!isAtBottom) {
+    if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
     
@@ -380,26 +380,16 @@ export const ChatPage = ({ route }) => {
       setMessageObjectId(null);
     }
   };
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (messages.length > prevMessagesLength) {
-      if (lastMessage?.messageTo === stringConstants.user && !isAtBottom && lastMessage?.status !== socketConstants.read) {
-        setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
-      }
-      setPrevMessagesLength(messages.length);
-    }
-  }, [messages, isAtBottom, prevMessagesLength]);
+
   useEffect(() => {
   if (netInfo?.isConnected) {
-    // Connect the WebSocket only if not already connected
-    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+  if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       const agentId = reconfigApiResponse?.userInfo?.agentId;
       if (agentId && token) {
         connectWebSocket(agentId, token);
       }
     }
   } else {
-    // Internet is disconnected, cleanup the WebSocket
     cleanupWebSocket(true);
   }
 }, [netInfo, token, reconfigApiResponse]);
