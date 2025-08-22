@@ -62,7 +62,7 @@ export const ChatPage = ({ route }) => {
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const [historyLoading, sethistoryLoading] = useState(false);
-  const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 1 });
+  const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const messages = useSelector((state) => state.chat.messages);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -280,7 +280,7 @@ export const ChatPage = ({ route }) => {
         getData({ token: newToken, agentId: "10236a", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        setnavigationPage(response.statusFlag);
+        setnavigationPage("agenda");
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
