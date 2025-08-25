@@ -297,7 +297,7 @@ const messageObject = useMemo(() =>
         getData({ token: newToken, agentId: "10236a", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        setnavigationPage(response.statusFlag);
+        setnavigationPage("agenda");
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
@@ -381,22 +381,25 @@ const messageObject = useMemo(() =>
     setReplyMessageId(null);
     setReply(false);
   };
-  const copyToClipboard = async () => {
-    const androidVersion = parseInt(Platform.Version, 10);
-    const textToCopy = messageObject?.message?.text
-      ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
-      : messageObject?.message?.text;
-    Clipboard.setString(textToCopy);
-    if (androidVersion < 33 || Platform.OS === platformName.ios) {
-      setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-        setMessageObjectId(null);
-      }, 1000);
-    } else {
+const copyToClipboard = useCallback(() => {
+  const androidVersion = parseInt(Platform.Version, 10);
+  const textToCopy = messageObject?.message?.text
+    ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
+    : messageObject?.message?.text;
+
+  Clipboard.setString(textToCopy);
+
+  if (androidVersion < 33 || Platform.OS === platformName.ios) {
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
       setMessageObjectId(null);
-    }
-  };
+    }, 1000);
+  } else {
+    setMessageObjectId(null);
+  }
+}, [messageObject]);
+
 
   useEffect(() => {
     if (netInfo?.isConnected) {
