@@ -175,6 +175,9 @@ const messageObject = useMemo(() =>
     if(reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current){
        connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
     }
+    else{
+      console.error("Cannot reconnect WebSocket: Missing agentId or token");
+    }
    };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
@@ -299,7 +302,12 @@ const messageObject = useMemo(() =>
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-        connectWebSocket(response.userInfo.agentId, newToken);
+        if(response.userInfo.agentId && newToken){
+           connectWebSocket(response.userInfo.agentId, newToken);
+        }
+        else{
+          console.error("Cannot connect WebSocket: Missing agentId or token");
+        }
       }
     } catch (error) {
       console.error(error);
