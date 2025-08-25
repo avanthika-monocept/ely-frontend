@@ -29,7 +29,7 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   socket,
   messages,
   copyToClipboard,
-  onInputHeightChange,
+  
   scrollToDown,
   inactivityTimer,
   setInactivityTimer,
@@ -54,7 +54,7 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
     socket: PropTypes.object,
     messages: PropTypes.array,
     copyToClipboard: PropTypes.func,
-    onInputHeightChange: PropTypes.func.isRequired,
+    
     scrollToDown: PropTypes.func,
     inactivityTimer: PropTypes.number,
     setInactivityTimer: PropTypes.func,
@@ -126,7 +126,6 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
         token: socketToken,
         payload: encryptedPayload
       };
-      console.log("Final Payload:", finalPayload);
       dispatch(addMessage(message));
       setValue("");
       socket.send(JSON.stringify(finalPayload));
@@ -175,8 +174,7 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
               placeholder={dynamicPlaceholder}
               rows={3}
               fullWidth
-              // disabled={isLoading}
-              onInputHeightChange={onInputHeightChange}
+             
             />
           </View>
           <View style={styles.buttonContainer}>

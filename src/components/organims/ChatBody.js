@@ -31,7 +31,7 @@ const MessageItem = React.memo(({
   socket,
   reconfigApiResponse,
   setCopied,
-  
+ 
 }) => {
   const replyMessageObj = React.useMemo(() => 
     item?.replyId ? messages.find((msg) => msg?.messageId === item.replyId) : null,
@@ -110,7 +110,9 @@ const ChatBody =React.memo(({
   token,
   setReplyIndex,
   historyLoading,
-}) => {
+  hasMore,
+  handleScrollEnd,
+  }) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
     handleScroll: PropTypes.func.isRequired,
@@ -125,8 +127,12 @@ const ChatBody =React.memo(({
     setCopied: PropTypes.func,
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
-    historyLoading:PropTypes.bool
+    historyLoading:PropTypes.bool,
+    hasMore: PropTypes.bool,
+    handleScrollEnd: PropTypes.func,
+    isAutoScrollingRef: PropTypes.object,
   };
+  const SCROLL_BOTTOM_THRESHOLD = 10;
   const messages = useSelector((state) => state.chat.messages);
   const isLoading = useSelector((state) => state.loader.isLoading);
   const animatedValues = useRef({}).current;
@@ -302,8 +308,11 @@ const ChatBody =React.memo(({
       onScroll={handleScroll}
       onEndReachedThreshold={0.5}
       onEndReached={() =>
+        hasMore && !historyLoading && reconfigApiResponse?.userInfo?.agentId &&
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
+   onMomentumScrollEnd={handleScrollEnd}
+
       initialNumToRender={5}
       removeClippedSubviews={true}
       maxToRenderPerBatch={5}

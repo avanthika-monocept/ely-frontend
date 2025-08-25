@@ -28,16 +28,40 @@ const chatSlice = createSlice({
     },
 
     addChatHistory: (state, action) => {
-      const newMessages = action.payload;
-      const existingIds = new Set(state.messages.map((msg) => msg.messageId));
-      newMessages.forEach((msg) => {
-        const id = String(msg.messageId);
-        if (id && !existingIds.has(id)) {
-          state.messages.unshift(msg);
-          existingIds.add(id);
+  const newMessages = action.payload;
+
+  
+  newMessages.forEach((newMsg) => {
+    const id = String(newMsg.messageId);
+    if (!id) return;
+    
+    // Find existing message with same ID
+    const existingIndex = state.messages.findIndex(msg => 
+      String(msg.messageId) === id
+    );
+    
+    if (existingIndex === -1) {
+      // Message doesn't exist, add it
+      state.messages.unshift(newMsg);
+    } else {
+     
+      
+      state.messages[existingIndex] = {
+        ...state.messages[existingIndex],
+        ...newMsg, 
+        
+        message: {
+          ...state.messages[existingIndex].message,
+          ...newMsg.message
+        },
+        media: {
+          ...state.messages[existingIndex].media,
+          ...newMsg.media
         }
-      });
-    },
+      };
+    }
+  });
+},
     updateMessageStatus: (state, action) => {
       const { messageId, status } = action.payload;
       const message = state.messages.find(msg => msg.messageId === messageId);
