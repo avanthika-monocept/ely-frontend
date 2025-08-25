@@ -160,7 +160,7 @@ const messageObject = useMemo(() =>
         sethistoryLoading(false);
         return;
       }
-      const formattedMessages = newMessages.map(msg =>
+      const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
       dispatch(addChatHistory(formattedMessages));
