@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect,useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
   StatusBar,
   KeyboardAvoidingView,
   Platform,
- 
+
   AppState,
-  
+
 } from "react-native";
 import { ChatHeader } from "../organims/ChatHeader";
 import ChatFooter from "../organims/ChatFooter";
@@ -68,7 +68,7 @@ export const ChatPage = ({ route }) => {
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
   const isSharing = useSelector((state) => state.shareLoader.isSharing);
   const netInfo = useNetInfo();
- 
+
   useEffect(() => {
     reconfigApiResponseRef.current = reconfigApiResponse;
   }, [reconfigApiResponse]);
@@ -83,14 +83,14 @@ export const ChatPage = ({ route }) => {
       dispatch(hideLoader());
     }, timeoutConstants.response);
     setResponseTimeout(timeoutId);
-  },[]);
-  
+  }, []);
+
   const clearResponseTimeout = useCallback(() => {
     if (responseTimeout) {
       clearTimeout(responseTimeout);
       setResponseTimeout(null);
     }
-  },[]);
+  }, []);
   const fetchToken = async () => {
     try {
       const response = await getCognitoToken();
@@ -108,21 +108,21 @@ export const ChatPage = ({ route }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
     isAtBottomRef.current = isBottom;
     if (isBottom) {
-      setFabState(prev => ({ ...prev, showFab: true , showNewMessageAlert: false, newMessageCount: 0 }));
-     } else {
+      setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: false, newMessageCount: 0 }));
+    } else {
       setFabState(prev => ({ ...prev, showFab: true }));
     }
-  },[]);
+  }, []);
 
   const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
       setReplyMessageId(messageObjectId);
       setReply(true);
     }
-  },[messageObjectId]);
+  }, [messageObjectId]);
   const resetNewMessageState = useCallback(() => {
     setFabState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
-  },[]);
+  }, []);
   const scrollToDown = useCallback(() => {
     isAutoScrollingRef.current = true;
     if (scrollViewRef.current) {
@@ -131,7 +131,7 @@ export const ChatPage = ({ route }) => {
         animated: true,
       });
     }
-  },[]);
+  }, []);
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -170,7 +170,7 @@ export const ChatPage = ({ route }) => {
   };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
-    if(!agentId || !token) {
+    if (!agentId || !token) {
       console.error("Agent ID or token is missing. Cannot connect WebSocket.");
       return;
     }
@@ -214,7 +214,9 @@ export const ChatPage = ({ route }) => {
       cleanupWebSocket();
       setPage(0);
       clearResponseTimeout();
-      if (AppState.currentState === "active") reconnectWebSocket();
+      if (e.code === 1001 && AppState.currentState === "active") {
+        reconnectWebSocket();
+      }
     };
   };
   const cleanupWebSocket = (sendDisconnect = false) => {
@@ -260,7 +262,7 @@ export const ChatPage = ({ route }) => {
       dispatch(clearMessages());
       setPage(0);
       const newToken = await fetchToken();
-      
+
       //   const validationResponse = await validateJwtToken(
       //   newToken,
       //   jwtToken,
@@ -344,7 +346,7 @@ export const ChatPage = ({ route }) => {
     if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
-    
+
     dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
   };
@@ -381,17 +383,18 @@ export const ChatPage = ({ route }) => {
   };
 
   useEffect(() => {
-  if (netInfo?.isConnected) {
-  if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      const agentId = reconfigApiResponse?.userInfo?.agentId;
-      if (agentId && token) {
-        connectWebSocket(agentId, token);
+    if (netInfo?.isConnected) {
+      if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        const agentId = reconfigApiResponse?.userInfo?.agentId;
+        if (agentId && token) {
+          connectWebSocket(agentId, token);
+        }
       }
+    } else {
+      cleanupWebSocket(true);
     }
-  } else {
-    cleanupWebSocket(true);
-  }
-}, [netInfo, token, reconfigApiResponse]);
+  }, [netInfo?.isConnected]);
+  console.log("helooooooooooo")
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
@@ -405,7 +408,7 @@ export const ChatPage = ({ route }) => {
           <VideoLoader />
         </View>
       )}
-    
+
       <View style={styles.content}>
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
@@ -419,11 +422,11 @@ export const ChatPage = ({ route }) => {
         {!isInitializing && navigationPage !== stringConstants.coach && (
           <ChatBody
             scrollViewRef={scrollViewRef}
-          
+
             handleScroll={handleScroll}
             setDropDownType={setDropDownType}
             setMessageObjectId={setMessageObjectId}
-          
+
             handleReplyMessage={handleReplyMessage}
             setReplyIndex={setReplyIndex}
             replyIndex={replyIndex}
@@ -480,12 +483,12 @@ export const ChatPage = ({ route }) => {
         reconfigApiResponse={reconfigApiResponse}
         messages={messages}
         copyToClipboard={copyToClipboard}
-        
+
         scrollToDown={scrollToDown}
         inactivityTimer={inactivityTimer}
         setInactivityTimer={setInactivityTimer}
-        
-       
+
+
         cleanupWebSocket={cleanupWebSocket}
         startResponseTimeout={startResponseTimeout}
         clearResponseTimeout={clearResponseTimeout}
