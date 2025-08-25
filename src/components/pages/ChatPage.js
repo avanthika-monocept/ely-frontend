@@ -217,7 +217,6 @@ export const ChatPage = ({ route }) => {
       if (AppState.currentState === "active") reconnectWebSocket();
     };
   };
-  console.log("hellooooo")
   const cleanupWebSocket = (sendDisconnect = false) => {
     if (!ws.current) return;
     try {
@@ -285,7 +284,7 @@ export const ChatPage = ({ route }) => {
         getData({ token: newToken, agentId: "10236a", platform: "MSPACE" })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        setnavigationPage("agenda");
+        setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
