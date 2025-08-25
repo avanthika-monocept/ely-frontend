@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -15,7 +15,7 @@ import ChatBody from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
 import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -45,6 +45,7 @@ export const ChatPage = ({ route }) => {
   const scrollViewRef = useRef(null);
   const isAtBottomRef = useRef(true);
   const reconfigApiResponseRef = useRef({});
+  const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
@@ -63,7 +64,7 @@ export const ChatPage = ({ route }) => {
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
-  const messages = useSelector((state) => state.chat.messages);
+  const messages = useSelector((state) => state.chat.messages,shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
   const isSharing = useSelector((state) => state.shareLoader.isSharing);
@@ -72,8 +73,12 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     reconfigApiResponseRef.current = reconfigApiResponse;
   }, [reconfigApiResponse]);
-  const messageObject = messages.find(
-    (msg) => msg?.messageId === messageObjectId
+  useEffect(() => {
+  tokenRef.current = token;
+}, [token]);
+const messageObject = useMemo(() => 
+    messages.find(msg => msg?.messageId === messageObjectId),
+    [messages, messageObjectId]
   );
   const startResponseTimeout = useCallback(() => {
     if (responseTimeout) {
@@ -95,6 +100,7 @@ export const ChatPage = ({ route }) => {
     try {
       const response = await getCognitoToken();
       if (response && response.access_token) {
+        tokenRef.current = response.access_token;
         settoken(response.access_token);
       }
       return response.access_token;
@@ -166,8 +172,10 @@ export const ChatPage = ({ route }) => {
     }
   };
   const reconnectWebSocket = () => {
-    connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, token);
-  };
+    if(reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current){
+       connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
+    }
+   };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     if (!agentId || !token) {
@@ -385,16 +393,16 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     if (netInfo?.isConnected) {
       if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-        const agentId = reconfigApiResponse?.userInfo?.agentId;
-        if (agentId && token) {
-          connectWebSocket(agentId, token);
+        const agentId = reconfigApiResponseRef.current?.userInfo?.agentId;
+        if (agentId && tokenRef.current) {
+          reconnectWebSocket();
         }
       }
     } else {
       cleanupWebSocket(true);
     }
   }, [netInfo?.isConnected]);
-  console.log("helooooooooooo")
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
@@ -447,11 +455,7 @@ export const ChatPage = ({ route }) => {
       {navigationPage !== stringConstants.coach && fabState.showFab && (
         <KeyboardAvoidingView>
           <View
-            style={{
-              position: "absolute",
-              bottom: spacing.space_10,
-              right: spacing.space_m3,
-            }}
+            style={styles.fabWrapper}
           >
             <FabFloatingButton
               onClick={scrollToDown}
@@ -518,6 +522,11 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
+   fabWrapper: {
+    position: "absolute",
+    bottom: spacing.space_10,
+    right: spacing.space_m3,
+  }
 });
 ChatPage.propTypes = {
   route: PropTypes.shape({

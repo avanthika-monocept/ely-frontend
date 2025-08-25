@@ -8,7 +8,7 @@ import {
   Text,
 } from "react-native";
 import  ChatBubble  from "../molecules/ChatBubble";
-import { useSelector } from "react-redux";
+import { shallowEqual, useSelector } from "react-redux";
 import  ChatDateSeparator  from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
@@ -133,7 +133,7 @@ const ChatBody =React.memo(({
     isAutoScrollingRef: PropTypes.object,
   };
   const SCROLL_BOTTOM_THRESHOLD = 10;
-  const messages = useSelector((state) => state.chat.messages);
+  const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const isLoading = useSelector((state) => state.loader.isLoading);
   const animatedValues = useRef({}).current;
   useEffect(() => {

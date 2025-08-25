@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   StyleSheet,
   View,
@@ -17,7 +17,7 @@ import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
  
-export const LandingPage = ({
+export const LandingPage = memo(({
   setnavigationPage,
   reconfigApiResponse,
   socket,
@@ -84,7 +84,7 @@ export const LandingPage = ({
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
-};
+});
  
 LandingPage.propTypes = {
   setnavigationPage: PropTypes.func.isRequired,
