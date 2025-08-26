@@ -110,7 +110,7 @@ const messageObject = useMemo(() =>
   };
   const SCROLL_BOTTOM_THRESHOLD = 10;
 const handleScroll = useCallback(({ nativeEvent }) => {
-  const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+  const { contentOffset } = nativeEvent;
 
   // Because list is inverted, bottom = y <= threshold
   const isBottom = contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
@@ -130,7 +130,7 @@ const handleScroll = useCallback(({ nativeEvent }) => {
     }
   }
 
-  console.log("scroll fired → isBottom:", isBottom);
+
 }, []);
 
 

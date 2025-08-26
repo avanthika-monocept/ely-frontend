@@ -1,5 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Text, StyleSheet, Animated } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
 import CopyClip from "../../../assets/CopyClip.svg";
 import { fontStyle, fontType } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
@@ -12,33 +18,44 @@ import {
 } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { stringConstants } from "../../constants/StringConstants";
+
 const CopyTextClipboard = ({ reply }) => {
   const [visible, setVisible] = useState(true);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const opacity = useSharedValue(0);
+
   useEffect(() => {
-    // Animate in
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-    // Auto-dismiss after 5 seconds
+    // Fade in
+    opacity.value = withTiming(1, { duration: 200 });
+
+    // Auto-dismiss after 2s, fade out over 1s
     const timeout = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 10000,
-        useNativeDriver: true,
-      }).start(() => setVisible(false));
+      opacity.value = withTiming(0, { duration: 1000 }, (finished) => {
+        if (finished) {
+          runOnJS(setVisible)(false);
+        }
+      });
     }, 2000);
+
     return () => clearTimeout(timeout);
   }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
   if (!visible) return null;
+
   return (
     <Animated.View
       testID="copy-toast-container"
       style={[
         styles.copiedMessage,
-        { bottom: reply ? sizeWithoutScale.width135 : sizeWithoutScale.width80, opacity: fadeAnim },
+        animatedStyle,
+        {
+          bottom: reply
+            ? sizeWithoutScale.width135
+            : sizeWithoutScale.width80,
+        },
       ]}
     >
       <CopyClip
@@ -50,9 +67,11 @@ const CopyTextClipboard = ({ reply }) => {
     </Animated.View>
   );
 };
+
 CopyTextClipboard.propTypes = {
   reply: PropTypes.bool,
 };
+
 const styles = StyleSheet.create({
   copiedMessage: {
     position: "absolute",
@@ -73,4 +92,5 @@ const styles = StyleSheet.create({
     marginLeft: spacing.space_base,
   },
 });
+
 export default CopyTextClipboard;
