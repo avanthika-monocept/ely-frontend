@@ -1,25 +1,44 @@
-import React, { useEffect } from 'react';
-import { Animated, Easing, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import React, { useEffect } from "react";
+import { View } from "react-native";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+
+const AnimatedSvg = Animated.createAnimatedComponent(Svg);
+
 const VideoLoader = () => {
-  const spinValue = new Animated.Value(0);
+  const rotation = useSharedValue(0);
+
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
+    rotation.value = withRepeat(
+      withTiming(360, {
         duration: 1500,
         easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
+      }),
+      -1, // infinite
+      false
+    );
   }, []);
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
-    <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={{ transform: [{ rotate: spin }] }}>
+    <View
+      style={{
+        width: 50,
+        height: 50,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Animated.View style={animatedStyle}>
         <Svg height="30" width="30" viewBox="0 0 100 100">
           <Defs>
             <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -43,4 +62,5 @@ const VideoLoader = () => {
     </View>
   );
 };
+
 export default VideoLoader;
