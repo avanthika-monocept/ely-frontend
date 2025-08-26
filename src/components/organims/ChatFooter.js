@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import DynamicTextInput from "../atoms/DynamicTextInput";
 import Button from "../atoms/Button";
@@ -29,7 +29,6 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   socket,
   messages,
   copyToClipboard,
-  
   scrollToDown,
   inactivityTimer,
   setInactivityTimer,
@@ -39,55 +38,33 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   clearResponseTimeout,
   token,
 }) => {
-  ChatFooter.propTypes = {
-    copied: PropTypes.bool.isRequired,
-    dropDownType: PropTypes.string.isRequired,
-    setReplyMessageId: PropTypes.func.isRequired,
-    replyMessageId: PropTypes.string,
-    navigationPage: PropTypes.string.isRequired,
-    setnavigationPage: PropTypes.func.isRequired,
-    setReply: PropTypes.func.isRequired,
-    reply: PropTypes.bool.isRequired,
-    handleReplyClose: PropTypes.func.isRequired,
-    handleReplyMessage: PropTypes.func.isRequired,
-    reconfigApiResponse: PropTypes.object.isRequired,
-    socket: PropTypes.object,
-    messages: PropTypes.array,
-    copyToClipboard: PropTypes.func,
-    
-    scrollToDown: PropTypes.func,
-    inactivityTimer: PropTypes.number,
-    setInactivityTimer: PropTypes.func,
-    replyIndex: PropTypes.number,
-    setCopied: PropTypes.func,
-    cleanupWebSocket: PropTypes.func,
-    clearResponseTimeout: PropTypes.func,
-    token: PropTypes.string,
-  };
+  
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
   const [dynamicPlaceholder, setDynamicPlaceholder] = useState(stringConstants.typeMessage);
   const isLoading = useSelector((state) => state.loader.isLoading);
   const isBottomSheetOpen = useSelector((state) => state.bottomSheet.isBottomSheetOpen);
-  useEffect(() => {
-    const clearPlaceholderInterval = setupDynamicPlaceholder(
-      reconfigApiResponse.placeHolders || [],
-      setDynamicPlaceholder,
-      3000,
-      isLoading,
-      reply
-    );
-    return () => clearPlaceholderInterval();
-  }, [reconfigApiResponse.placeHolders,isLoading, reply]);
-  const handleChange = (text) => {
-    setValue(text);
-  };
-  const resetReplyState = () => {
+  const placeHolders = reconfigApiResponse.placeHolders || [];
+  const effectDependencies = useMemo(() => [placeHolders, isLoading, reply], [placeHolders, isLoading, reply]);
+useEffect(() => {
+  const clearPlaceholderInterval = setupDynamicPlaceholder(
+    placeHolders,
+    setDynamicPlaceholder,
+    3000,
+    isLoading,
+    reply
+  );
+  return () => clearPlaceholderInterval();
+}, effectDependencies);
+  const handleChange = useCallback((text) => {
+  setValue(text);
+}, []);
+const resetReplyState = useCallback(() => {
   setReply(false);
   setReplyMessageId(null);
-};
+}, [setReply, setReplyMessageId]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     scrollToDown();
     if (navigationPage == stringConstants.coach)
       if (!value.trim() || isLoading) return;
@@ -135,37 +112,53 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
       dispatch(hideLoader());
       clearResponseTimeout();
     }
+  }, [
+  value, isLoading, navigationPage, reconfigApiResponse, 
+  reply, replyMessageId, token, replyIndex, messages,
+  socket, dispatch, resetReplyState, inactivityTimer,
+  setInactivityTimer, setnavigationPage, scrollToDown,
+  cleanupWebSocket, clearResponseTimeout
+]);
+  const getReplyMessage = useCallback(() => {
+  const replyMessageObject = messages.find(
+    (msg) => msg?.messageId === replyMessageId
+  );
+  return {
+    text: replyMessageObject?.message?.text || replyMessageObject?.text || "",
+    messageTo: replyMessageObject?.messageTo,
+    media: replyMessageObject?.media || [],
   };
-  const getReplyMessage = () => {
-    let replyMessageObject = messages.find(
-      (msg) => msg?.messageId === replyMessageId
-    );
-    return {
-      text: replyMessageObject?.message?.text || replyMessageObject?.text || "",
-      messageTo: replyMessageObject?.messageTo,
-      media: replyMessageObject?.media || [],
-    };
-  };
+}, [messages, replyMessageId]);
+
+const replyData = useMemo(() => {
+  if (!reply) return null;
+  return getReplyMessage();
+}, [reply, getReplyMessage]);
+
+
+const replyComponent = useMemo(() => {
+  if (!reply || !replyData) return null;
+  
+  return (
+    <ReplyMessage
+      replyFrom={
+        replyData?.messageTo?.toLowerCase() === stringConstants.bot ? 
+        stringConstants.you : stringConstants.botCaps
+      }
+      replyMessage={replyData.text}
+      media={replyData.media}
+      reply={reply}
+      handleClose={handleReplyClose}
+      replyIndex={replyIndex}
+    />
+  );
+}, [reply, replyData, handleReplyClose, replyIndex]);
   let data = {};
   return (
     <View>
       {copied && <CopyTextClipboard reply={reply} />}
       <View style={styles.containerHead}>
-        {reply &&
-          ((data = getReplyMessage()),
-            (
-              <ReplyMessage
-                replyFrom={
-                  data?.messageTo?.toLowerCase() === stringConstants.bot ? stringConstants.you : stringConstants.botCaps
-                }
-                replyMessage={data.text}
-                media={data.media}
-                reply={reply}
-                handleClose={handleReplyClose}
-
-                replyIndex={replyIndex}
-              />
-            ))}
+        {replyComponent}
         <View style={styles.container}>
           <View style={styles.inputContainer}>
             <DynamicTextInput
@@ -199,6 +192,30 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
     </View>
   );
 });
+ChatFooter.propTypes = {
+    copied: PropTypes.bool.isRequired,
+    dropDownType: PropTypes.string.isRequired,
+    setReplyMessageId: PropTypes.func.isRequired,
+    replyMessageId: PropTypes.string,
+    navigationPage: PropTypes.string.isRequired,
+    setnavigationPage: PropTypes.func.isRequired,
+    setReply: PropTypes.func.isRequired,
+    reply: PropTypes.bool.isRequired,
+    handleReplyClose: PropTypes.func.isRequired,
+    handleReplyMessage: PropTypes.func.isRequired,
+    reconfigApiResponse: PropTypes.object.isRequired,
+    socket: PropTypes.object,
+    messages: PropTypes.array,
+    copyToClipboard: PropTypes.func,
+    scrollToDown: PropTypes.func,
+    inactivityTimer: PropTypes.number,
+    setInactivityTimer: PropTypes.func,
+    replyIndex: PropTypes.number,
+    setCopied: PropTypes.func,
+    cleanupWebSocket: PropTypes.func,
+    clearResponseTimeout: PropTypes.func,
+    token: PropTypes.string,
+  };
 const styles = StyleSheet.create({
   containerHead: {
     backgroundColor: colors.primaryColors.lightSurface,
