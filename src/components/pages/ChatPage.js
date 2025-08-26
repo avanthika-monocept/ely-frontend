@@ -109,16 +109,30 @@ const messageObject = useMemo(() =>
     }
   };
   const SCROLL_BOTTOM_THRESHOLD = 10;
-  const handleScroll = useCallback(({ nativeEvent }) => {
-    if (isAutoScrollingRef.current) return;
-    const isBottom = getIsAtBottom(nativeEvent.contentOffset);
-    isAtBottomRef.current = isBottom;
+const handleScroll = useCallback(({ nativeEvent }) => {
+  const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+
+  // Because list is inverted, bottom = y <= threshold
+  const isBottom = contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
+  isAtBottomRef.current = isBottom;
+
+  // Don’t completely block during auto-scroll, just mark bottom state
+  if (!isAutoScrollingRef.current) {
     if (isBottom) {
-      setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: false, newMessageCount: 0 }));
+      resetNewMessageState();
     } else {
-      setFabState(prev => ({ ...prev, showFab: true }));
+      setFabState(prev => ({
+        ...prev,
+        showFab: true,
+        showNewMessageAlert: prev.showNewMessageAlert,
+        newMessageCount: prev.newMessageCount,
+      }));
     }
-  }, []);
+  }
+
+  console.log("scroll fired → isBottom:", isBottom);
+}, []);
+
 
   const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
@@ -129,15 +143,20 @@ const messageObject = useMemo(() =>
   const resetNewMessageState = useCallback(() => {
     setFabState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   }, []);
-  const scrollToDown = useCallback(() => {
+ const scrollToDown = useCallback(() => {
+  if (scrollViewRef.current) {
     isAutoScrollingRef.current = true;
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToOffset({
-        offset: 0,
-        animated: true,
-      });
-    }
-  }, []);
+    scrollViewRef.current.scrollToOffset({
+      offset: 0,
+      animated: true,
+    });
+    // Reset after short delay so user scrolls aren’t blocked
+    setTimeout(() => {
+      isAutoScrollingRef.current = false;
+    }, 300);
+  }
+}, []);
+
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);

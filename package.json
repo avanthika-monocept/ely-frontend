@@ -99,6 +99,7 @@
     "react-native-webview": "^13.13.5",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
+    "remove-markdown": "^0.6.2",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {

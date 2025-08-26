@@ -1,258 +1,163 @@
-import React, { useRef, useState } from "react";
-import Markdown from "react-native-markdown-display";
-import {
-  View,
-  Linking,
-  Alert,
-  Platform,
-  Text,
-  TouchableWithoutFeedback,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
-import { fontStyle, fontType, fontWeight } from "../../constants/Fonts";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Linking, Alert, TouchableOpacity } from "react-native";
+import removeMarkdown from "remove-markdown";
 import PropTypes from "prop-types";
-import { borderRadius, spacing, size } from "../../constants/Dimensions";
-import colors from "../../constants/Colors";
-import { useDispatch } from "react-redux";
-import { openBottomSheet, setBottomSheetURL } from "../../store/reducers/bottomSheetSlice";
-import { platformName, share, markdownLinks, stringConstants } from "../../constants/StringConstants";
-
-
-const LONG_PRESS_THRESHOLD = 500;
-const CHAR_LIMIT = 350;
-const MarkdownComponent = ({ markdownText, setDropDownType }) => {
-  const dispatch = useDispatch();
-  const longPressTimer = useRef(null);
-  const isLongPressTriggered = useRef(false);
+ 
+const CHAR_LIMIT = 200; // Characters before showing "Read More"
+ 
+const MarkdownComponent = ({ markdownText }) => {
   const [expanded, setExpanded] = useState(false);
-  const handleLinkPress = async (url) => {
-    if (isLongPressTriggered.current) return;
-    if (url.startsWith(markdownLinks.phone)) {
-      Linking.openURL(url);
-      return;
-    }
-    if (url.startsWith(markdownLinks.email)) {
-      try {
-        await Linking.openURL(url);
-      } catch (error) {
-        Alert.alert(stringConstants.error);
-      }
-      return;
-    }
+ 
+  const handleEmailPress = async (email) => {
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(share.invalidUri);
-      }
+      await Linking.openURL(`mailto:${email}`);
     } catch (error) {
-
-      Alert.alert(stringConstants.error, share.invalidUri);
+      Alert.alert("Error", "Unable to open email client.");
     }
   };
-
-  const handleLinkLongPress = (url) => {
-    dispatch(openBottomSheet());
-    dispatch(setBottomSheetURL(url));
-    if (url.startsWith(markdownLinks.email)) {
-      setDropDownType(stringConstants.email);
+ 
+  const handlePhonePress = async (phone) => {
+    try {
+      await Linking.openURL(`tel:${phone}`);
+    } catch (error) {
+      Alert.alert("Error", "Unable to make a call.");
     }
-    else if (url.startsWith(markdownLinks.phone)) {
-      setDropDownType(stringConstants.phone);
-    }
-    else {
-      setDropDownType(stringConstants.url);
-    }
-    setBottomSheetURL(url);
   };
- const formatTextWithLinks = (text) => {
-  // Convert emails
-  let formattedText = text.replace(
-    /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi,
-    '[$1](mailto:$1)'
-  );
-
-  // Convert phone numbers
-  formattedText = formattedText.replace(
-    /(\+?\d[\d -]{7,}\d)/g,
-    (match) => {
-      const phoneNumber = match.replace(/[^\d+]/g, ''); // keep only digits + leading +
-      return `[${match}](tel:${phoneNumber})`;
+ 
+  const renderStyledText = (line, i) => {
+    const regex =
+      /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|<br>|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?[\d\s-]{5,15})/gi;
+ 
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+ 
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push({ text: line.slice(lastIndex, match.index), style: {}, type: "text" });
+      }
+ 
+      let matched = match[0];
+ 
+      if (matched === "<br>") {
+        parts.push({ text: "\n", style: {}, type: "text" });
+      } else if (matched.startsWith("***")) {
+        parts.push({ text: matched.replace(/\*\*\*/g, ""), style: styles.boldItalic, type: "text" });
+      } else if (matched.startsWith("**")) {
+        parts.push({ text: matched.replace(/\*\*/g, ""), style: styles.bold, type: "text" });
+      } else if (matched.startsWith("*")) {
+        parts.push({ text: matched.replace(/\*/g, ""), style: styles.italic, type: "text" });
+      } else if (/\S+@\S+\.\S+/.test(matched)) {
+        parts.push({ text: matched, style: styles.email, type: "email" });
+      } else if (/^\+?\d[\d\s()-]{5,}$/.test(matched)) {
+        parts.push({ text: matched, style: styles.phone, type: "phone" });
+      }
+ 
+      lastIndex = regex.lastIndex;
     }
-  );
-
-  // Convert URLs
-  formattedText = formattedText.replace(
-    /\b((?:https?:\/\/|www\.)[^\s]+)\b/gi,
-    (match) => {
-      // If it starts with www, prepend https://
-      const url = match.startsWith("http") ? match : `https://${match}`;
-      return `[${match}](${url})`;
+ 
+    if (lastIndex < line.length) {
+      parts.push({ text: line.slice(lastIndex), style: {}, type: "text" });
     }
-  );
-
-  return formattedText;
-};
-
- const renderCustomLink = (children, href) => {
-  if (href === "action://readmore") {
+ 
     return (
-      <Text
-        style={styles.readMoreText}
-        onPress={() => setExpanded(true)}
-      >
-        {children}
+      <Text key={i} style={styles.text}>
+        {parts.map((p, j) => {
+          if (p.type === "email") {
+            return (
+              <Text key={j} style={p.style} onPress={() => handleEmailPress(p.text)}>
+                {p.text}
+              </Text>
+            );
+          }
+          if (p.type === "phone") {
+            return (
+              <Text key={j} style={p.style} onPress={() => handlePhonePress(p.text)}>
+                {p.text}
+              </Text>
+            );
+          }
+          return <Text key={j} style={p.style}>{p.text}</Text>;
+        })}
       </Text>
     );
-  }
-  if (href === "action://readless") {
-    return (
-      <Text
-        style={styles.readMoreText}
-        onPress={() => setExpanded(false)}
-      >
-        {children}
-      </Text>
-    );
-  }
-
-  // normal link handling (your old logic)
+  };
+ 
+  const renderLine = (line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+ 
+    if (/^---+$/.test(trimmed)) return <View key={i} style={styles.hr} />;
+ 
+    if (trimmed.startsWith("# 🌟 H1") || trimmed.startsWith("H1:")) {
+      return <Text key={i} style={styles.h1}>{removeMarkdown(trimmed)}</Text>;
+    }
+    if (trimmed.startsWith("## 📋 H2") || trimmed.startsWith("✅ H2") || trimmed.startsWith("🔢 H2")) {
+      return <Text key={i} style={styles.h2}>{removeMarkdown(trimmed)}</Text>;
+    }
+    if (trimmed.startsWith("###")) {
+      return <Text key={i} style={styles.h3}>{removeMarkdown(trimmed.replace("###", "").trim())}</Text>;
+    }
+    if (trimmed.startsWith("-") || trimmed.startsWith("•")) {
+      return <Text key={i} style={styles.list}>{removeMarkdown(trimmed)}</Text>;
+    }
+    if (trimmed.startsWith(">")) {
+      return (
+        <Text key={i} style={styles.quote}>
+          {removeMarkdown(trimmed.replace(">", "").trim())}
+        </Text>
+      );
+    }
+ 
+    return renderStyledText(trimmed, i);
+  };
+ 
+  const displayedText = expanded
+    ? markdownText
+    : markdownText.length > CHAR_LIMIT
+    ? markdownText.slice(0, CHAR_LIMIT) + "..."
+    : markdownText;
+ 
   return (
-    <TouchableWithoutFeedback
-      onPressIn={() => {
-        isLongPressTriggered.current = false;
-        longPressTimer.current = setTimeout(() => {
-          isLongPressTriggered.current = true;
-          handleLinkLongPress(href);
-        }, LONG_PRESS_THRESHOLD);
-      }}
-      onPressOut={() => {
-        clearTimeout(longPressTimer.current);
-        if (!isLongPressTriggered.current) handleLinkPress(href);
-      }}
-    >
-      <Text style={markdownStyles.link}>{children}</Text>
-    </TouchableWithoutFeedback>
-  );
-};
-
-  const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, '\n');
-  const formattedText = formatTextWithLinks(sanitizedText);
-const displayText = expanded
-  ? formattedText + " [Read less](action://readless)"
-  : formattedText.length > CHAR_LIMIT
-  ? formattedText.substring(0, CHAR_LIMIT) + "... [Read more](action://readmore)"
-  : formattedText;
-  return (
-    <View style={styles.container}>
-      <Markdown
-        style={markdownStyles}
-        mergeStyle={true}
-        rules={{
-          link: (node, children, parent, styles) =>
-            renderCustomLink(children, node.attributes.href),
-      
-  
- }} >
-        {displayText}
-      </Markdown>
-      
+    <View>
+      {displayedText.split("\n").map((line, i) => renderLine(line, i))}
+      {markdownText.length > CHAR_LIMIT && (
+        <TouchableOpacity onPress={() => setExpanded(!expanded)}>
+          <Text style={styles.readMore}>
+            {expanded ? "Read Less" : "Read More"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
+ 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: spacing.space_s1,
-    borderRadius: borderRadius.borderRadius8,
-    alignSelf: 'flex-start',
-    maxWidth: size.hundredPercent,
+  text: { fontSize: 16, color: "#000", marginVertical: 2, flexWrap: "wrap" },
+  h1: { fontSize: 26, fontWeight: "bold", marginVertical: 8, color: "#222" },
+  h2: { fontSize: 20, fontWeight: "600", marginVertical: 6, color: "#333" },
+  h3: { fontSize: 18, fontWeight: "500", marginVertical: 4, color: "#444" },
+  list: { fontSize: 16, marginLeft: 16, color: "#000", marginVertical: 2 },
+  quote: {
+    fontSize: 16,
+    fontStyle: "italic",
+    borderLeftWidth: 3,
+    borderLeftColor: "#aaa",
+    paddingLeft: 8,
+    color: "#555",
+    marginVertical: 4,
   },
-   readMoreText: {
-    color: colors.primaryColors.lightblue,
-    marginTop: 4,
-    fontWeight: "500",
-  }
-})
-
-const markdownStyles = {
-  body: {
-    color: colors.primaryColors.black,
-    marginBottom: spacing.space_s0,
-    padding: spacing.space_s0,
-    ...fontStyle.bodyBold2,
-  },
-  paragraph: {
-    marginTop: spacing.space_s2,
-    marginBottom: spacing.space_s0,
-    padding: spacing.space_s0,
-  },
-  
-  list_item: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  alignItems: "flex-start",
-  flexShrink: 1,
-  maxWidth: "100%",
-},
-
-bullet_list: {
-  paddingLeft: spacing.space_s3,
-  flexShrink: 1,
-  maxWidth: "100%",
-},
-
-ordered_list: {
-  paddingLeft: spacing.space_s3,
-  flexShrink: 1,
-  maxWidth: "100%",
-},
-
-// Ensures list text doesn't overflow
-list_item_text: {
-  flexShrink: 1,
-  flexWrap: "wrap",
-  maxWidth: "100%",
-},
-link: {
-  color: colors.primaryColors.lightblue,
-  textDecorationLine: "underline",
-  // Add platform-specific selection properties
-  ...Platform.select({
-    ios: {
-      userSelect: 'text',
-      WebkitUserSelect: 'text',
-    },
-    android: {
-      selectable: true,
-    },
-  }),
-},
-  strong: {
-    fontWeight: Platform.OS === platformName.ios ? fontWeight.weight600 : fontWeight.weight400,
-  },
-  em: {
-    fontStyle: fontType.italic,
-  },
-  code_inline: {
-    fontFamily: Platform.OS === platformName.ios ? fontType.Courier : fontType.monospace,
-    backgroundColor: colors.primaryColors.halfWhite,
-    padding: spacing.space_s1,
-    borderRadius: borderRadius.borderRadius4,
-  },
-  heading1: {
-    ...fontStyle.Nudgeh3bOLD,
-    marginBottom: spacing.space_base,
-  },
-  heading2: {
-    ...fontStyle.bodyBold0,
-    marginBottom: spacing.space_s3,
-  },
-};
+  bold: { fontWeight: "bold" },
+  italic: { fontStyle: "italic" },
+  boldItalic: { fontWeight: "bold", fontStyle: "italic" },
+  hr: { borderBottomColor: "#bbb", borderBottomWidth: 1, marginVertical: 8 },
+  email: { color: "blue", textDecorationLine: "underline" },
+  phone: { color: "green", textDecorationLine: "underline" },
+  readMore: { color: "blue", marginTop: 5, fontWeight: "500" },
+});
+ 
 MarkdownComponent.propTypes = {
   markdownText: PropTypes.string.isRequired,
-  setCopied: PropTypes.func,
-  setDropDownType: PropTypes.func,
 };
+ 
 export default MarkdownComponent;
