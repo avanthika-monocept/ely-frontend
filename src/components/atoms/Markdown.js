@@ -1,163 +1,306 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Linking, Alert, TouchableOpacity } from "react-native";
-import removeMarkdown from "remove-markdown";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableWithoutFeedback,
+  StyleSheet,
+  Alert,
+  Linking,
+  Platform,
+} from "react-native";
 import PropTypes from "prop-types";
- 
-const CHAR_LIMIT = 200; // Characters before showing "Read More"
- 
-const MarkdownComponent = ({ markdownText }) => {
+import { useDispatch } from "react-redux";
+
+import {
+  openBottomSheet,
+  setBottomSheetURL,
+} from "../../store/reducers/bottomSheetSlice";
+
+import {
+  share,
+  markdownLinks,
+  stringConstants,
+} from "../../constants/StringConstants";
+
+import { fontStyle } from "../../constants/Fonts";
+import {
+  borderRadius,
+  spacing,
+  size,
+} from "../../constants/Dimensions";
+import colors from "../../constants/Colors";
+
+const LONG_PRESS_THRESHOLD = 500;
+const CHAR_LIMIT = 350;
+
+const MarkdownComponent = ({ markdownText, setDropDownType }) => {
+  const dispatch = useDispatch();
+  const longPressTimer = useRef(null);
+  const isLongPressTriggered = useRef(false);
   const [expanded, setExpanded] = useState(false);
- 
-  const handleEmailPress = async (email) => {
+
+  // ✅ Handle link tap
+  const handleLinkPress = async (url) => {
+    if (isLongPressTriggered.current) return;
     try {
-      await Linking.openURL(`mailto:${email}`);
+      if (url.startsWith(markdownLinks.phone)) {
+        await Linking.openURL(url);
+        return;
+      }
+      if (url.startsWith(markdownLinks.email)) {
+        await Linking.openURL(url);
+        return;
+      }
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(share.invalidUri);
+      }
     } catch (error) {
-      Alert.alert("Error", "Unable to open email client.");
+      Alert.alert(stringConstants.error, share.invalidUri);
     }
   };
- 
-  const handlePhonePress = async (phone) => {
-    try {
-      await Linking.openURL(`tel:${phone}`);
-    } catch (error) {
-      Alert.alert("Error", "Unable to make a call.");
+
+  // ✅ Handle link long press
+  const handleLinkLongPress = (url) => {
+    dispatch(openBottomSheet());
+    dispatch(setBottomSheetURL(url));
+
+    if (url.startsWith(markdownLinks.email)) {
+      setDropDownType(stringConstants.email);
+    } else if (url.startsWith(markdownLinks.phone)) {
+      setDropDownType(stringConstants.phone);
+    } else {
+      setDropDownType(stringConstants.url);
     }
   };
+
  
-  const renderStyledText = (line, i) => {
-    const regex =
-      /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|<br>|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?[\d\s-]{5,15})/gi;
- 
+  const parseInlineMarkdown = (text) => {
+    const regex = /(\*\*(.*?)\*\*)|(\*(.*?)\*)|(`(.*?)`)/g;
     const parts = [];
     let lastIndex = 0;
-    let match;
- 
-    while ((match = regex.exec(line)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({ text: line.slice(lastIndex, match.index), style: {}, type: "text" });
+
+    text.replace(regex, (match, bold, boldText, italic, italicText, code, codeText, offset) => {
+      if (lastIndex < offset) {
+        parts.push({ type: "text", text: text.slice(lastIndex, offset) });
       }
- 
-      let matched = match[0];
- 
-      if (matched === "<br>") {
-        parts.push({ text: "\n", style: {}, type: "text" });
-      } else if (matched.startsWith("***")) {
-        parts.push({ text: matched.replace(/\*\*\*/g, ""), style: styles.boldItalic, type: "text" });
-      } else if (matched.startsWith("**")) {
-        parts.push({ text: matched.replace(/\*\*/g, ""), style: styles.bold, type: "text" });
-      } else if (matched.startsWith("*")) {
-        parts.push({ text: matched.replace(/\*/g, ""), style: styles.italic, type: "text" });
-      } else if (/\S+@\S+\.\S+/.test(matched)) {
-        parts.push({ text: matched, style: styles.email, type: "email" });
-      } else if (/^\+?\d[\d\s()-]{5,}$/.test(matched)) {
-        parts.push({ text: matched, style: styles.phone, type: "phone" });
+      if (boldText) parts.push({ type: "bold", text: boldText });
+      else if (italicText) parts.push({ type: "italic", text: italicText });
+      else if (codeText) parts.push({ type: "inlineCode", text: codeText });
+
+      lastIndex = offset + match.length;
+    });
+
+    if (lastIndex < text.length) {
+      parts.push({ type: "text", text: text.slice(lastIndex) });
+    }
+
+    return parts;
+  };
+
+
+  const parseTextWithLinks = (text) => {
+    const parts = [];
+    let lastIndex = 0;
+    const regex =
+      /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)|(\+?\d[\d -]{7,}\d)|((?:https?:\/\/|www\.)[^\s]+)/gi;
+
+    text.replace(regex, (match, email, phone, url, offset) => {
+      if (lastIndex < offset) {
+        parts.push({ type: "text", text: text.slice(lastIndex, offset) });
       }
- 
-      lastIndex = regex.lastIndex;
+      if (email) {
+        parts.push({ type: "link", text: email, url: `mailto:${email}` });
+      } else if (phone) {
+        const phoneNumber = phone.replace(/[^\d+]/g, "");
+        parts.push({ type: "link", text: phone, url: `tel:${phoneNumber}` });
+      } else if (url) {
+        const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+        parts.push({ type: "link", text: url, url: normalizedUrl });
+      }
+      lastIndex = offset + match.length;
+    });
+
+    if (lastIndex < text.length) {
+      parts.push({ type: "text", text: text.slice(lastIndex) });
     }
- 
-    if (lastIndex < line.length) {
-      parts.push({ text: line.slice(lastIndex), style: {}, type: "text" });
-    }
- 
-    return (
-      <Text key={i} style={styles.text}>
-        {parts.map((p, j) => {
-          if (p.type === "email") {
-            return (
-              <Text key={j} style={p.style} onPress={() => handleEmailPress(p.text)}>
-                {p.text}
-              </Text>
-            );
-          }
-          if (p.type === "phone") {
-            return (
-              <Text key={j} style={p.style} onPress={() => handlePhonePress(p.text)}>
-                {p.text}
-              </Text>
-            );
-          }
-          return <Text key={j} style={p.style}>{p.text}</Text>;
-        })}
-      </Text>
-    );
+
+    return parts;
   };
- 
-  const renderLine = (line, i) => {
-    const trimmed = line.trim();
-    if (!trimmed) return null;
- 
-    if (/^---+$/.test(trimmed)) return <View key={i} style={styles.hr} />;
- 
-    if (trimmed.startsWith("# 🌟 H1") || trimmed.startsWith("H1:")) {
-      return <Text key={i} style={styles.h1}>{removeMarkdown(trimmed)}</Text>;
-    }
-    if (trimmed.startsWith("## 📋 H2") || trimmed.startsWith("✅ H2") || trimmed.startsWith("🔢 H2")) {
-      return <Text key={i} style={styles.h2}>{removeMarkdown(trimmed)}</Text>;
-    }
-    if (trimmed.startsWith("###")) {
-      return <Text key={i} style={styles.h3}>{removeMarkdown(trimmed.replace("###", "").trim())}</Text>;
-    }
-    if (trimmed.startsWith("-") || trimmed.startsWith("•")) {
-      return <Text key={i} style={styles.list}>{removeMarkdown(trimmed)}</Text>;
-    }
-    if (trimmed.startsWith(">")) {
-      return (
-        <Text key={i} style={styles.quote}>
-          {removeMarkdown(trimmed.replace(">", "").trim())}
-        </Text>
-      );
-    }
- 
-    return renderStyledText(trimmed, i);
+
+  // ✅ Block-level markdown
+  const parseMarkdown = (text) => {
+    const lines = text.split("\n");
+    const elements = [];
+
+    lines.forEach((line) => {
+      if (/^#{1,6}\s/.test(line)) {
+        const level = line.match(/^#+/)[0].length;
+        elements.push({
+          type: `heading${level}`,
+          text: line.replace(/^#{1,6}\s/, ""),
+        });
+      } else if (/^>\s/.test(line)) {
+        elements.push({ type: "blockquote", text: line.replace(/^>\s/, "") });
+      } else if (/^[-*]\s/.test(line)) {
+        elements.push({ type: "listItem", text: line.replace(/^[-*]\s/, "• ") });
+      } else if (/^```/.test(line)) {
+        elements.push({ type: "codeBlock", text: line.replace(/```/g, "") });
+      } else {
+        elements.push({ type: "text", text: line });
+      }
+    });
+
+    return elements;
   };
- 
-  const displayedText = expanded
-    ? markdownText
-    : markdownText.length > CHAR_LIMIT
-    ? markdownText.slice(0, CHAR_LIMIT) + "..."
-    : markdownText;
- 
-  return (
-    <View>
-      {displayedText.split("\n").map((line, i) => renderLine(line, i))}
-      {markdownText.length > CHAR_LIMIT && (
-        <TouchableOpacity onPress={() => setExpanded(!expanded)}>
-          <Text style={styles.readMore}>
-            {expanded ? "Read Less" : "Read More"}
+
+  const plainText = markdownText || "";
+  const displayText =
+    expanded || plainText.length <= CHAR_LIMIT
+      ? plainText
+      : plainText.substring(0, CHAR_LIMIT) + "...";
+
+  const parsedElements = parseMarkdown(displayText);
+
+  // ✅ Render
+  const renderElement = (el, index) => {
+    const inlineParts = parseInlineMarkdown(el.text);
+
+    const children = inlineParts.flatMap((inline, i) => {
+      const linkParts = parseTextWithLinks(inline.text);
+
+      return linkParts.map((part, j) => {
+        if (part.type === "link") {
+          return (
+            <TouchableWithoutFeedback
+              key={`${i}-${j}`}
+              onPressIn={() => {
+                isLongPressTriggered.current = false;
+                longPressTimer.current = setTimeout(() => {
+                  isLongPressTriggered.current = true;
+                  handleLinkLongPress(part.url);
+                }, LONG_PRESS_THRESHOLD);
+              }}
+              onPressOut={() => {
+                clearTimeout(longPressTimer.current);
+                if (!isLongPressTriggered.current) handleLinkPress(part.url);
+              }}
+            >
+              <Text style={styles.link}>{part.text}</Text>
+            </TouchableWithoutFeedback>
+          );
+        }
+
+        let style = styles.body;
+        if (inline.type === "bold") style = styles.bold;
+        if (inline.type === "italic") style = styles.italic;
+        if (inline.type === "inlineCode") style = styles.inlineCode;
+
+        return (
+          <Text key={`${i}-${j}`} style={style}>
+            {part.text}
           </Text>
-        </TouchableOpacity>
+        );
+      });
+    });
+
+    switch (el.type) {
+      case "heading1":
+        return <Text key={index} style={styles.h1}>{children}</Text>;
+      case "heading2":
+        return <Text key={index} style={styles.h2}>{children}</Text>;
+      case "heading3":
+        return <Text key={index} style={styles.h3}>{children}</Text>;
+      case "blockquote":
+        return <Text key={index} style={styles.blockquote}>{children}</Text>;
+      case "listItem":
+        return <Text key={index} style={styles.listItem}>{children}</Text>;
+      case "codeBlock":
+        return <Text key={index} style={styles.code}>{children}</Text>;
+      default:
+        return <Text key={index} style={styles.body}>{children}</Text>;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {parsedElements.map((el, idx) => renderElement(el, idx))}
+      {plainText.length > CHAR_LIMIT && !expanded && (
+        <Text style={styles.readMoreText} onPress={() => setExpanded(true)}>
+          Read more
+        </Text>
+      )}
+      {expanded && plainText.length > CHAR_LIMIT && (
+        <Text style={styles.readMoreText} onPress={() => setExpanded(false)}>
+          Read less
+        </Text>
       )}
     </View>
   );
 };
- 
+
 const styles = StyleSheet.create({
-  text: { fontSize: 16, color: "#000", marginVertical: 2, flexWrap: "wrap" },
-  h1: { fontSize: 26, fontWeight: "bold", marginVertical: 8, color: "#222" },
-  h2: { fontSize: 20, fontWeight: "600", marginVertical: 6, color: "#333" },
-  h3: { fontSize: 18, fontWeight: "500", marginVertical: 4, color: "#444" },
-  list: { fontSize: 16, marginLeft: 16, color: "#000", marginVertical: 2 },
-  quote: {
-    fontSize: 16,
-    fontStyle: "italic",
+  container: {
+    paddingVertical: spacing.space_s1,
+    borderRadius: borderRadius.borderRadius8,
+    alignSelf: "flex-start",
+    maxWidth: size.hundredPercent,
+  },
+  body: {
+    color: colors.primaryColors.black,
+    ...fontStyle.bodyBold2,
+  },
+  bold: { fontWeight: "bold", color: colors.primaryColors.black },
+  italic: { fontStyle: "italic", color: colors.primaryColors.black },
+  inlineCode: {
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    color: "#d63384",
+  },
+  h1: { fontSize: 22, fontWeight: "700", marginVertical: 4 },
+  h2: { fontSize: 20, fontWeight: "600", marginVertical: 3 },
+  h3: { fontSize: 18, fontWeight: "500", marginVertical: 2 },
+  blockquote: {
     borderLeftWidth: 3,
-    borderLeftColor: "#aaa",
+    borderLeftColor: "#ccc",
     paddingLeft: 8,
     color: "#555",
     marginVertical: 4,
   },
-  bold: { fontWeight: "bold" },
-  italic: { fontStyle: "italic" },
-  boldItalic: { fontWeight: "bold", fontStyle: "italic" },
-  hr: { borderBottomColor: "#bbb", borderBottomWidth: 1, marginVertical: 8 },
-  email: { color: "blue", textDecorationLine: "underline" },
-  phone: { color: "green", textDecorationLine: "underline" },
-  readMore: { color: "blue", marginTop: 5, fontWeight: "500" },
+  listItem: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginLeft: 10,
+  },
+  code: {
+    backgroundColor: "#f5f5f5",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    padding: 6,
+    borderRadius: 6,
+    marginVertical: 4,
+  },
+  link: {
+    color: colors.primaryColors.lightblue,
+    textDecorationLine: "underline",
+    ...Platform.select({
+      ios: { userSelect: "text" },
+      android: { selectable: true },
+    }),
+  },
+  readMoreText: {
+    color: colors.primaryColors.lightblue,
+    marginTop: 4,
+    fontWeight: "500",
+  },
 });
- 
+
 MarkdownComponent.propTypes = {
   markdownText: PropTypes.string.isRequired,
+  setDropDownType: PropTypes.func,
 };
- 
+
 export default MarkdownComponent;
