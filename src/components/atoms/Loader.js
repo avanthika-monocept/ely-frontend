@@ -1,18 +1,26 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Easing } from "react-native";
-import { borderRadius,sizeWithoutScale, spacing } from "../../constants/Dimensions";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
+import { borderRadius, sizeWithoutScale, spacing } from "../../constants/Dimensions";
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
 import { loaderConfig } from "../../constants/StringConstants";
+
 export const Loader = () => {
   const messages = loaderConfig.messages;
   const [step, setStep] = useState(0);
-  
-  const dots = useRef(
-    Array(loaderConfig.dotCount)
-      .fill()
-      .map(() => new Animated.Value(0))
-  ).current;
+  const dots = Array(loaderConfig.dotCount)
+    .fill()
+    .map(() => useSharedValue(0));
+
   useEffect(() => {
     const interval = setInterval(
       () => setStep((prev) => (prev + 1) % messages.length),
@@ -20,54 +28,54 @@ export const Loader = () => {
     );
     return () => clearInterval(interval);
   }, []);
-useEffect(() => {
+
+  useEffect(() => {
     const createWaveAnimation = () => {
-      const animations = dots.map((dot, index) => {
-        return Animated.sequence([
-          Animated.delay(index * loaderConfig.dotAnimationDelay),
-          Animated.timing(dot, {
-            toValue: 1,
-            duration: loaderConfig.DotAnimationDuration,
-            easing: Easing.bezier(0.4, 0, 0.2, 1),
-            useNativeDriver: true,
-          }),
-          Animated.timing(dot, {
-            toValue: 0,
-            duration: loaderConfig.DotAnimationDuration,
-            easing: Easing.bezier(0.4, 0, 0.2, 1),
-            useNativeDriver: true,
-          }),
-        ]);
+      dots.forEach((dot, index) => {
+        dot.value = withDelay(
+          index * loaderConfig.dotAnimationDelay,
+          withSequence(
+            withTiming(1, {
+              duration: loaderConfig.DotAnimationDuration,
+              easing: Easing.bezier(0.4, 0, 0.2, 1),
+            }),
+            withTiming(0, {
+              duration: loaderConfig.DotAnimationDuration,
+              easing: Easing.bezier(0.4, 0, 0.2, 1),
+            })
+          )
+        );
       });
-      Animated.loop(Animated.stagger(loaderConfig.dotAnimationDelay, animations)).start();
+
+      // Loop animation by recursively calling
+      setTimeout(() => {
+        runOnJS(createWaveAnimation)();
+      }, loaderConfig.dotAnimationDelay * loaderConfig.dotCount + loaderConfig.DotAnimationDuration * 2);
     };
+
     createWaveAnimation();
+
     return () => {
-      dots.forEach((dot) => dot.stopAnimation());
+      dots.forEach((dot) => (dot.value = 0));
     };
   }, []);
+
   const renderDots = () => {
     return dots.map((dot, index) => {
-      const translateY = dot.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, -6], 
-      });
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: dot.value * -6 }],
+      }));
+
       return (
         <Animated.View
           key={index}
-          style={[
-            styles.dot,
-            {
-              transform: [
-                { translateY }, 
-              ],
-            },
-          ]}
+          style={[styles.dot, animatedStyle]}
           testID={`loader-dot-${index}`}
         />
       );
     });
   };
+
   return (
     <View style={styles.loaderContainer} testID="loader-container">
       <View style={styles.dotsContainer}>{renderDots()}</View>
@@ -79,6 +87,7 @@ useEffect(() => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   loaderContainer: {
     flexDirection: "row",

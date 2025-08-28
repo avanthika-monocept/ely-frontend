@@ -2,13 +2,12 @@ import React, { useCallback, useEffect, useRef } from "react";
 import {
   FlatList,
   StyleSheet,
-  Animated,
-  Dimensions,
   View,
   Text,
 } from "react-native";
+import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import  ChatBubble  from "../molecules/ChatBubble";
-import { useSelector } from "react-redux";
+import { shallowEqual, useSelector } from "react-redux";
 import  ChatDateSeparator  from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
@@ -20,7 +19,6 @@ const MessageItem = React.memo(({
   item,
   index,
   messages,
-  animatedValues,
   formatTime,
   setDropDownType,
   setMessageObjectId,
@@ -41,14 +39,12 @@ const MessageItem = React.memo(({
   const replyMessage = replyMessageObj?.message?.text || replyMessageObj?.text || null;
   const replyFrom = replyMessageObj?.messageTo.toLowerCase() || "";
   const isBot = item?.messageTo?.toLowerCase() === stringConstants.user;
-  const translateX = animatedValues[item.messageId] || new Animated.Value(0);
+  
 
   return (
     <Animated.View
-      style={[
-        isBot ? styles.messageContainer : styles.messageContainerUser,
-        { transform: [{ translateX }] },
-      ]}
+      style={isBot ? styles.messageContainer : styles.messageContainerUser}
+      entering={isBot ? SlideInLeft.springify().damping(15) : SlideInRight.springify().damping(15)}
     >
       <ChatBubble
         text={item?.message?.text || item?.text}
@@ -83,7 +79,6 @@ MessageItem.propTypes = {
   item: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
   messages: PropTypes.array.isRequired,
-  animatedValues: PropTypes.object.isRequired,
   formatTime: PropTypes.func.isRequired,
   setDropDownType: PropTypes.func.isRequired,
   setMessageObjectId: PropTypes.func.isRequired,
@@ -132,26 +127,11 @@ const ChatBody =React.memo(({
     handleScrollEnd: PropTypes.func,
     isAutoScrollingRef: PropTypes.object,
   };
-  const SCROLL_BOTTOM_THRESHOLD = 10;
-  const messages = useSelector((state) => state.chat.messages);
+
+  const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const isLoading = useSelector((state) => state.loader.isLoading);
-  const animatedValues = useRef({}).current;
-  useEffect(() => {
-    messages.forEach((message) => {
-      const isBot = message?.messageTo?.toLowerCase() === stringConstants.user;
-      if (!animatedValues[message.messageId]) {
-        const startValue = isBot ? -100 : Dimensions.get("window").width;
-        animatedValues[message.messageId] = new Animated.Value(startValue);
-        Animated.spring(animatedValues[message.messageId], {
-          toValue: 0,
-          friction: 80,
-          tension: 40,
-          useNativeDriver: true,
-        }).start();
-      }
-    });
-  }, [messages]);
-  const formatTime = useCallback((dateTime) => {
+ 
+const formatTime = useCallback((dateTime) => {
     let date;
     if (typeof dateTime === "string") {
       date = new Date(dateTime);
@@ -266,7 +246,7 @@ const ChatBody =React.memo(({
         item={item}
         index={index}
         messages={messages}
-        animatedValues={animatedValues}
+        
         formatTime={formatTime}
         setDropDownType={setDropDownType}
         setMessageObjectId={setMessageObjectId}
@@ -281,7 +261,6 @@ const ChatBody =React.memo(({
     );
   }, [
     messages,
-    animatedValues,
     formatTime,
     setDropDownType,
     setMessageObjectId,

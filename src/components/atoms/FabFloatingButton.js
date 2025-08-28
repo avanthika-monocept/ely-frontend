@@ -1,4 +1,4 @@
-import React from "react";
+import React ,{memo} from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import Chevron from "../../../assets/Chevron.svg"; 
 import ChevronDown from "../../../assets/ChevronDown.svg";
@@ -14,7 +14,7 @@ import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 
-const FabFloatingButton = ({
+const FabFloatingButton = memo(({
   count,
   onClick,
   showFab,
@@ -54,7 +54,7 @@ const FabFloatingButton = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   fab: {

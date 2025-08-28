@@ -1,15 +1,20 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Animated,
   Modal,
   Pressable,
   Platform,
   Linking,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
+
 import Download from "../../../assets/Download.svg";
 import Vector from "../../../assets/Vector.svg";
 import Upload from "../../../assets/Upload.svg";
@@ -33,9 +38,11 @@ import {
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
 import Clipboard from "@react-native-clipboard/clipboard";
-import { platformName, labels, stringConstants } from "../../constants/StringConstants";
-
-
+import {
+  platformName,
+  labels,
+  stringConstants,
+} from "../../constants/StringConstants";
 
 const Dropdown = ({
   isOpen,
@@ -53,10 +60,9 @@ const Dropdown = ({
   };
 
   const dispatch = useDispatch();
-  const [slideAnim] = useState(new Animated.Value(0));
-   
-  const dropdownRef = useRef(null);
- const url= useSelector((state) => state.bottomSheet.bottomSheetURL);
+  const translateY = useSharedValue(100); // start hidden
+  const url = useSelector((state) => state.bottomSheet.bottomSheetURL);
+
   const onLayout = (event) => {
     const { height } = event.nativeEvent.layout;
     dispatch(setBottomSheetHeight(height));
@@ -64,44 +70,42 @@ const Dropdown = ({
 
   useEffect(() => {
     if (isOpen) {
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      translateY.value = withTiming(0, { duration: 300 });
     } else {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      translateY.value = withTiming(100, { duration: 300 });
     }
-  }, [isOpen, slideAnim]);
+  }, [isOpen]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const handleClose = () => {
     dispatch(closeBottomSheet());
   };
-const handleCopyURL = () => {
-  let textToCopy = url;
-  if (url.startsWith('mailto:')) {
-    textToCopy = url.replace('mailto:', '');
-  } else if (url.startsWith('tel:')) {
-    textToCopy = url.replace('tel:', '');
-  }
-  
-  Clipboard.setString(textToCopy);
-  const androidVersion = parseInt(Platform.Version, 10);
-  if ((androidVersion < 33 || Platform.OS === platformName.ios)) {
-    setCopied(true);
-  }
-  setTimeout(() => setCopied(false), 1000);
-};
-const handleOpenURL = () => {
-   Linking.openURL(url);
 
+  const handleCopyURL = () => {
+    let textToCopy = url;
+    if (url.startsWith("mailto:")) {
+      textToCopy = url.replace("mailto:", "");
+    } else if (url.startsWith("tel:")) {
+      textToCopy = url.replace("tel:", "");
     }
+
+    Clipboard.setString(textToCopy);
+    const androidVersion = parseInt(Platform.Version, 10);
+    if (androidVersion < 33 || Platform.OS === platformName.ios) {
+      setCopied(true);
+    }
+    setTimeout(() => setCopied(false), 1000);
+  };
+
+  const handleOpenURL = () => {
+    Linking.openURL(url);
+  };
+
   const menuItems = [
-   {
+    {
       type: stringConstants.url,
       label: labels.openUrl,
       icon: <Vector />,
@@ -110,7 +114,7 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-      {
+    {
       type: stringConstants.url,
       label: labels.copyUrl,
       icon: <Copy />,
@@ -119,7 +123,7 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-      {
+    {
       type: stringConstants.email,
       label: labels.openEmail,
       icon: <Vector />,
@@ -128,7 +132,7 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-      {
+    {
       type: stringConstants.email,
       label: labels.copyEmail,
       icon: <Copy />,
@@ -137,7 +141,7 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-     {
+    {
       type: stringConstants.phone,
       label: labels.callNumber,
       icon: <Vector />,
@@ -146,7 +150,7 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-      {
+    {
       type: stringConstants.phone,
       label: labels.copyNumber,
       icon: <Copy />,
@@ -173,22 +177,22 @@ const handleOpenURL = () => {
         handleClose();
       },
     },
-   
   ];
 
   const getFilteredMenuItems = (type) => {
     return menuItems.filter((item) => {
       if (stringConstants.textWithLink === type) {
-        return item.type === stringConstants.text || item.type === stringConstants.textwithlink;
+        return (
+          item.type === stringConstants.text ||
+          item.type === stringConstants.textwithlink
+        );
       } else if (stringConstants.text === type) {
         return item.type === stringConstants.text;
-        } else if (stringConstants.url === type) {
+      } else if (stringConstants.url === type) {
         return item.type === stringConstants.url;
-        }
-        else if (stringConstants.email === type) {
+      } else if (stringConstants.email === type) {
         return item.type === stringConstants.email;
-        }
-          else if (stringConstants.phone === type) {
+      } else if (stringConstants.phone === type) {
         return item.type === stringConstants.phone;
       } else {
         return false;
@@ -203,10 +207,6 @@ const handleOpenURL = () => {
       transparent={true}
       visible={isOpen}
       onRequestClose={handleClose}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
-      backdropTransitionInTiming={0}
-      backdropTransitionOutTiming={0}
     >
       <Pressable
         style={styles.overlay}
@@ -215,20 +215,7 @@ const handleOpenURL = () => {
       >
         <Animated.View
           testID="dropdown-container"
-          ref={dropdownRef}
-          style={[
-            styles.dropdown,
-            {
-              transform: [
-                {
-                  translateY: slideAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [100, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
+          style={[styles.dropdown, animatedStyle]}
           onLayout={onLayout}
         >
           <View style={styles.list}>
@@ -263,26 +250,28 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     elevation: shadowOpacityElevation.elevation5,
     shadowColor: colors.primaryColors.black,
-    shadowOffset: { width: sizeWithoutScale.width0, height: sizeWithoutScale.height2 },
+    shadowOffset: {
+      width: sizeWithoutScale.width0,
+      height: sizeWithoutScale.height2,
+    },
     shadowOpacity: shadowOpacityElevation.opacity0_25,
     shadowRadius: ShadowRadius.shadowRadius3,
   },
   list: {
     padding: spacing.space_m2,
     left: spacing.space_m1,
-    paddingVertical: spacing.space_m2, 
+    paddingVertical: spacing.space_m2,
     paddingHorizontal: spacing.space_m1,
   },
   listItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.space_10,
-   
   },
   iconContainer: {
     marginRight: spacing.space_10,
     width: sizeWithoutScale.width24,
-    alignItems: 'left',
+    alignItems: "left",
   },
   label: {
     ...fontStyle.bodyMedium,

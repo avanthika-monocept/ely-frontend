@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -15,7 +15,7 @@ import ChatBody from "../organims/ChatBody";
 import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
 import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -45,6 +45,7 @@ export const ChatPage = ({ route }) => {
   const scrollViewRef = useRef(null);
   const isAtBottomRef = useRef(true);
   const reconfigApiResponseRef = useRef({});
+  const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
@@ -63,7 +64,7 @@ export const ChatPage = ({ route }) => {
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
-  const messages = useSelector((state) => state.chat.messages);
+  const messages = useSelector((state) => state.chat.messages,shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
   const isSharing = useSelector((state) => state.shareLoader.isSharing);
@@ -72,8 +73,12 @@ export const ChatPage = ({ route }) => {
   useEffect(() => {
     reconfigApiResponseRef.current = reconfigApiResponse;
   }, [reconfigApiResponse]);
-  const messageObject = messages.find(
-    (msg) => msg?.messageId === messageObjectId
+  useEffect(() => {
+  tokenRef.current = token;
+}, [token]);
+const messageObject = useMemo(() => 
+    messages.find(msg => msg?.messageId === messageObjectId),
+    [messages, messageObjectId]
   );
   const startResponseTimeout = useCallback(() => {
     if (responseTimeout) {
@@ -95,6 +100,7 @@ export const ChatPage = ({ route }) => {
     try {
       const response = await getCognitoToken();
       if (response && response.access_token) {
+        tokenRef.current = response.access_token;
         settoken(response.access_token);
       }
       return response.access_token;
@@ -103,16 +109,30 @@ export const ChatPage = ({ route }) => {
     }
   };
   const SCROLL_BOTTOM_THRESHOLD = 10;
-  const handleScroll = useCallback(({ nativeEvent }) => {
-    if (isAutoScrollingRef.current) return;
-    const isBottom = getIsAtBottom(nativeEvent.contentOffset);
-    isAtBottomRef.current = isBottom;
+const handleScroll = useCallback(({ nativeEvent }) => {
+  const { contentOffset } = nativeEvent;
+
+  // Because list is inverted, bottom = y <= threshold
+  const isBottom = contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
+  isAtBottomRef.current = isBottom;
+
+  // Don’t completely block during auto-scroll, just mark bottom state
+  if (!isAutoScrollingRef.current) {
     if (isBottom) {
-      setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: false, newMessageCount: 0 }));
+      resetNewMessageState();
     } else {
-      setFabState(prev => ({ ...prev, showFab: true }));
+      setFabState(prev => ({
+        ...prev,
+        showFab: true,
+        showNewMessageAlert: prev.showNewMessageAlert,
+        newMessageCount: prev.newMessageCount,
+      }));
     }
-  }, []);
+  }
+
+
+}, []);
+
 
   const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
@@ -123,15 +143,20 @@ export const ChatPage = ({ route }) => {
   const resetNewMessageState = useCallback(() => {
     setFabState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   }, []);
-  const scrollToDown = useCallback(() => {
+ const scrollToDown = useCallback(() => {
+  if (scrollViewRef.current) {
     isAutoScrollingRef.current = true;
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToOffset({
-        offset: 0,
-        animated: true,
-      });
-    }
-  }, []);
+    scrollViewRef.current.scrollToOffset({
+      offset: 0,
+      animated: true,
+    });
+    // Reset after short delay so user scrolls aren’t blocked
+    setTimeout(() => {
+      isAutoScrollingRef.current = false;
+    }, 300);
+  }
+}, []);
+
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -154,7 +179,7 @@ export const ChatPage = ({ route }) => {
         sethistoryLoading(false);
         return;
       }
-      const formattedMessages = newMessages.map(msg =>
+      const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
       dispatch(addChatHistory(formattedMessages));
@@ -166,8 +191,13 @@ export const ChatPage = ({ route }) => {
     }
   };
   const reconnectWebSocket = () => {
-    connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, token);
-  };
+    if(reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current){
+       connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
+    }
+    else{
+      console.error("Cannot reconnect WebSocket: Missing agentId or token");
+    }
+   };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     if (!agentId || !token) {
@@ -290,7 +320,12 @@ export const ChatPage = ({ route }) => {
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-        connectWebSocket(response.userInfo.agentId, newToken);
+        if(response.userInfo.agentId && newToken){
+           connectWebSocket(response.userInfo.agentId, newToken);
+        }
+        else{
+          console.error("Cannot connect WebSocket: Missing agentId or token");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -365,36 +400,39 @@ export const ChatPage = ({ route }) => {
     setReplyMessageId(null);
     setReply(false);
   };
-  const copyToClipboard = async () => {
-    const androidVersion = parseInt(Platform.Version, 10);
-    const textToCopy = messageObject?.message?.text
-      ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
-      : messageObject?.message?.text;
-    Clipboard.setString(textToCopy);
-    if (androidVersion < 33 || Platform.OS === platformName.ios) {
-      setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-        setMessageObjectId(null);
-      }, 1000);
-    } else {
+const copyToClipboard = useCallback(() => {
+  const androidVersion = parseInt(Platform.Version, 10);
+  const textToCopy = messageObject?.message?.text
+    ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
+    : messageObject?.message?.text;
+
+  Clipboard.setString(textToCopy);
+
+  if (androidVersion < 33 || Platform.OS === platformName.ios) {
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
       setMessageObjectId(null);
-    }
-  };
+    }, 1000);
+  } else {
+    setMessageObjectId(null);
+  }
+}, [messageObject]);
+
 
   useEffect(() => {
     if (netInfo?.isConnected) {
       if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-        const agentId = reconfigApiResponse?.userInfo?.agentId;
-        if (agentId && token) {
-          connectWebSocket(agentId, token);
+        const agentId = reconfigApiResponseRef.current?.userInfo?.agentId;
+        if (agentId && tokenRef.current) {
+          reconnectWebSocket();
         }
       }
     } else {
       cleanupWebSocket(true);
     }
   }, [netInfo?.isConnected]);
-  console.log("helooooooooooo")
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
@@ -447,11 +485,7 @@ export const ChatPage = ({ route }) => {
       {navigationPage !== stringConstants.coach && fabState.showFab && (
         <KeyboardAvoidingView>
           <View
-            style={{
-              position: "absolute",
-              bottom: spacing.space_10,
-              right: spacing.space_m3,
-            }}
+            style={styles.fabWrapper}
           >
             <FabFloatingButton
               onClick={scrollToDown}
@@ -518,6 +552,11 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
+   fabWrapper: {
+    position: "absolute",
+    bottom: spacing.space_10,
+    right: spacing.space_m3,
+  }
 });
 ChatPage.propTypes = {
   route: PropTypes.shape({

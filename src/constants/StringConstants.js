@@ -114,10 +114,10 @@ export const labels = {
   copyNumber: "Copy Number",
 }
 export const loaderConfig = {
-  textCycleInterval: 1300,
+  textCycleInterval: 1500,
   dotCount: 5,
   dotAnimationDelay: 200,
-  DotAnimationDuration: 600,
+  DotAnimationDuration: 400,
   messages: ["", "ELY is thinking", "", "ELY is typing"]
 };
 
