@@ -315,7 +315,7 @@ const handleScroll = useCallback(({ nativeEvent }) => {
         getData({ token: newToken, agentId:userInfo?.agentId?.toLowerCase(), platform: platform })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
-        setnavigationPage(response.statusFlag);
+        setnavigationPage("agenda");
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
@@ -345,6 +345,12 @@ const handleScroll = useCallback(({ nativeEvent }) => {
       safelyCleanupSocket();
     }
   }, []);
+  useEffect(() => {
+  if (navigationPage === stringConstants.coach) {
+   resetNewMessageState();
+  }
+}, [navigationPage]);
+
   useEffect(() => {
     let currentAppState = AppState.currentState;
     let isMounted = true; // Track mounted state
@@ -478,7 +484,7 @@ const copyToClipboard = useCallback(() => {
             historyLoading={historyLoading}
             hasMore={hasMore}
             handleScrollEnd={onMomentumScrollEnd}
-            isAutoScrollingRef={isAutoScrollingRef}
+           
           />
         )}
       </View>

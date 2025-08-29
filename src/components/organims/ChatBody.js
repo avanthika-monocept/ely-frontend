@@ -125,7 +125,7 @@ const ChatBody =React.memo(({
     historyLoading:PropTypes.bool,
     hasMore: PropTypes.bool,
     handleScrollEnd: PropTypes.func,
-    isAutoScrollingRef: PropTypes.object,
+    
   };
 
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
@@ -284,6 +284,7 @@ const formatTime = useCallback((dateTime) => {
       inverted={true}
       scrollEventThrottle={16}
       windowSize={21}
+      bounces={false}
       onScroll={handleScroll}
       onEndReachedThreshold={0.5}
       onEndReached={() =>
