@@ -108,7 +108,7 @@ const messageObject = useMemo(() =>
       console.error(err);
     }
   };
-  const SCROLL_BOTTOM_THRESHOLD = 10;
+  const SCROLL_BOTTOM_THRESHOLD = 20;
 const handleScroll = useCallback(({ nativeEvent }) => {
   const { contentOffset } = nativeEvent;
 
