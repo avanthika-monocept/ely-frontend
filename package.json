@@ -1,6 +1,6 @@
 {
   "name": "amlielychatbot",
-  "version": "1.0.152",
+  "version": "1.0.153",
   "description": "A React Native Expo Bare Workflow chatbot component library",
   "main": "index.js",
   "types": "index.d.ts",
@@ -85,7 +85,6 @@
     "react-native-webview": "^13.13.5",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
-    "socket.io-client": "^4.8.1",
     "react-native-blob-util": "^0.21.2",
     "react-native-video": "^6.14.1",
     "crypto-js": "^4.2.0"
