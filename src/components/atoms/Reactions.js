@@ -13,7 +13,6 @@ export const Reactions = ({
   agentId,
   platform,
   socket,
-  token,
   activity
 }) => {
   const [selected, setSelected] = useState(activity || null);
@@ -33,7 +32,6 @@ export const Reactions = ({
     const encryptedPayload = encryptSocketPayload(message);
     const finalPayload = {
       action: CHAT_MESSAGE_PROXY,
-      token: token,
       payload: encryptedPayload
     };
     socket.send(JSON.stringify(finalPayload));
@@ -81,7 +79,6 @@ Reactions.propTypes = {
   messageId: PropTypes.string,
   agentId: PropTypes.string,
   socket: PropTypes.object,
-  token: PropTypes.string,
   platform: PropTypes.string,
   activity: PropTypes.string,
 };

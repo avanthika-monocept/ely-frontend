@@ -36,7 +36,6 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   replyIndex,
   cleanupWebSocket,
   clearResponseTimeout,
-  token,
 }) => {
   
   const dispatch = useDispatch();
@@ -93,14 +92,12 @@ const resetReplyState = useCallback(() => {
       } else {
         messageType = socketMessageTypes.text;
       }
-      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, token, replyMessageId, replyIndex);
-      const socketToken = socketPayload.token;
+      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, replyMessageId, replyIndex);
       const action = socketPayload.action;
       const payload = socketPayload.message;
       const encryptedPayload = encryptSocketPayload(payload);
       const finalPayload = {
         action,
-        token: socketToken,
         payload: encryptedPayload
       };
       dispatch(addMessage(message));
@@ -114,7 +111,7 @@ const resetReplyState = useCallback(() => {
     }
   }, [
   value, isLoading, navigationPage, reconfigApiResponse, 
-  reply, replyMessageId, token, replyIndex, messages,
+  reply, replyMessageId, replyIndex, messages,
   socket, dispatch, resetReplyState, inactivityTimer,
   setInactivityTimer, setnavigationPage, scrollToDown,
   cleanupWebSocket, clearResponseTimeout
@@ -214,7 +211,6 @@ ChatFooter.propTypes = {
     setCopied: PropTypes.func,
     cleanupWebSocket: PropTypes.func,
     clearResponseTimeout: PropTypes.func,
-    token: PropTypes.string,
   };
 const styles = StyleSheet.create({
   containerHead: {

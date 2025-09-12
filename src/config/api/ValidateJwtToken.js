@@ -4,16 +4,13 @@ import {VALIDATE_JWT_TOKEN_URL} from "../apiUrls";
 import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
 
 export const validateJwtToken = async (
-  bearerToken,
   jwtToken,
-  cogToken,
   platform,
   userInfo = {}
 ) => {
   try {
     const rawPayload = {
       jwtToken: jwtToken,
-      cogToken: cogToken,
       platform: platform,
       userInfo: userInfo,
     };
@@ -25,7 +22,7 @@ export const validateJwtToken = async (
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${bearerToken}`,
+        "Authorization": jwtToken,
         "x-api-key": X_API_KEY,
       },
       data: encryptedPayload,

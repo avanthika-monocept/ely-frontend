@@ -45,7 +45,6 @@ const ChatBubble = React.memo(({
   replyFrom,
   socket,
   handleReplyMessage,
-  token,
   copyToClipboard,
   replyMessageObj,
   reconfigApiResponse,
@@ -100,19 +99,16 @@ const ChatBubble = React.memo(({
       feedback,
       reconfigApiResponse,
       socketMessageTypes.quickReply,
-      token,
       null,
       0,
 
     );
     dispatch(addMessage(message));
-    const socketToken = socketPayload.token;
     const action = socketPayload.action;
     const payload = socketPayload.message;
     const encryptedPayload = encryptSocketPayload(payload);
     const finalPayload = {
       action,
-      token: socketToken,
       payload: encryptedPayload
     };
 
@@ -278,7 +274,6 @@ const ChatBubble = React.memo(({
               socket={socket}
               agentId={reconfigApiResponse?.userInfo?.agentId}
               platform={reconfigApiResponse?.theme?.platform}
-              token={token}
               activity={activity}
             />
           </View>
@@ -307,7 +302,6 @@ ChatBubble.propTypes = {
   replyMessageObj: PropTypes.object,
   reconfigApiResponse: PropTypes.object,
   setCopied: PropTypes.func,
-  token: PropTypes.string,
   setReplyIndex: PropTypes.func,
   replyIndex: PropTypes.number,
   activity: PropTypes.string,

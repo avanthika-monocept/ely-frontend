@@ -16,7 +16,7 @@ export const FeedbackChip = ({ options, onSelect, selectedFeedback, reconfigApiR
   
   return (
     <View style={styles.feedbackChipContainer}>
-      {options.map((option, index) => (
+      {options.slice().reverse().map((option, index) => (
         <TouchableOpacity
           testID={`feedback-button-${index}`}
           key={option}
