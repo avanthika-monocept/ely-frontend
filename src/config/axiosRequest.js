@@ -25,6 +25,12 @@ const apiCall = async ({
     });
     return response?.data || "";
   } catch (error) {
+    // Throw specific error for token expiry
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      const tokenError = new Error("TOKEN_EXPIRED");
+      tokenError.isTokenExpired = true;
+      throw tokenError;
+    }
     console.error("API Error:", error?.response?.data || error.message);
     throw error;
   }

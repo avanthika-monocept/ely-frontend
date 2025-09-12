@@ -5,7 +5,7 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-
+  Text,
   AppState,
 
 } from "react-native";
@@ -26,7 +26,6 @@ import { flex, size, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
 import { ApiResponseConstant, platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
-import { getCognitoToken } from "../../config/api/getToken";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
 import PropTypes from "prop-types";
@@ -44,7 +43,7 @@ export const ChatPage = ({ route }) => {
     platform: "MSPACE",
     userInfo: { agentId: "76361B", deviceId: "da0969f26f83cdf9", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel" }
   };
-
+ const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
@@ -62,12 +61,12 @@ export const ChatPage = ({ route }) => {
   const [reconfigApiResponse, setReconfigApiResponse] = useState({});
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [newMessageCount, setNewMessageCount] = useState(1);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
-  const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const [historyLoading, sethistoryLoading] = useState(false);
+  const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
+  const [showTokenError, setShowTokenError] = useState(false);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
@@ -162,87 +161,129 @@ export const ChatPage = ({ route }) => {
       resetNewMessageState();
     }
   };
-  const loadChatHistory = async (agentId, page, message, newToken) => {
-    setHasMore(true);
-    if (!hasMore) return;
-    try {
-      sethistoryLoading(true)
-      const newMessages = await fetchChatHistory(agentId, page, message, newToken);
-      if (!newMessages || newMessages.length === 0) {
-        setHasMore(false);
-        sethistoryLoading(false);
-        return;
-      }
-      const formattedMessages = newMessages?.content.map(msg =>
-        formatHistoryMessage(msg)
-      );
-      dispatch(addChatHistory(formattedMessages));
-      setPage((prev) => prev + 1);
-      sethistoryLoading(false)
-    } catch (err) {
-      sethistoryLoading(false)
-      console.error(stringConstants.failToLoad, err);
-    }
-  };
-  const reconnectWebSocket = () => {
-    if (reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current) {
-      connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
-    }
-    else {
-      console.error("Cannot reconnect WebSocket: Missing agentId or token");
-    }
-  };
-  const connectWebSocket = (agentId, token) => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
-    if (!agentId || !token) {
-      console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+  const loadChatHistory = async (agentId, page, message, newToken, isRetry = false) => {
+  if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    setShowTokenError(true);
+    return;
+  }
+
+  setHasMore(true);
+  if (!hasMore) return;
+  
+  try {
+    sethistoryLoading(true);
+    const newMessages = await fetchChatHistory(agentId, page, message, newToken);
+    
+    if (!newMessages || newMessages.length === 0) {
+      setHasMore(false);
+      sethistoryLoading(false);
       return;
     }
-    ws.current = new WebSocket(WEBSOCKET_URL);
-    ws.current.onopen = () => {
-      console.log(stringConstants.socketConnected)
-    };
-    ws.current.onmessage = (event) => {
+    
+    const formattedMessages = newMessages?.content.map(msg =>
+      formatHistoryMessage(msg)
+    );
+    dispatch(addChatHistory(formattedMessages));
+    setPage((prev) => prev + 1);
+    sethistoryLoading(false);
+    
+  } catch (err) {
+    sethistoryLoading(false);
+    
+    if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+      // Try to refresh token and retry
       try {
-        if (!event.data) return;
-        const data = JSON.parse(event.data);
-        // Handle encrypted payload
-        if (data.payload) {
-          const decryptedData = decryptSocketPayload(data);
-          if (decryptedData.type === socketConstants.botResponse) {
-            handleBotMessage(decryptedData);
-          }
-          else if (decryptedData.type === socketConstants.acknowledgement) {
-            handleAcknowledgement(decryptedData);
-          }
-        }
-        // Fallback for unencrypted messages (remove in production)
-        else {
-          console.warn('Received unencrypted message:', data);
-          if (data.type === socketConstants.botResponse) {
-            handleBotMessage(data);
-          }
-          else if (data.type === socketConstants.acknowledgement) {
-            handleAcknowledgement(data);
-          }
-        }
-      } catch (err) {
-        console.error('Message processing error:', err);
+        const refreshedToken = await refreshToken();
+        setTokenExpiryRetryCount(prev => prev + 1);
+        await loadChatHistory(agentId, page, message, refreshedToken, true);
+      } catch (refreshError) {
+        setShowTokenError(true);
       }
-    };
-    ws.current.onerror = (error) => {
-      clearResponseTimeout();
-    };
-    ws.current.onclose = (e) => {
-      console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
-      cleanupWebSocket();
-      setPage(0);
-      clearResponseTimeout();
-      if (e.code === 1001 && AppState.currentState === "active") {
-        reconnectWebSocket();
+    } else {
+      console.error(stringConstants.failToLoad, err);
+      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+        setShowTokenError(true);
       }
-    };
+    }
+  }
+};
+  const reconnectWebSocket = async () => {
+  if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    setShowTokenError(true);
+    return;
+  }
+
+  try {
+    const agentId = reconfigApiResponseRef.current?.userInfo?.agentId;
+    if (agentId && tokenRef.current) {
+      connectWebSocket(agentId, tokenRef.current);
+    }
+  } catch (error) {
+    console.error("WebSocket reconnection failed:", error);
+    if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      setShowTokenError(true);
+    }
+  }
+};
+  const connectWebSocket = (agentId, token) => {
+  const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
+  
+  if (!agentId || !token) {
+    console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+    return;
+  }
+
+  ws.current = new WebSocket(WEBSOCKET_URL);
+  
+  ws.current.onopen = () => {
+    console.log(stringConstants.socketConnected);
+    setTokenExpiryRetryCount(0); // Reset on successful connection
+    setShowTokenError(false);
   };
+  
+  ws.current.onerror = (error) => {
+    clearResponseTimeout();
+    
+    // Check if error is due to token expiry (WebSocket error code 1008)
+    if (error.code === 1008) {
+      handleWebSocketTokenExpiry();
+    }
+  };
+  
+  ws.current.onclose = (e) => {
+    console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
+    
+    // Check if closure is due to token expiry (1008 = policy violation, often token related)
+    if (e.code === 1008) {
+      handleWebSocketTokenExpiry();
+    }
+    
+    cleanupWebSocket();
+    setPage(0);
+    clearResponseTimeout();
+    
+    if (e.code === 1001 && AppState.currentState === "active") {
+      reconnectWebSocket();
+    }
+  };
+};
+
+const handleWebSocketTokenExpiry = async () => {
+  if (tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+    try {
+      const newToken = await refreshToken();
+      setTokenExpiryRetryCount(prev => prev + 1);
+      
+      if (reconfigApiResponseRef.current?.userInfo?.agentId && newToken) {
+        connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
+      }
+    } catch (error) {
+      setShowTokenError(true);
+    }
+  } else {
+    setShowTokenError(true);
+  }
+};
   const cleanupWebSocket = (sendDisconnect = false) => {
     if (!ws.current) return;
     try {
@@ -280,53 +321,127 @@ export const ChatPage = ({ route }) => {
       ws.current.send(JSON.stringify(finalPayload));
     }
   };
-  const initialize = async () => {
-    try {
-      setIsInitializing(true);
-      dispatch(clearMessages());
-      setPage(0);
-      const validationResponse = await validateJwtToken(
-        jwtToken,
-        platform,
-        {
-          agentId: userInfo?.agentId,
-          userName: userInfo?.userName,
-          email: userInfo?.email,
-          role: userInfo?.role,
-          firebaseId: userInfo?.firebaseId,
-          deviceId: userInfo?.deviceId,
-        }
-      );
-      const newToken = validationResponse?.data?.elyAuthToken;
-      settoken(newToken);
+  const refreshToken = async () => {
+  try {
+    // Get new token using validateJwtToken API
+    const validationResponse = await validateJwtToken(
+      jwtToken, // Original JWT token from props
+      platform,
+      {
+        agentId: userInfo?.agentId,
+        userName: userInfo?.userName,
+        email: userInfo?.email,
+        role: userInfo?.role,
+        firebaseId: userInfo?.firebaseId,
+        deviceId: userInfo?.deviceId,
+      }
+    );
 
-      if (!validationResponse || validationResponse.status !== stringConstants.success) {
-        console.warn(ApiResponseConstant.fail, validationResponse.message);
-        setIsInitializing(false);
-        return;
-      }
-      const response = await dispatch(
-        getData({ token: newToken, agentId: userInfo?.agentId?.toLowerCase(), platform: platform })
-      ).unwrap();
-      if (response && response.userInfo?.agentId) {
-        setnavigationPage(response.statusFlag);
-        setReconfigApiResponse(prev => ({ ...prev, ...response }));
-        if (response.statusFlag === stringConstants.agenda) {
-          await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-        }
-        if (response.userInfo.agentId && newToken) {
-          connectWebSocket(response.userInfo.agentId, newToken);
-        }
-        else {
-          console.error("Cannot connect WebSocket: Missing agentId or token");
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsInitializing(false);
+    if (!validationResponse || validationResponse.status !== stringConstants.success) {
+      throw new Error("Token validation failed");
     }
-  };
+
+    const newToken = validationResponse?.data?.elyAuthToken;
+    settoken(newToken);
+    setTokenExpiryRetryCount(0); // Reset retry count on success
+    setShowTokenError(false);
+    return newToken;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    throw error;
+  }
+};
+  const initialize = async (isRetry = false) => {
+  if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    setShowTokenError(true);
+    return;
+  }
+
+  try {
+    setIsInitializing(true);
+    dispatch(clearMessages());
+    setPage(0);
+    
+    const validationResponse = await validateJwtToken(
+      jwtToken,
+      platform,
+      {
+        agentId: userInfo?.agentId,
+        userName: userInfo?.userName,
+        email: userInfo?.email,
+        role: userInfo?.role,
+        firebaseId: userInfo?.firebaseId,
+        deviceId: userInfo?.deviceId,
+      }
+    );
+    
+    if (!validationResponse || validationResponse.status !== stringConstants.success) {
+      throw new Error("Token validation failed");
+    }
+
+    const newToken = validationResponse?.data?.elyAuthToken;
+    settoken(newToken);
+
+    const response = await dispatch(
+      getData({ 
+        token: newToken, 
+        agentId: userInfo?.agentId?.toLowerCase(), 
+        platform: platform,
+        retryCount: tokenExpiryRetryCount
+      })
+    ).unwrap();
+    
+    if (response && response.userInfo?.agentId) {
+      setnavigationPage(response.statusFlag);
+      setReconfigApiResponse(prev => ({ ...prev, ...response }));
+      
+      if (response.statusFlag === stringConstants.agenda) {
+        await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+      }
+      
+      if (response.userInfo.agentId && newToken) {
+        connectWebSocket(response.userInfo.agentId, newToken);
+      }
+    }
+    
+  } catch (error) {
+    if (error.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+      try {
+        // Use validateJwtToken to get fresh token
+        const validationResponse = await validateJwtToken(
+          jwtToken,
+          platform,
+          {
+            agentId: userInfo?.agentId,
+            userName: userInfo?.userName,
+            email: userInfo?.email,
+            role: userInfo?.role,
+            firebaseId: userInfo?.firebaseId,
+            deviceId: userInfo?.deviceId,
+          }
+        );
+        
+        if (validationResponse && validationResponse.status === stringConstants.success) {
+          const refreshedToken = validationResponse?.data?.elyAuthToken;
+          settoken(refreshedToken);
+          setTokenExpiryRetryCount(prev => prev + 1);
+          await initialize(true); // Retry with new token
+        } else {
+          throw new Error("Token refresh failed");
+        }
+      } catch (refreshError) {
+        setShowTokenError(true);
+      }
+    } else {
+      console.error(error);
+      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+        setShowTokenError(true);
+      }
+    }
+  } finally {
+    setIsInitializing(false);
+  }
+};
   const safelyCleanupSocket = () => {
     cleanupWebSocket(true);
     clearResponseTimeout();
@@ -450,6 +565,13 @@ export const ChatPage = ({ route }) => {
       )}
 
       <View style={styles.content}>
+         {showTokenError && (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          Session expired. Please restart the application.
+        </Text>
+      </View>
+    )}
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}
