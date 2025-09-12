@@ -1,6 +1,6 @@
 import apiCall from "../axiosRequest";
 import { CHAT_HISTORY } from "../apiUrls";
-import { baseUrl ,X_API_KEY} from "../../constants/constants";
+import { baseUrl, X_API_KEY } from "../../constants/constants";
 import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
 
 
@@ -14,18 +14,19 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10, token) => {
       url: CHAT_HISTORY,
       method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': "dummy",
         'x-api-key': X_API_KEY,
+        'userId': agentId,
+        'elyAuthToken': token,
       },
       data: encryptedPayload,
     });
-    
-if (response?.payload) {
+
+    if (response?.payload) {
       const decryptedData = decResPayload(response?.payload);
       return decryptedData?.data || [];
     }
-    
+
     return [];
   } catch (error) {
     console.error("Error fetching chat history:", error);

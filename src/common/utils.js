@@ -107,7 +107,7 @@ export const getFormattedDividerDate = (dateString) => {
   };
 };
 
-export const formatUserMessage = (text, reconfigApiResponse, messageType,token,replyMessageId = null,replyIndex=0) => {
+export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMessageId = null,replyIndex=0) => {
   const messageId = generateUniqueId();
   return {
      message: {
@@ -131,7 +131,6 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,token,r
     },
     socketPayload: {
       action: CHAT_MESSAGE_PROXY,
-      token:token,
       message: {
       emailId: reconfigApiResponse?.userInfo?.email,
       userId: reconfigApiResponse?.userInfo?.agentId,

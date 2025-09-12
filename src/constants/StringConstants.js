@@ -50,7 +50,7 @@ export const stringConstants = {
   ely:"ELY",
   copiedToClipboard: "Copied to Clipboard",
   error: "Error",
-  success: "Success",
+  success: "SUCCESS",
   like:"like",
   dislike:"dislike",
   thumbsUpEmoji:"U+1F44D" ,

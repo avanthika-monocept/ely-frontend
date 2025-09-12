@@ -20,8 +20,11 @@ export const getData = createAsyncThunk("getData", async (data) => {
       url: USER_CONFIG,
       method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': "dummy",
         'x-api-key': X_API_KEY,
+        'userId': agentId,
+        'elyAuthToken': token,
+        
       },
       data: encryptedPayload,
     });

@@ -19,8 +19,7 @@ export const SuggestionList = ({
   setnavigationPage,
   reconfigApiResponse,
   socket,
-  token,
-}) => {
+  }) => {
 
   const dispatch = useDispatch();
   const data = reconfigApiResponse?.options || [];
@@ -31,18 +30,15 @@ export const SuggestionList = ({
       topic,
       reconfigApiResponse,
       socketMessageTypes.replyToLandingPage,
-      token,
       null,
       0
     );
     dispatch(addMessage(message));
-    const socketToken = socketPayload.token;
     const action = socketPayload.action;
     const payload = socketPayload.message;
     const encryptedPayload = encryptSocketPayload(payload);
     const finalPayload = {
       action,
-      token: socketToken,
       payload: encryptedPayload
     };
 
@@ -91,7 +87,6 @@ SuggestionList.propTypes = {
   setnavigationPage: PropTypes.func.isRequired,
   reconfigApiResponse: PropTypes.object.isRequired,
   socket: PropTypes.object,
-  token: PropTypes.string,
 };
 const styles = StyleSheet.create({
   mainContainer: {

@@ -9,6 +9,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   View,
+ 
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/appNavigator";
@@ -60,12 +61,7 @@ export default function App(props) {
  
   return (
     <GestureHandlerRootView style={styles.container}>
-      {/* Fixed StatusBar on Android */}
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="dark-content"
-      />
+     
  
       {Platform.OS === "ios" ? (
         <KeyboardAvoidingView
@@ -79,7 +75,7 @@ export default function App(props) {
         <Animated.View
           style={[
             styles.innerContainer,
-            { transform: [{ translateY: keyboardOffset }], paddingTop: StatusBar.currentHeight },
+            { transform: [{ translateY: keyboardOffset }] },
           ]}
         >
           <AppNavigator standalone={true} props={props} />

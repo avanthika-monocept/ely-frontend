@@ -36,10 +36,15 @@ import { useNetInfo } from "@react-native-community/netinfo";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
-    cogToken,
     userInfo,
     platform
-  } = route.params || {};
+  } = {
+    cogToken: "eyJraWQiOiJnRm5IUTVDdm9taUFmU0lmRjJwNGF6TkFQYTVpS0dUeGJmdW15Ym9UZFUwPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzdTZsdXBscmlzMnFnbG42NGVsMjZpcTIwaiIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYWRtaW5cL3dyaXRlIGFkbWluXC9yZWFkIiwiYXV0aF90aW1lIjoxNzU3NjcxNTgxLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtc291dGgtMS5hbWF6b25hd3MuY29tXC9hcC1zb3V0aC0xX2tMVkxMT2hGRCIsImV4cCI6MTc1NzY3NTE4MSwiaWF0IjoxNzU3NjcxNTgxLCJ2ZXJzaW9uIjoyLCJqdGkiOiJiZTMwMzQwNS0zZWMzLTRkNjYtOWVmYS1mYWM1NTM3OTYxMTciLCJjbGllbnRfaWQiOiIzdTZsdXBscmlzMnFnbG42NGVsMjZpcTIwaiJ9.MPfochMYbJy2WfsWczXUBa2ZOlg7Unmb4sm6otoq5bLacWGbKzWLxrVpod3a8heSPjrttxyFneCDzxyaIVJbAJK5F0TSbfk6743bz4WBHJVLAVIsxdfhO8yMDgZqGmniLK_6jjKllzjLCGPi-GI_ouRuvZI-a6lmqrLRUzcb55fALTqSqTstwvm2lJgbtkuM3zsoikWjMutIcLzUvv6jUekawZ_rYxoOYPGWZ4_ZxEW4-ug5KfEytdNw4xJH_Ds1OoAedbOvmUEQn2E3HkNJ0yAz3ZagfvsDxmqXscWUbNIcRVPHpcDjF4Uewqaha-3AGF197_rzl0je5IlcqLp-Uw",
+    jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwiYWdlbnRJZCI6Ijc2MzYxQiIsInVzZXJEZXRhaWxzIjoiNzYzNjFCX0FETSIsImlhdCI6MTc1NzY3MjY1OSwiZXhwIjoxNzU3NzU5MDU5fQ.U9R1o0JBgyRcFzToMRpSrUKId-WpkIPcQ8vrQftWFwCx12vEOzxo9YG1da41Ryk4nxXAsr4eoievFeWbx8nEFA",
+    platform: "MSPACE",
+    userInfo: { agentId: "76361B", deviceId: "da0969f26f83cdf9", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel" }
+  };
+
   const dispatch = useDispatch();
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
@@ -64,7 +69,7 @@ export const ChatPage = ({ route }) => {
   const [prevMessagesLength, setPrevMessagesLength] = useState(0);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
-  const messages = useSelector((state) => state.chat.messages,shallowEqual);
+  const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
   const isSharing = useSelector((state) => state.shareLoader.isSharing);
@@ -74,9 +79,9 @@ export const ChatPage = ({ route }) => {
     reconfigApiResponseRef.current = reconfigApiResponse;
   }, [reconfigApiResponse]);
   useEffect(() => {
-  tokenRef.current = token;
-}, [token]);
-const messageObject = useMemo(() => 
+    tokenRef.current = token;
+  }, [token]);
+  const messageObject = useMemo(() =>
     messages.find(msg => msg?.messageId === messageObjectId),
     [messages, messageObjectId]
   );
@@ -96,42 +101,31 @@ const messageObject = useMemo(() =>
       setResponseTimeout(null);
     }
   }, []);
-  const fetchToken = async () => {
-    try {
-      const response = await getCognitoToken();
-      if (response && response.access_token) {
-        tokenRef.current = response.access_token;
-        settoken(response.access_token);
-      }
-      return response.access_token;
-    } catch (err) {
-      console.error(err);
-    }
-  };
+
   const SCROLL_BOTTOM_THRESHOLD = 20;
-const handleScroll = useCallback(({ nativeEvent }) => {
-  const { contentOffset } = nativeEvent;
+  const handleScroll = useCallback(({ nativeEvent }) => {
+    const { contentOffset } = nativeEvent;
 
-  // Because list is inverted, bottom = y <= threshold
-  const isBottom = contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
-  isAtBottomRef.current = isBottom;
+    // Because list is inverted, bottom = y <= threshold
+    const isBottom = contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
+    isAtBottomRef.current = isBottom;
 
-  // Don’t completely block during auto-scroll, just mark bottom state
-  if (!isAutoScrollingRef.current) {
-    if (isBottom) {
-      resetNewMessageState();
-    } else {
-      setFabState(prev => ({
-        ...prev,
-        showFab: true,
-        showNewMessageAlert: prev.showNewMessageAlert,
-        newMessageCount: prev.newMessageCount,
-      }));
+    // Don’t completely block during auto-scroll, just mark bottom state
+    if (!isAutoScrollingRef.current) {
+      if (isBottom) {
+        resetNewMessageState();
+      } else {
+        setFabState(prev => ({
+          ...prev,
+          showFab: true,
+          showNewMessageAlert: prev.showNewMessageAlert,
+          newMessageCount: prev.newMessageCount,
+        }));
+      }
     }
-  }
 
 
-}, []);
+  }, []);
 
 
   const handleReplyMessage = useCallback(() => {
@@ -143,19 +137,19 @@ const handleScroll = useCallback(({ nativeEvent }) => {
   const resetNewMessageState = useCallback(() => {
     setFabState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   }, []);
- const scrollToDown = useCallback(() => {
-  if (scrollViewRef.current) {
-    isAutoScrollingRef.current = true;
-    scrollViewRef.current.scrollToOffset({
-      offset: 0,
-      animated: true,
-    });
-    // Reset after short delay so user scrolls aren’t blocked
-    setTimeout(() => {
-      isAutoScrollingRef.current = false;
-    }, 300);
-  }
-}, []);
+  const scrollToDown = useCallback(() => {
+    if (scrollViewRef.current) {
+      isAutoScrollingRef.current = true;
+      scrollViewRef.current.scrollToOffset({
+        offset: 0,
+        animated: true,
+      });
+      // Reset after short delay so user scrolls aren’t blocked
+      setTimeout(() => {
+        isAutoScrollingRef.current = false;
+      }, 300);
+    }
+  }, []);
 
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
@@ -191,13 +185,13 @@ const handleScroll = useCallback(({ nativeEvent }) => {
     }
   };
   const reconnectWebSocket = () => {
-    if(reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current){
-       connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
+    if (reconfigApiResponseRef.current?.userInfo?.agentId && tokenRef.current) {
+      connectWebSocket(reconfigApiResponseRef.current?.userInfo?.agentId, tokenRef.current);
     }
-    else{
+    else {
       console.error("Cannot reconnect WebSocket: Missing agentId or token");
     }
-   };
+  };
   const connectWebSocket = (agentId, token) => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
     if (!agentId || !token) {
@@ -291,29 +285,28 @@ const handleScroll = useCallback(({ nativeEvent }) => {
       setIsInitializing(true);
       dispatch(clearMessages());
       setPage(0);
-      const newToken = await fetchToken();
+      const validationResponse = await validateJwtToken(
+        jwtToken,
+        platform,
+        {
+          agentId: userInfo?.agentId,
+          userName: userInfo?.userName,
+          email: userInfo?.email,
+          role: userInfo?.role,
+          firebaseId: userInfo?.firebaseId,
+          deviceId: userInfo?.deviceId,
+        }
+      );
+      const newToken = validationResponse?.data?.elyAuthToken;
+      settoken(newToken);
 
-      //   const validationResponse = await validateJwtToken(
-      //   newToken,
-      //   jwtToken,
-      //   cogToken,
-      //   platform,
-      //   {
-      //     agentId: userInfo?.agentId,
-      //     userName: userInfo?.userName,
-      //     email: userInfo?.email,
-      //     role: userInfo?.role,
-      //     firebaseId: userInfo?.firebaseId,
-      //     deviceId: userInfo?.deviceId,
-      //   }
-      // );
-      //  if (!validationResponse || validationResponse.status !== stringConstants.success) {
-      //     console.warn(ApiResponseConstant.fail, validationResponse.message);
-      //     setIsInitializing(false);
-      //     return;
-      //   }
+      if (!validationResponse || validationResponse.status !== stringConstants.success) {
+        console.warn(ApiResponseConstant.fail, validationResponse.message);
+        setIsInitializing(false);
+        return;
+      }
       const response = await dispatch(
-        getData({ token: newToken, agentId: "10236a", platform: "MSPACE" })
+        getData({ token: newToken, agentId: userInfo?.agentId?.toLowerCase(), platform: platform })
       ).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
@@ -321,10 +314,10 @@ const handleScroll = useCallback(({ nativeEvent }) => {
         if (response.statusFlag === stringConstants.agenda) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-        if(response.userInfo.agentId && newToken){
-           connectWebSocket(response.userInfo.agentId, newToken);
+        if (response.userInfo.agentId && newToken) {
+          connectWebSocket(response.userInfo.agentId, newToken);
         }
-        else{
+        else {
           console.error("Cannot connect WebSocket: Missing agentId or token");
         }
       }
@@ -346,10 +339,10 @@ const handleScroll = useCallback(({ nativeEvent }) => {
     }
   }, []);
   useEffect(() => {
-  if (navigationPage === stringConstants.coach) {
-   resetNewMessageState();
-  }
-}, [navigationPage]);
+    if (navigationPage === stringConstants.coach) {
+      resetNewMessageState();
+    }
+  }, [navigationPage]);
 
   useEffect(() => {
     let currentAppState = AppState.currentState;
@@ -384,6 +377,9 @@ const handleScroll = useCallback(({ nativeEvent }) => {
     }, timeoutConstants.inactivity));
     sendAcknowledgement(data?.messageId);
     const botMessage = formatBotMessage(data);
+    if (navigationPage === stringConstants.coach) {
+      setnavigationPage(stringConstants.chat);
+    }
     if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
@@ -406,24 +402,24 @@ const handleScroll = useCallback(({ nativeEvent }) => {
     setReplyMessageId(null);
     setReply(false);
   };
-const copyToClipboard = useCallback(() => {
-  const androidVersion = parseInt(Platform.Version, 10);
-  const textToCopy = messageObject?.message?.text
-    ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
-    : messageObject?.message?.text;
+  const copyToClipboard = useCallback(() => {
+    const androidVersion = parseInt(Platform.Version, 10);
+    const textToCopy = messageObject?.message?.text
+      ? splitMarkdownIntoTableAndText(messageObject?.message?.text).textPart
+      : messageObject?.message?.text;
 
-  Clipboard.setString(textToCopy);
+    Clipboard.setString(textToCopy);
 
-  if (androidVersion < 33 || Platform.OS === platformName.ios) {
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
+    if (androidVersion < 33 || Platform.OS === platformName.ios) {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        setMessageObjectId(null);
+      }, 1000);
+    } else {
       setMessageObjectId(null);
-    }, 1000);
-  } else {
-    setMessageObjectId(null);
-  }
-}, [messageObject]);
+    }
+  }, [messageObject]);
 
 
   useEffect(() => {
@@ -484,7 +480,7 @@ const copyToClipboard = useCallback(() => {
             historyLoading={historyLoading}
             hasMore={hasMore}
             handleScrollEnd={onMomentumScrollEnd}
-           
+
           />
         )}
       </View>
@@ -558,7 +554,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     backgroundColor: colors.loaderBackground.loaderBackgroundDark,
   },
-   fabWrapper: {
+  fabWrapper: {
     position: "absolute",
     bottom: spacing.space_10,
     right: spacing.space_m3,
