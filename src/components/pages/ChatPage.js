@@ -32,6 +32,8 @@ import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 import { useNetInfo } from "@react-native-community/netinfo";
+import { showToast } from "../../store/reducers/toastSlice";
+import ToastMessage from "../atoms/ToastMessage";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
@@ -235,7 +237,34 @@ export const ChatPage = ({ route }) => {
     setTokenExpiryRetryCount(0); // Reset on successful connection
     setShowTokenError(false);
   };
-  
+    ws.current.onmessage = (event) => {
+      try {
+        if (!event.data) return;
+        const data = JSON.parse(event.data);
+        // Handle encrypted payload
+        if (data.payload) {
+          const decryptedData = decryptSocketPayload(data);
+          if (decryptedData.type === socketConstants.botResponse) {
+            handleBotMessage(decryptedData);
+          }
+          else if (decryptedData.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(decryptedData);
+          }
+        }
+        // Fallback for unencrypted messages (remove in production)
+        else {
+          console.warn('Received unencrypted message:', data);
+          if (data.type === socketConstants.botResponse) {
+            handleBotMessage(data);
+          }
+          else if (data.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(data);
+          }
+        }
+      } catch (err) {
+        console.error('Message processing error:', err);
+      }
+    };
   ws.current.onerror = (error) => {
     clearResponseTimeout();
     
@@ -318,9 +347,9 @@ const handleWebSocketTokenExpiry = async () => {
   };
   const refreshToken = async () => {
   try {
-    // Get new token using validateJwtToken API
+    
     const validationResponse = await validateJwtToken(
-      jwtToken, // Original JWT token from props
+      jwtToken, 
       platform,
       {
         agentId: userInfo?.agentId,
@@ -331,14 +360,13 @@ const handleWebSocketTokenExpiry = async () => {
         deviceId: userInfo?.deviceId,
       }
     );
-
-    if (!validationResponse || validationResponse.status !== stringConstants.success) {
+  if (!validationResponse || validationResponse.status !== stringConstants.success) {
       throw new Error("Token validation failed");
     }
 
     const newToken = validationResponse?.data?.elyAuthToken;
     settoken(newToken);
-    setTokenExpiryRetryCount(0); // Reset retry count on success
+    setTokenExpiryRetryCount(0);
     setShowTokenError(false);
     return newToken;
   } catch (error) {
@@ -346,9 +374,11 @@ const handleWebSocketTokenExpiry = async () => {
     throw error;
   }
 };
+
   const initialize = async (isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
+     
     return;
   }
 
@@ -402,7 +432,6 @@ const handleWebSocketTokenExpiry = async () => {
   } catch (error) {
     if (error.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
       try {
-        // Use validateJwtToken to get fresh token
         const validationResponse = await validateJwtToken(
           jwtToken,
           platform,
@@ -560,13 +589,7 @@ const handleWebSocketTokenExpiry = async () => {
       )}
 
       <View style={styles.content}>
-         {showTokenError && (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          Session expired. Please restart the application.
-        </Text>
-      </View>
-    )}
+      <ToastMessage/>
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}

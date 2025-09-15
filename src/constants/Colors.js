@@ -16,6 +16,7 @@ const colors = {
     darkBlue: "#143A72",
     borderBlue: "#0092DB",
     red: "#ff0000",
+    bloodRed:"#D12F23",
     lightSurface: "#F4F6FA",
     borderTop: "#e0e0e0",
     skyBlue: "#CDEAF8",

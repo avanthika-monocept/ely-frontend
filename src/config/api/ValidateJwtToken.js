@@ -15,7 +15,6 @@ export const validateJwtToken = async (
       userInfo: userInfo,
     };
     const encryptedPayload = encNewPayload(rawPayload);
-
     const response = await apiCall({
       baseURL: baseUrl,
       url: VALIDATE_JWT_TOKEN_URL,
@@ -36,6 +35,7 @@ export const validateJwtToken = async (
     return null;
   } catch (error) {
     console.error("Error validating JWT token:", error);
+    
     throw error;
   }
 };
