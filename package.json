@@ -1,6 +1,6 @@
 {
   "name": "amlielychatbot",
-  "version": "1.0.154",
+  "version": "1.0.155",
   "description": "A React Native Expo Bare Workflow chatbot component library",
   "main": "index.js",
   "types": "index.d.ts",

@@ -72,14 +72,14 @@ export default function App(props) {
           <AppNavigator standalone={true} props={props} />
         </KeyboardAvoidingView>
       ) : (
-        // <Animated.View
-        //   style={[
-        //     styles.innerContainer,
-        //     { transform: [{ translateY: keyboardOffset }] },
-        //   ]}
-        // >
+        <Animated.View
+          style={[
+            styles.innerContainer,
+            { transform: [{ translateY: keyboardOffset }] },
+          ]}
+        >
           <AppNavigator standalone={true} props={props} />
-        // </Animated.View>
+        </Animated.View>
       )}
     </GestureHandlerRootView>
   );
