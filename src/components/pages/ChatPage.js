@@ -32,17 +32,15 @@ import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 import { useNetInfo } from "@react-native-community/netinfo";
+import { showToast } from "../../store/reducers/toastSlice";
+import ToastMessage from "../atoms/ToastMessage";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
     userInfo,
     platform
-  } = {
-    cogToken: "eyJraWQiOiJnRm5IUTVDdm9taUFmU0lmRjJwNGF6TkFQYTVpS0dUeGJmdW15Ym9UZFUwPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzdTZsdXBscmlzMnFnbG42NGVsMjZpcTIwaiIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYWRtaW5cL3dyaXRlIGFkbWluXC9yZWFkIiwiYXV0aF90aW1lIjoxNzU3NjcxNTgxLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtc291dGgtMS5hbWF6b25hd3MuY29tXC9hcC1zb3V0aC0xX2tMVkxMT2hGRCIsImV4cCI6MTc1NzY3NTE4MSwiaWF0IjoxNzU3NjcxNTgxLCJ2ZXJzaW9uIjoyLCJqdGkiOiJiZTMwMzQwNS0zZWMzLTRkNjYtOWVmYS1mYWM1NTM3OTYxMTciLCJjbGllbnRfaWQiOiIzdTZsdXBscmlzMnFnbG42NGVsMjZpcTIwaiJ9.MPfochMYbJy2WfsWczXUBa2ZOlg7Unmb4sm6otoq5bLacWGbKzWLxrVpod3a8heSPjrttxyFneCDzxyaIVJbAJK5F0TSbfk6743bz4WBHJVLAVIsxdfhO8yMDgZqGmniLK_6jjKllzjLCGPi-GI_ouRuvZI-a6lmqrLRUzcb55fALTqSqTstwvm2lJgbtkuM3zsoikWjMutIcLzUvv6jUekawZ_rYxoOYPGWZ4_ZxEW4-ug5KfEytdNw4xJH_Ds1OoAedbOvmUEQn2E3HkNJ0yAz3ZagfvsDxmqXscWUbNIcRVPHpcDjF4Uewqaha-3AGF197_rzl0je5IlcqLp-Uw",
-    jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwiYWdlbnRJZCI6Ijc2MzYxQiIsInVzZXJEZXRhaWxzIjoiNzYzNjFCX0FETSIsImlhdCI6MTc1NzY3MjY1OSwiZXhwIjoxNzU3NzU5MDU5fQ.U9R1o0JBgyRcFzToMRpSrUKId-WpkIPcQ8vrQftWFwCx12vEOzxo9YG1da41Ryk4nxXAsr4eoievFeWbx8nEFA",
-    platform: "MSPACE",
-    userInfo: { agentId: "76361B", deviceId: "da0969f26f83cdf9", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel" }
-  };
+  } = {jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwiYWdlbnRJZCI6Ijc2MzYxQiIsInVzZXJEZXRhaWxzIjoiNzYzNjFCX0FETSIsImlhdCI6MTc1NzkxODE2MiwiZXhwIjoxNzU4MDA0NTYyfQ.QJ97wTK6eR4PyfgxwF1-7De6Jczk_Q5izwEoNbIy36EggzcikdAkRL9kugVrbXDBK5oREKV8Hd9heooJxj-1Lg", platform: "MSPACE", userInfo: {agentId: "76361B", deviceId: "d29b3dbd9671ad50", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel"}}
+
  const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
   const [copied, setCopied] = useState(false);
@@ -240,7 +238,34 @@ export const ChatPage = ({ route }) => {
     setTokenExpiryRetryCount(0); // Reset on successful connection
     setShowTokenError(false);
   };
-  
+    ws.current.onmessage = (event) => {
+      try {
+        if (!event.data) return;
+        const data = JSON.parse(event.data);
+        // Handle encrypted payload
+        if (data.payload) {
+          const decryptedData = decryptSocketPayload(data);
+          if (decryptedData.type === socketConstants.botResponse) {
+            handleBotMessage(decryptedData);
+          }
+          else if (decryptedData.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(decryptedData);
+          }
+        }
+        // Fallback for unencrypted messages (remove in production)
+        else {
+          console.warn('Received unencrypted message:', data);
+          if (data.type === socketConstants.botResponse) {
+            handleBotMessage(data);
+          }
+          else if (data.type === socketConstants.acknowledgement) {
+            handleAcknowledgement(data);
+          }
+        }
+      } catch (err) {
+        console.error('Message processing error:', err);
+      }
+    };
   ws.current.onerror = (error) => {
     clearResponseTimeout();
     
@@ -323,9 +348,9 @@ const handleWebSocketTokenExpiry = async () => {
   };
   const refreshToken = async () => {
   try {
-    // Get new token using validateJwtToken API
+    
     const validationResponse = await validateJwtToken(
-      jwtToken, // Original JWT token from props
+      jwtToken, 
       platform,
       {
         agentId: userInfo?.agentId,
@@ -336,14 +361,13 @@ const handleWebSocketTokenExpiry = async () => {
         deviceId: userInfo?.deviceId,
       }
     );
-
-    if (!validationResponse || validationResponse.status !== stringConstants.success) {
+  if (!validationResponse || validationResponse.status !== stringConstants.success) {
       throw new Error("Token validation failed");
     }
 
     const newToken = validationResponse?.data?.elyAuthToken;
     settoken(newToken);
-    setTokenExpiryRetryCount(0); // Reset retry count on success
+    setTokenExpiryRetryCount(0);
     setShowTokenError(false);
     return newToken;
   } catch (error) {
@@ -351,9 +375,11 @@ const handleWebSocketTokenExpiry = async () => {
     throw error;
   }
 };
+
   const initialize = async (isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
+     
     return;
   }
 
@@ -407,7 +433,6 @@ const handleWebSocketTokenExpiry = async () => {
   } catch (error) {
     if (error.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
       try {
-        // Use validateJwtToken to get fresh token
         const validationResponse = await validateJwtToken(
           jwtToken,
           platform,
@@ -565,13 +590,7 @@ const handleWebSocketTokenExpiry = async () => {
       )}
 
       <View style={styles.content}>
-         {showTokenError && (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          Session expired. Please restart the application.
-        </Text>
-      </View>
-    )}
+      <ToastMessage/>
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}
