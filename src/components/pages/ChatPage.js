@@ -146,7 +146,13 @@ export const ChatPage = ({ route }) => {
       }, 300);
     }
   }, []);
-
+const showTokenToast=()=>{
+  dispatch(showToast({
+    type: "error",
+    title: "Session Expired",
+    message: "session expired. Please login again.",
+    }));
+}
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -161,6 +167,7 @@ export const ChatPage = ({ route }) => {
   const loadChatHistory = async (agentId, page, message, newToken, isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
+    showTokenToast();
     return;
   }
 
@@ -195,11 +202,13 @@ export const ChatPage = ({ route }) => {
         await loadChatHistory(agentId, page, message, refreshedToken, true);
       } catch (refreshError) {
         setShowTokenError(true);
+        showTokenToast();
       }
     } else {
       console.error(stringConstants.failToLoad, err);
       if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
         setShowTokenError(true);
+        showTokenToast();
       }
     }
   }
@@ -207,6 +216,7 @@ export const ChatPage = ({ route }) => {
   const reconnectWebSocket = async () => {
   if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
+    showTokenToast();
     return;
   }
 
@@ -219,6 +229,7 @@ export const ChatPage = ({ route }) => {
     console.error("WebSocket reconnection failed:", error);
     if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
       setShowTokenError(true);
+      showTokenToast();
     }
   }
 };
@@ -303,9 +314,11 @@ const handleWebSocketTokenExpiry = async () => {
       }
     } catch (error) {
       setShowTokenError(true);
+      showTokenToast();
     }
   } else {
     setShowTokenError(true);
+    showTokenToast();
   }
 };
   const cleanupWebSocket = (sendDisconnect = false) => {
@@ -378,7 +391,7 @@ const handleWebSocketTokenExpiry = async () => {
   const initialize = async (isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
-     
+     showTokenToast();
     return;
   }
 
@@ -455,11 +468,13 @@ const handleWebSocketTokenExpiry = async () => {
         }
       } catch (refreshError) {
         setShowTokenError(true);
+        showTokenToast();
       }
     } else {
       console.error(error);
       if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
         setShowTokenError(true);
+        showTokenToast();
       }
     }
   } finally {
