@@ -64,7 +64,6 @@ export const ChatPage = ({ route }) => {
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
-  const [showTokenError, setShowTokenError] = useState(false);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
@@ -167,7 +166,6 @@ const showTokenToast=()=>{
   };
  const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    setShowTokenError(true);
     showTokenToast();
     return;
   }
@@ -205,13 +203,11 @@ const showTokenToast=()=>{
         // retry only once with new token
         await loadChatHistory(agentId, page, message, refreshedToken, true);
       } catch (refreshError) {
-        setShowTokenError(true);
         showTokenToast();
       }
     } else {
       // second time or other error
       console.error(stringConstants.failToLoad, err);
-      setShowTokenError(true);
       showTokenToast();
     }
   }
@@ -219,7 +215,6 @@ const showTokenToast=()=>{
 
   const reconnectWebSocket = async () => {
   if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    setShowTokenError(true);
     showTokenToast();
     return;
   }
@@ -232,8 +227,7 @@ const showTokenToast=()=>{
   } catch (error) {
     console.error("WebSocket reconnection failed:", error);
     if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      setShowTokenError(true);
-      showTokenToast();
+    showTokenToast();
     }
   }
 };
@@ -250,8 +244,7 @@ const showTokenToast=()=>{
   ws.current.onopen = () => {
     console.log(stringConstants.socketConnected);
     setTokenExpiryRetryCount(0); // Reset on successful connection
-    setShowTokenError(false);
-  };
+    };
     ws.current.onmessage = (event) => {
       try {
         if (!event.data) return;
@@ -317,11 +310,11 @@ const handleWebSocketTokenExpiry = async () => {
         connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
       }
     } catch (error) {
-      setShowTokenError(true);
+      
       showTokenToast();
     }
   } else {
-    setShowTokenError(true);
+   
     showTokenToast();
   }
 };
@@ -384,7 +377,6 @@ const handleWebSocketTokenExpiry = async () => {
     const newToken = validationResponse?.data?.elyAuthToken;
     settoken(newToken);
     setTokenExpiryRetryCount(0);
-    setShowTokenError(false);
     return newToken;
   } catch (error) {
     console.error("Token refresh failed:", error);
@@ -394,7 +386,6 @@ const handleWebSocketTokenExpiry = async () => {
 
  const initialize = async (isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    setShowTokenError(true);
     showTokenToast();
     return;
   }
@@ -476,13 +467,11 @@ const handleWebSocketTokenExpiry = async () => {
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        setShowTokenError(true);
         showTokenToast();
       }
     } else {
       console.error("Initialize error:", error);
       if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
-        setShowTokenError(true);
         showTokenToast();
       }
     }
