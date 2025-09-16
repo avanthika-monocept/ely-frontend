@@ -164,7 +164,7 @@ const showTokenToast=()=>{
       resetNewMessageState();
     }
   };
-  const loadChatHistory = async (agentId, page, message, newToken, isRetry = false) => {
+ const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
     showTokenToast();
@@ -173,46 +173,49 @@ const showTokenToast=()=>{
 
   setHasMore(true);
   if (!hasMore) return;
-  
+
   try {
     sethistoryLoading(true);
-    const newMessages = await fetchChatHistory(agentId, page, message, newToken);
-    
+
+    // pass retry count to fetchChatHistory
+    const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
+
     if (!newMessages || newMessages.length === 0) {
       setHasMore(false);
       sethistoryLoading(false);
       return;
     }
-    
+
     const formattedMessages = newMessages?.content.map(msg =>
       formatHistoryMessage(msg)
     );
     dispatch(addChatHistory(formattedMessages));
     setPage((prev) => prev + 1);
     sethistoryLoading(false);
-    
+
   } catch (err) {
     sethistoryLoading(false);
-    
-    if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
-      // Try to refresh token and retry
+
+    if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
       try {
-        const refreshedToken = await refreshToken();
+        const refreshedToken = await refreshToken(); // validateJwtToken inside
         setTokenExpiryRetryCount(prev => prev + 1);
+
+        // retry only once with new token
         await loadChatHistory(agentId, page, message, refreshedToken, true);
       } catch (refreshError) {
         setShowTokenError(true);
         showTokenToast();
       }
     } else {
+      // second time or other error
       console.error(stringConstants.failToLoad, err);
-      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-        setShowTokenError(true);
-        showTokenToast();
-      }
+      setShowTokenError(true);
+      showTokenToast();
     }
   }
 };
+
   const reconnectWebSocket = async () => {
   if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
@@ -388,10 +391,10 @@ const handleWebSocketTokenExpiry = async () => {
   }
 };
 
-  const initialize = async (isRetry = false) => {
+ const initialize = async (isRetry = false) => {
   if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
     setShowTokenError(true);
-     showTokenToast();
+    showTokenToast();
     return;
   }
 
@@ -399,7 +402,8 @@ const handleWebSocketTokenExpiry = async () => {
     setIsInitializing(true);
     dispatch(clearMessages());
     setPage(0);
-    
+
+    // 🔹 validate token
     const validationResponse = await validateJwtToken(
       jwtToken,
       platform,
@@ -412,40 +416,41 @@ const handleWebSocketTokenExpiry = async () => {
         deviceId: userInfo?.deviceId,
       }
     );
-    
+
     if (!validationResponse || validationResponse.status !== stringConstants.success) {
-      throw new Error("Token validation failed");
+      throw new Error("TOKEN_EXPIRED"); // standardize failure reason
     }
 
     const newToken = validationResponse?.data?.elyAuthToken;
     settoken(newToken);
 
+    // 🔹 fetch user config
     const response = await dispatch(
-      getData({ 
-        token: newToken, 
-        agentId: userInfo?.agentId?.toLowerCase(), 
-        platform: platform,
-        retryCount: tokenExpiryRetryCount
+      getData({
+        token: newToken,
+        agentId: userInfo?.agentId?.toLowerCase(),
+        platform,
+        retryCount: tokenExpiryRetryCount,
       })
     ).unwrap();
-    
+
     if (response && response.userInfo?.agentId) {
       setnavigationPage(response.statusFlag);
       setReconfigApiResponse(prev => ({ ...prev, ...response }));
-      
+
       if (response.statusFlag === stringConstants.agenda) {
         await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
       }
-      
+
       if (response.userInfo.agentId && newToken) {
         connectWebSocket(response.userInfo.agentId, newToken);
       }
     }
-    
   } catch (error) {
-    if (error.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+    // 🔹 Check standardized error from thunk
+    if (error === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
       try {
-        const validationResponse = await validateJwtToken(
+        const refreshResponse = await validateJwtToken(
           jwtToken,
           platform,
           {
@@ -457,22 +462,25 @@ const handleWebSocketTokenExpiry = async () => {
             deviceId: userInfo?.deviceId,
           }
         );
-        
-        if (validationResponse && validationResponse.status === stringConstants.success) {
-          const refreshedToken = validationResponse?.data?.elyAuthToken;
+
+        if (refreshResponse && refreshResponse.status === stringConstants.success) {
+          const refreshedToken = refreshResponse?.data?.elyAuthToken;
           settoken(refreshedToken);
+
+          // 🔹 increment before retry to avoid infinite recursion
           setTokenExpiryRetryCount(prev => prev + 1);
-          await initialize(true); // Retry with new token
+          await initialize(true);
         } else {
           throw new Error("Token refresh failed");
         }
       } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
         setShowTokenError(true);
         showTokenToast();
       }
     } else {
-      console.error(error);
-      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      console.error("Initialize error:", error);
+      if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
         setShowTokenError(true);
         showTokenToast();
       }
@@ -481,6 +489,7 @@ const handleWebSocketTokenExpiry = async () => {
     setIsInitializing(false);
   }
 };
+
   const safelyCleanupSocket = () => {
     cleanupWebSocket(true);
     clearResponseTimeout();
