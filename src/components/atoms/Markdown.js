@@ -97,13 +97,63 @@ const MarkdownComponent = ({ markdownText, setDropDownType }) => {
     return formattedText;
   };
 
+ const truncateWithoutBreakingMarkdown = (text, limit) => {
+    if (text.length <= limit) return text;
+    
+    // Look for a safe truncation point (space, punctuation, or end of markdown element)
+    let safeLimit = limit;
+    
+    // First, try to find a space near the limit
+    while (safeLimit > limit * 0.7 && 
+           safeLimit > 0 && 
+           text[safeLimit] !== ' ' && 
+           text[safeLimit] !== '.' && 
+           text[safeLimit] !== '!' && 
+           text[safeLimit] !== '?') {
+      safeLimit--;
+    }
+    
+    // If we found a reasonable break point
+    if (safeLimit > limit * 0.7) {
+      const truncated = text.substring(0, safeLimit) + '...';
+      
+      // Check if we've broken any markdown syntax and try to fix it
+      return fixBrokenMarkdown(truncated);
+    }
+    
+    // If no good break point found, just truncate and try to fix broken markdown
+    return fixBrokenMarkdown(text.substring(0, limit) + '...');
+  };
+
+  // Function to fix broken markdown syntax after truncation
+  const fixBrokenMarkdown = (text) => {
+    // Fix broken bold/italic syntax
+    let fixedText = text;
+    
+    // Count opening and closing markers to ensure they match
+    const boldOpen = (fixedText.match(/\*\*/g) || []).length;
+    const boldClose = (fixedText.match(/\*\*/g) || []).length;
+    
+    // If we have an odd number of bold markers, add a closing one
+    if (boldOpen % 2 !== 0) {
+      fixedText += '**';
+    }
+    
+    // Fix broken links - remove any incomplete link syntax
+    fixedText = fixedText.replace(/\[[^\]]*$/, ''); // Remove incomplete [text
+    fixedText = fixedText.replace(/\([^)]*$/, ''); // Remove incomplete (url
+    
+    return fixedText;
+  };
+
   const sanitizedText = markdownText.replace(/<br\s*\/?>/gi, "\n");
   const formattedText = formatTextWithLinks(sanitizedText);
-  const displayText = expanded
-    ? formattedText 
-    : formattedText.length > CHAR_LIMIT
-    ? formattedText.substring(0, CHAR_LIMIT)
-    : formattedText;
+  
+ const displayText = expanded
+  ? formatTextWithLinks(sanitizedText)
+  : sanitizedText.length > CHAR_LIMIT
+  ? formatTextWithLinks(truncateWithoutBreakingMarkdown(sanitizedText, CHAR_LIMIT))
+  : formatTextWithLinks(sanitizedText);
 
   return (
     <View style={styles.container}>
