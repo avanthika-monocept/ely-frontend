@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = {jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwiYWdlbnRJZCI6Ijc2MzYxQiIsInVzZXJEZXRhaWxzIjoiNzYzNjFCX0FETSIsImlhdCI6MTc1NzkxODE2MiwiZXhwIjoxNzU4MDA0NTYyfQ.QJ97wTK6eR4PyfgxwF1-7De6Jczk_Q5izwEoNbIy36EggzcikdAkRL9kugVrbXDBK5oREKV8Hd9heooJxj-1Lg", platform: "MSPACE", userInfo: {agentId: "76361B", deviceId: "d29b3dbd9671ad50", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel"}}
+  } = {jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU4NjI4OTQzLCJleHAiOjE3NTg3MTUzNDN9.To7u2aSNUrKpcJStj4s7LlzGxKRcRG5m8k7FvJdmaKCACDtcxvKhccNmOJ9j0QS8X_qc1doKUIu4crjYApPdMg", platform: "MSPACE", userInfo: {agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare"}}
 
  const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -530,9 +530,7 @@ const handleWebSocketTokenExpiry = async () => {
     }, timeoutConstants.inactivity));
     sendAcknowledgement(data?.messageId);
     const botMessage = formatBotMessage(data);
-    if (navigationPage === stringConstants.coach) {
-      setnavigationPage(stringConstants.chat);
-    }
+    setnavigationPage("agenda");
     if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
