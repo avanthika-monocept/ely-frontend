@@ -67,6 +67,7 @@ export const socketConstants = {
   disconnect: "disconnect",
   botResponse: "BOT_RESPONSE",
   acknowledgement: "ACKNOWLEDGEMENT",
+  backendAcknowledgement: "BACKEND_ACKNOWLEDGEMENT",
   read: "READ",
   received: "RECEIVED",
   reaction:"REACTION",

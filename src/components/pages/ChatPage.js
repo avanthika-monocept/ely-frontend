@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = {jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU4NjI4OTQzLCJleHAiOjE3NTg3MTUzNDN9.To7u2aSNUrKpcJStj4s7LlzGxKRcRG5m8k7FvJdmaKCACDtcxvKhccNmOJ9j0QS8X_qc1doKUIu4crjYApPdMg", platform: "MSPACE", userInfo: {agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare"}}
+  } = {jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU4NjkxNzQ5LCJleHAiOjE3NTg3NzgxNDl9.e2seqyZUubq6x8FwxZl9GHk2tD4CTqeF9eDfDUbbVUaDFsMAr385d6QUGcczR2YZ7JKvtvvWHvUm3eZ2j-j4mA", platform: "MSPACE", userInfo: {agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare"}}
 
  const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -257,6 +257,9 @@ const showTokenToast=()=>{
           }
           else if (decryptedData.type === socketConstants.acknowledgement) {
             handleAcknowledgement(decryptedData);
+          }
+          else if (decryptedData.type === socketConstants.backendAcknowledgement) {
+            handleBackendAcknowledgement(decryptedData);
           }
         }
         // Fallback for unencrypted messages (remove in production)
@@ -534,9 +537,15 @@ const handleWebSocketTokenExpiry = async () => {
     if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
-
-    dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
+  };
+   const handleBackendAcknowledgement = (data) => {
+    if (data.acknowledgement === socketConstants.received) {
+      dispatch(updateMessageStatus({
+        messageId: data.messageId,
+        status: socketConstants.received,
+      }));
+    }
   };
   const handleAcknowledgement = (data) => {
     dispatch(showLoader());
@@ -544,7 +553,7 @@ const handleWebSocketTokenExpiry = async () => {
     if (data.acknowledgement === socketConstants.received) {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
-        status: socketConstants.received,
+        status: socketConstants.read,
       }));
     }
   };
