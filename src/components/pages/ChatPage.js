@@ -175,16 +175,20 @@ export const ChatPage = ({ route }) => {
 
     try {
       sethistoryLoading(true);
-
-      // pass retry count to fetchChatHistory
       const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
-
       if (!newMessages || newMessages.length === 0) {
         setHasMore(false);
         sethistoryLoading(false);
         return;
       }
-
+      newMessages?.content?.forEach((msg) => {
+      if (
+        msg?.messageTo === stringConstants.userCaps &&
+        msg?.status === socketConstants.delivered 
+      ) {
+        sendAcknowledgement(msg.messageId);
+      }
+    });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -336,6 +340,7 @@ export const ChatPage = ({ route }) => {
     }
   };
   const sendAcknowledgement = (messageId) => {
+    console.log("Sending acknowledgement for messageId:", messageId);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const currentConfig = reconfigApiResponseRef.current;
       const payload = {
