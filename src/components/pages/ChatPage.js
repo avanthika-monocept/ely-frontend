@@ -145,13 +145,13 @@ export const ChatPage = ({ route }) => {
       }, 300);
     }
   }, []);
-const showTokenToast=()=>{
-  dispatch(showToast({
-    type: "error",
-    title: "Session Expired",
-    message: "session expired. Please login again.",
+  const showTokenToast = () => {
+    dispatch(showToast({
+      type: "error",
+      title: "Session Expired",
+      message: "session expired. Please login again.",
     }));
-}
+  }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -163,86 +163,90 @@ const showTokenToast=()=>{
       resetNewMessageState();
     }
   };
- const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
-  if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    showTokenToast();
-    return;
-  }
-
-  setHasMore(true);
-  if (!hasMore) return;
-
-  try {
-    sethistoryLoading(true);
-
-    // pass retry count to fetchChatHistory
-    const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
-
-    if (!newMessages || newMessages.length === 0) {
-      setHasMore(false);
-      sethistoryLoading(false);
+  const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
+    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      showTokenToast();
       return;
     }
 
-    const formattedMessages = newMessages?.content.map(msg =>
-      formatHistoryMessage(msg)
-    );
-    dispatch(addChatHistory(formattedMessages));
-    setPage((prev) => prev + 1);
-    sethistoryLoading(false);
+    setHasMore(true);
+    if (!hasMore) return;
 
-  } catch (err) {
-    sethistoryLoading(false);
+    try {
+      sethistoryLoading(true);
+      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
+      if (!newMessages || newMessages.length === 0) {
+        setHasMore(false);
+        sethistoryLoading(false);
+        return;
+      }
+      newMessages?.content?.forEach((msg) => {
+      if (
+        msg?.messageTo === stringConstants.userCaps &&
+        msg?.status === socketConstants.delivered 
+      ) {
+        sendAcknowledgement(msg.messageId);
+      }
+    });
+      const formattedMessages = newMessages?.content.map(msg =>
+        formatHistoryMessage(msg)
+      );
+      dispatch(addChatHistory(formattedMessages));
+      setPage((prev) => prev + 1);
+      sethistoryLoading(false);
 
-    if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
-      try {
-        const refreshedToken = await refreshToken(); // validateJwtToken inside
-        setTokenExpiryRetryCount(prev => prev + 1);
+    } catch (err) {
+      sethistoryLoading(false);
 
-        // retry only once with new token
-        await loadChatHistory(agentId, page, message, refreshedToken, true);
-      } catch (refreshError) {
+      if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+        try {
+          const refreshedToken = await refreshToken(); // validateJwtToken inside
+          setTokenExpiryRetryCount(prev => prev + 1);
+
+          // retry only once with new token
+          await loadChatHistory(agentId, page, message, refreshedToken, true);
+        } catch (refreshError) {
+          showTokenToast();
+        }
+      } else {
+        // second time or other error
+        console.error(stringConstants.failToLoad, err);
         showTokenToast();
       }
-    } else {
-      // second time or other error
-      console.error(stringConstants.failToLoad, err);
-      showTokenToast();
     }
-  }
-};
+  };
 
   const reconnectWebSocket = async () => {
-  if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    showTokenToast();
-    return;
-  }
-
-  try {
-    const agentId = reconfigApiResponseRef.current?.userInfo?.agentId;
-    if (agentId && tokenRef.current) {
-      connectWebSocket(agentId, tokenRef.current);
-    }
-  } catch (error) {
-    console.error("WebSocket reconnection failed:", error);
     if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    showTokenToast();
+      showTokenToast();
+      return;
     }
-  }
-};
-  const connectWebSocket = (agentId, token) => {
-  const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
-  
-  if (!agentId || !token) {
-    console.error("Agent ID or token is missing. Cannot connect WebSocket.");
-    return;
-  }
 
-  ws.current = new WebSocket(WEBSOCKET_URL);
-  
-  ws.current.onopen = () => {
-    console.log(stringConstants.socketConnected);
-    setTokenExpiryRetryCount(0); // Reset on successful connection
+    try {
+      const agentId = reconfigApiResponseRef.current?.userInfo?.agentId;
+      if (agentId && tokenRef.current) {
+        connectWebSocket(agentId, tokenRef.current);
+      }
+    } catch (error) {
+      console.error("WebSocket reconnection failed:", error);
+      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+        showTokenToast();
+      }
+    }
+  };
+  const connectWebSocket = (agentId, token) => {
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
+
+    if (!agentId || !token) {
+      console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+      return;
+    }
+
+    ws.current = new WebSocket(WEBSOCKET_URL);
+
+    ws.current.onopen = () => {
+      console.log(stringConstants.socketConnected);
+      setTokenExpiryRetryCount(0); // Reset on successful connection
     };
     ws.current.onmessage = (event) => {
       try {
@@ -257,7 +261,7 @@ const showTokenToast=()=>{
           else if (decryptedData.type === socketConstants.acknowledgement) {
             handleAcknowledgement(decryptedData);
           }
-        }
+          }
         // Fallback for unencrypted messages (remove in production)
         else {
           console.warn('Received unencrypted message:', data);
@@ -272,51 +276,51 @@ const showTokenToast=()=>{
         console.error('Message processing error:', err);
       }
     };
-  ws.current.onerror = (error) => {
-    clearResponseTimeout();
-    
-    // Check if error is due to token expiry (WebSocket error code 1008)
-    if (error.code === 1008) {
-      handleWebSocketTokenExpiry();
-    }
-  };
-  
-  ws.current.onclose = (e) => {
-    console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
-    
-    // Check if closure is due to token expiry (1008 = policy violation, often token related)
-    if (e.code === 1008) {
-      handleWebSocketTokenExpiry();
-    }
-    
-    cleanupWebSocket();
-    setPage(0);
-    clearResponseTimeout();
-    
-    if (e.code === 1001 && AppState.currentState === "active") {
-      reconnectWebSocket();
-    }
-  };
-};
+    ws.current.onerror = (error) => {
+      clearResponseTimeout();
 
-const handleWebSocketTokenExpiry = async () => {
-  if (tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
-    try {
-      const newToken = await refreshToken();
-      setTokenExpiryRetryCount(prev => prev + 1);
-      
-      if (reconfigApiResponseRef.current?.userInfo?.agentId && newToken) {
-        connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
+      // Check if error is due to token expiry (WebSocket error code 1008)
+      if (error.code === 1008) {
+        handleWebSocketTokenExpiry();
       }
-    } catch (error) {
-      
+    };
+
+    ws.current.onclose = (e) => {
+      console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
+
+      // Check if closure is due to token expiry (1008 = policy violation, often token related)
+      if (e.code === 1008) {
+        handleWebSocketTokenExpiry();
+      }
+
+      cleanupWebSocket();
+      setPage(0);
+      clearResponseTimeout();
+
+      if (e.code === 1001 && AppState.currentState === "active") {
+        reconnectWebSocket();
+      }
+    };
+  };
+
+  const handleWebSocketTokenExpiry = async () => {
+    if (tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+      try {
+        const newToken = await refreshToken();
+        setTokenExpiryRetryCount(prev => prev + 1);
+
+        if (reconfigApiResponseRef.current?.userInfo?.agentId && newToken) {
+          connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
+        }
+      } catch (error) {
+
+        showTokenToast();
+      }
+    } else {
+
       showTokenToast();
     }
-  } else {
-   
-    showTokenToast();
-  }
-};
+  };
   const cleanupWebSocket = (sendDisconnect = false) => {
     if (!ws.current) return;
     try {
@@ -335,6 +339,7 @@ const handleWebSocketTokenExpiry = async () => {
     }
   };
   const sendAcknowledgement = (messageId) => {
+    console.log("Sending acknowledgement for messageId:", messageId);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const currentConfig = reconfigApiResponseRef.current;
       const payload = {
@@ -355,129 +360,129 @@ const handleWebSocketTokenExpiry = async () => {
     }
   };
   const refreshToken = async () => {
-  try {
-    
-    const validationResponse = await validateJwtToken(
-      jwtToken, 
-      platform,
-      {
-        agentId: userInfo?.agentId,
-        userName: userInfo?.userName,
-        email: userInfo?.email,
-        role: userInfo?.role,
-        firebaseId: userInfo?.firebaseId,
-        deviceId: userInfo?.deviceId,
-      }
-    );
-  if (!validationResponse || validationResponse.status !== stringConstants.success) {
-      throw new Error("Token validation failed");
-    }
+    try {
 
-    const newToken = validationResponse?.data?.elyAuthToken;
-    settoken(newToken);
-    setTokenExpiryRetryCount(0);
-    return newToken;
-  } catch (error) {
-    console.error("Token refresh failed:", error);
-    throw error;
-  }
-};
-
- const initialize = async (isRetry = false) => {
-  if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-    showTokenToast();
-    return;
-  }
-
-  try {
-    setIsInitializing(true);
-    dispatch(clearMessages());
-    setPage(0);
-
-    // 🔹 validate token
-    const validationResponse = await validateJwtToken(
-      jwtToken,
-      platform,
-      {
-        agentId: userInfo?.agentId,
-        userName: userInfo?.userName,
-        email: userInfo?.email,
-        role: userInfo?.role,
-        firebaseId: userInfo?.firebaseId,
-        deviceId: userInfo?.deviceId,
-      }
-    );
-
-    if (!validationResponse || validationResponse.status !== stringConstants.success) {
-      throw new Error("TOKEN_EXPIRED"); // standardize failure reason
-    }
-
-    const newToken = validationResponse?.data?.elyAuthToken;
-    settoken(newToken);
-
-    // 🔹 fetch user config
-    const response = await dispatch(
-      getData({
-        token: newToken,
-        agentId: userInfo?.agentId?.toLowerCase(),
+      const validationResponse = await validateJwtToken(
+        jwtToken,
         platform,
-        retryCount: tokenExpiryRetryCount,
-      })
-    ).unwrap();
-
-    if (response && response.userInfo?.agentId) {
-      setnavigationPage(response.statusFlag);
-      setReconfigApiResponse(prev => ({ ...prev, ...response }));
-
-      if (response.statusFlag === stringConstants.agenda) {
-        await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
-      }
-
-      if (response.userInfo.agentId && newToken) {
-        connectWebSocket(response.userInfo.agentId, newToken);
-      }
-    }
-  } catch (error) {
-    // 🔹 Check standardized error from thunk
-    if (error === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
-      try {
-        const refreshResponse = await validateJwtToken(
-          jwtToken,
-          platform,
-          {
-            agentId: userInfo?.agentId,
-            userName: userInfo?.userName,
-            email: userInfo?.email,
-            role: userInfo?.role,
-            firebaseId: userInfo?.firebaseId,
-            deviceId: userInfo?.deviceId,
-          }
-        );
-
-        if (refreshResponse && refreshResponse.status === stringConstants.success) {
-          const refreshedToken = refreshResponse?.data?.elyAuthToken;
-          settoken(refreshedToken);
-
-          // 🔹 increment before retry to avoid infinite recursion
-          setTokenExpiryRetryCount(prev => prev + 1);
-          await initialize(true);
-        } else {
-          throw new Error("Token refresh failed");
+        {
+          agentId: userInfo?.agentId,
+          userName: userInfo?.userName,
+          email: userInfo?.email,
+          role: userInfo?.role,
+          firebaseId: userInfo?.firebaseId,
+          deviceId: userInfo?.deviceId,
         }
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        showTokenToast();
+      );
+      if (!validationResponse || validationResponse.status !== stringConstants.success) {
+        throw new Error("Token validation failed");
       }
-    } else {
-      console.error("Initialize error:", error);
-      if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
-        showTokenToast();
-      }
+
+      const newToken = validationResponse?.data?.elyAuthToken;
+      settoken(newToken);
+      setTokenExpiryRetryCount(0);
+      return newToken;
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      throw error;
     }
-  } finally {
-    setIsInitializing(false);
-  }
-};
+  };
+
+  const initialize = async (isRetry = false) => {
+    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      showTokenToast();
+      return;
+    }
+
+    try {
+      setIsInitializing(true);
+      dispatch(clearMessages());
+      setPage(0);
+
+      // 🔹 validate token
+      const validationResponse = await validateJwtToken(
+        jwtToken,
+        platform,
+        {
+          agentId: userInfo?.agentId,
+          userName: userInfo?.userName,
+          email: userInfo?.email,
+          role: userInfo?.role,
+          firebaseId: userInfo?.firebaseId,
+          deviceId: userInfo?.deviceId,
+        }
+      );
+
+      if (!validationResponse || validationResponse.status !== stringConstants.success) {
+        throw new Error("TOKEN_EXPIRED"); // standardize failure reason
+      }
+
+      const newToken = validationResponse?.data?.elyAuthToken;
+      settoken(newToken);
+
+      // 🔹 fetch user config
+      const response = await dispatch(
+        getData({
+          token: newToken,
+          agentId: userInfo?.agentId?.toLowerCase(),
+          platform,
+          retryCount: tokenExpiryRetryCount,
+        })
+      ).unwrap();
+
+      if (response && response.userInfo?.agentId) {
+        setnavigationPage(response.statusFlag);
+        setReconfigApiResponse(prev => ({ ...prev, ...response }));
+
+        if (response.statusFlag === stringConstants.agenda) {
+          await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
+        }
+
+        if (response.userInfo.agentId && newToken) {
+          connectWebSocket(response.userInfo.agentId, newToken);
+        }
+      }
+    } catch (error) {
+      // 🔹 Check standardized error from thunk
+      if (error === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+        try {
+          const refreshResponse = await validateJwtToken(
+            jwtToken,
+            platform,
+            {
+              agentId: userInfo?.agentId,
+              userName: userInfo?.userName,
+              email: userInfo?.email,
+              role: userInfo?.role,
+              firebaseId: userInfo?.firebaseId,
+              deviceId: userInfo?.deviceId,
+            }
+          );
+
+          if (refreshResponse && refreshResponse.status === stringConstants.success) {
+            const refreshedToken = refreshResponse?.data?.elyAuthToken;
+            settoken(refreshedToken);
+
+            // 🔹 increment before retry to avoid infinite recursion
+            setTokenExpiryRetryCount(prev => prev + 1);
+            await initialize(true);
+          } else {
+            throw new Error("Token refresh failed");
+          }
+        } catch (refreshError) {
+          console.error("Token refresh failed:", refreshError);
+          showTokenToast();
+        }
+      } else {
+        console.error("Initialize error:", error);
+        if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
+          showTokenToast();
+        }
+      }
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
   const safelyCleanupSocket = () => {
     cleanupWebSocket(true);
@@ -529,24 +534,29 @@ const handleWebSocketTokenExpiry = async () => {
     }, timeoutConstants.inactivity));
     sendAcknowledgement(data?.messageId);
     const botMessage = formatBotMessage(data);
-    if (navigationPage === stringConstants.coach) {
-      setnavigationPage(stringConstants.chat);
-    }
+    setnavigationPage("agenda");
     if (!isAtBottomRef.current) {
       setFabState(prev => ({ ...prev, showFab: true, showNewMessageAlert: true, newMessageCount: prev.newMessageCount + 1 }));
     }
-
-    dispatch(markAllMessagesAsRead());
     dispatch(addMessage(botMessage));
   };
+ 
   const handleAcknowledgement = (data) => {
-    dispatch(showLoader());
-    startResponseTimeout();
+
     if (data.acknowledgement === socketConstants.received) {
+      dispatch(showLoader());
+      startResponseTimeout();
+      dispatch(updateMessageStatus({
+        messageId: data.messageId,
+        status: socketConstants.read,
+      }));
+    }
+    else if (data.acknowledgement === socketConstants.delivered) {
       dispatch(updateMessageStatus({
         messageId: data.messageId,
         status: socketConstants.received,
       }));
+      
     }
   };
   const handleReplyClose = () => {
@@ -602,7 +612,7 @@ const handleWebSocketTokenExpiry = async () => {
       )}
 
       <View style={styles.content}>
-      <ToastMessage/>
+        <ToastMessage />
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}
