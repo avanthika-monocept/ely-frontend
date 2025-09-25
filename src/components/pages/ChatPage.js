@@ -148,11 +148,12 @@ export const ChatPage = ({ route }) => {
   }, []);
   const showTokenToast = () => {
     dispatch(showToast({
-      type: "error",
       title: "Session Expired",
       message: "session expired. Please login again.",
+      actions:[],
     }));
   }
+  showTokenToast();
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
