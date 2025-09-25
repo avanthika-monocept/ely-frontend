@@ -56,6 +56,7 @@ export const stringConstants = {
   dislike:"dislike",
   thumbsUpEmoji:"U+1F44D" ,
   thumbsDownEmoji:"U+1F44E",
+  showRecentConversations: "Show recent conversations",
  };
 
 

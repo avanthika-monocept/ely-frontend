@@ -46,7 +46,7 @@ export const LandingPage = memo(({
               onPress={() => setnavigationPage(stringConstants.agenda)}
             >
               <Timer width={20} height={20} style={{marginRight: spacing.space_s1}}/>
-              <Text style={styles.recentConvoText}>Show recent conversations</Text>
+              <Text style={styles.recentConvoText}>{stringConstants.showRecentConversations}</Text>
             </TouchableOpacity>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: flex.one,
     justifyContent: "space-between",
-    paddingTop: size.fiftyPercent,
+    paddingTop: size.fortytThreePercent,
   },
   textContainer: {
     alignSelf: "center",
