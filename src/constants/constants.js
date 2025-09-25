@@ -1,12 +1,12 @@
 export const env = "uat";
 const uatBaseUrl = "https://uatapi.maxlifeinsurance.com/hris";
-const prodBaseUrl = "";
+const prodBaseUrl = "https://api.axismaxlife.com/prod/hris";
 const X_API_KEY_UAT = '4iNbPS8RzT4G9q7tBp3QZ36FwFBd5GhX6Lrl4oVK';
 const X_API_KEY_PROD = '';
 const ENCRYPT_KEY_VALUE_UAT = "09876543345678900987654334567890";
 const ENCRYPT_IV_VALUE_UAT = "0987654334567890";
-const ENCRYPT_KEY_VALUE_PROD = "your-32-byte-key-here";
-const ENCRYPT_IV_VALUE_PROD = "your-16-byte-iv-here";
+const ENCRYPT_KEY_VALUE_PROD = "SyUh3AgP0PaEUwmZEDWTKYOLeblUSO5o";
+const ENCRYPT_IV_VALUE_PROD = "6ff2630e90ae39bacbb4095bbc0127a1";
 export const X_API_KEY = env === "uat" ? X_API_KEY_UAT : X_API_KEY_PROD;
 export const baseUrl = env === "uat" ? uatBaseUrl : prodBaseUrl;
 export const WEBSOCKET_BASE_URL = 'wss://rb0rtd86jb.execute-api.ap-south-1.amazonaws.com/uat/?userId=';
