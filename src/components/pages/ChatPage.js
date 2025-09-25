@@ -340,7 +340,6 @@ export const ChatPage = ({ route }) => {
     }
   };
   const sendAcknowledgement = (messageId) => {
-    console.log("Sending acknowledgement for messageId:", messageId);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const currentConfig = reconfigApiResponseRef.current;
       const payload = {
@@ -435,7 +434,7 @@ export const ChatPage = ({ route }) => {
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
 
-        if (response.statusFlag === stringConstants.agenda) {
+        if (response.userInfo.agentId && newToken) {
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
 
@@ -621,6 +620,7 @@ export const ChatPage = ({ route }) => {
             reconfigApiResponse={reconfigApiResponse}
             startResponseTimeout={startResponseTimeout}
             token={token}
+            hasMore={hasMore}
           />
         )}
         {!isInitializing && navigationPage !== stringConstants.coach && (
