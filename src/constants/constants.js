@@ -9,6 +9,6 @@ const ENCRYPT_KEY_VALUE_PROD = "SyUh3AgP0PaEUwmZEDWTKYOLeblUSO5o";
 const ENCRYPT_IV_VALUE_PROD = "6ff2630e90ae39bacbb4095bbc0127a1";
 export const X_API_KEY = env === "uat" ? X_API_KEY_UAT : X_API_KEY_PROD;
 export const baseUrl = env === "uat" ? uatBaseUrl : prodBaseUrl;
-export const WEBSOCKET_BASE_URL = 'wss://rb0rtd86jb.execute-api.ap-south-1.amazonaws.com/uat/?userId=';
+export const WEBSOCKET_BASE_URL = 'wss://6qwasq53he.execute-api.ap-south-1.amazonaws.com/prod/?userId=';
 export const ENCRYPT_KEY_VALUE = env === "uat" ? ENCRYPT_KEY_VALUE_UAT : ENCRYPT_KEY_VALUE_PROD;
 export const ENCRYPT_IV_VALUE_ = env=== "uat" ? ENCRYPT_IV_VALUE_UAT : ENCRYPT_IV_VALUE_PROD;
