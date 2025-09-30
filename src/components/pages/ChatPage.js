@@ -39,8 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU4Nzg1MTAzLCJleHAiOjE3NTg4NzE1MDN9.kj6ObY8ywxXDungbPrxP_gPizqMV6H81RaDST1NMIL3HqF9NyLFap3I-6dYw2S9pWpr8ASsSoUhzMP52iOxmVQ", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
-
+  } = route?.params || {};
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
   const [copied, setCopied] = useState(false);
@@ -63,6 +62,7 @@ export const ChatPage = ({ route }) => {
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [historyLoading, sethistoryLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
@@ -148,12 +148,12 @@ export const ChatPage = ({ route }) => {
   }, []);
   const showTokenToast = () => {
     dispatch(showToast({
+      type: "error",
       title: "Session Expired",
       message: "session expired. Please login again.",
       actions:[],
     }));
   }
-  showTokenToast();
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
     const isBottom = getIsAtBottom(nativeEvent.contentOffset);
@@ -183,13 +183,13 @@ export const ChatPage = ({ route }) => {
         return;
       }
       newMessages?.content?.forEach((msg) => {
-      if (
-        msg?.messageTo === stringConstants.userCaps &&
-        msg?.status === socketConstants.delivered 
-      ) {
-        sendAcknowledgement(msg.messageId);
-      }
-    });
+        if (
+          msg?.messageTo === stringConstants.userCaps &&
+          msg?.status === socketConstants.delivered
+        ) {
+          sendAcknowledgement(msg.messageId);
+        }
+      });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -263,7 +263,7 @@ export const ChatPage = ({ route }) => {
           else if (decryptedData.type === socketConstants.acknowledgement) {
             handleAcknowledgement(decryptedData);
           }
-          }
+        }
         // Fallback for unencrypted messages (remove in production)
         else {
           console.warn('Received unencrypted message:', data);
@@ -541,7 +541,7 @@ export const ChatPage = ({ route }) => {
     }
     dispatch(addMessage(botMessage));
   };
- 
+
   const handleAcknowledgement = (data) => {
 
     if (data.acknowledgement === socketConstants.received) {
@@ -557,7 +557,7 @@ export const ChatPage = ({ route }) => {
         messageId: data.messageId,
         status: socketConstants.received,
       }));
-      
+
     }
   };
   const handleReplyClose = () => {
@@ -598,9 +598,12 @@ export const ChatPage = ({ route }) => {
     }
   }, [netInfo?.isConnected]);
 
+  console.log("Keyboard Height: ", keyboardHeight);
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <SafeAreaView style={[styles.container, { marginTop: Platform.OS === "android" ? keyboardHeight : 0 }]}>
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
+      {(Platform.OS === "android" && keyboardHeight > 100) && <View style={{ position: 'absolute', zIndex: 1, top: -36, backgroundColor: colors.primaryColors.darkBlue, height: 40, width: '100%' }} />}
       <ChatHeader
         reconfigApiResponse={reconfigApiResponse}
         setnavigationPage={setnavigationPage}
@@ -693,6 +696,8 @@ export const ChatPage = ({ route }) => {
         cleanupWebSocket={cleanupWebSocket}
         startResponseTimeout={startResponseTimeout}
         clearResponseTimeout={clearResponseTimeout}
+        keyboardHeight={keyboardHeight}
+        setKeyboardHeight={setKeyboardHeight}
         token={token}
       />
       {/* </KeyboardAvoidingView>

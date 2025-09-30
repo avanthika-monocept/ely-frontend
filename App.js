@@ -9,16 +9,18 @@ import {
   Platform,
   KeyboardAvoidingView,
   View,
- 
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/appNavigator";
 import { loadFonts } from "./src/config/loadFonts";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
  
 export default function App(props) {
   LogBox.ignoreAllLogs(true);
- 
   const keyboardOffset = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+
+  console.log("Keyboard Offset: ", keyboardOffset);
  
   useEffect(() => {
     async function prepare() {
@@ -67,19 +69,19 @@ export default function App(props) {
         <KeyboardAvoidingView
           style={styles.innerContainer}
           behavior="padding"
-          keyboardVerticalOffset={0}
+          keyboardVerticalOffset={insets.top + 30}
         >
           <AppNavigator standalone={true} props={props} />
         </KeyboardAvoidingView>
       ) : (
-        // <Animated.View
-        //   style={[
-        //     styles.innerContainer,
-        //     { transform: [{ translateY: keyboardOffset }] },
-        //   ]}
-        // >
+        <Animated.View
+          style={[
+            styles.innerContainer,
+            { transform: [{ translateY: keyboardOffset }] },
+          ]}
+        >
           <AppNavigator standalone={true} props={props} />
-        // </Animated.View>
+        </Animated.View>
       )}
     </GestureHandlerRootView>
   );
