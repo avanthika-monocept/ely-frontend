@@ -5,22 +5,23 @@ const toastSlice = createSlice({
   name: "toast",
   initialState: {
     visible: false,
-    type: "error",
     title: "",
     message: "",
+    actions:[],
   },
   reducers: {
     showToast: (state, action) => {
       const { type, title, message } = action.payload;
       state.visible = true;
-      state.type = type || "error";
       state.title = title;
       state.message = message;
+      state.actions = action.payload.actions || [];
     },
     hideToast: (state) => {
       state.visible = false;
       state.title = "";
       state.message = "";
+      state.actions = [];
     },
   },
 });
