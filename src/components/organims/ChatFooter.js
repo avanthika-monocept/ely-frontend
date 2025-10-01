@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Keyboard, Text } from "react-native";
 import DynamicTextInput from "../atoms/DynamicTextInput";
 import Button from "../atoms/Button";
 import ReplyMessage from "../atoms/ReplyMessage";
@@ -14,7 +14,7 @@ import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
 import { encryptSocketPayload } from "../../common/cryptoUtils";
- const ChatFooter = React.memo(({
+const ChatFooter = React.memo(({
   copied,
   dropDownType,
   replyMessageId,
@@ -36,8 +36,10 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   replyIndex,
   cleanupWebSocket,
   clearResponseTimeout,
+  keyboardHeight,
+  setKeyboardHeight
 }) => {
-  
+
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
   const [dynamicPlaceholder, setDynamicPlaceholder] = useState(stringConstants.typeMessage);
@@ -45,23 +47,39 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   const isBottomSheetOpen = useSelector((state) => state.bottomSheet.isBottomSheetOpen);
   const placeHolders = reconfigApiResponse.placeHolders || [];
   const effectDependencies = useMemo(() => [placeHolders, isLoading, reply], [placeHolders, isLoading, reply]);
-useEffect(() => {
-  const clearPlaceholderInterval = setupDynamicPlaceholder(
-    placeHolders,
-    setDynamicPlaceholder,
-    3000,
-    isLoading,
-    reply
-  );
-  return () => clearPlaceholderInterval();
-}, effectDependencies);
+
+  useEffect(() => {
+    const keyboardShowEvent = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+
+    const keyboardHideEvent = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    })
+
+    return () => {
+      keyboardShowEvent.remove();
+      keyboardHideEvent.remove();
+    }
+  }, []);
+
+  useEffect(() => {
+    const clearPlaceholderInterval = setupDynamicPlaceholder(
+      placeHolders,
+      setDynamicPlaceholder,
+      3000,
+      isLoading,
+      reply
+    );
+    return () => clearPlaceholderInterval();
+  }, effectDependencies);
   const handleChange = useCallback((text) => {
-  setValue(text);
-}, []);
-const resetReplyState = useCallback(() => {
-  setReply(false);
-  setReplyMessageId(null);
-}, [setReply, setReplyMessageId]);
+    setValue(text);
+  }, []);
+  const resetReplyState = useCallback(() => {
+    setReply(false);
+    setReplyMessageId(null);
+  }, [setReply, setReplyMessageId]);
 
   const handleSend = useCallback(async () => {
     scrollToDown();
@@ -110,53 +128,60 @@ const resetReplyState = useCallback(() => {
       clearResponseTimeout();
     }
   }, [
-  value, isLoading, navigationPage, reconfigApiResponse, 
-  reply, replyMessageId, replyIndex, messages,
-  socket, dispatch, resetReplyState, inactivityTimer,
-  setInactivityTimer, setnavigationPage, scrollToDown,
-  cleanupWebSocket, clearResponseTimeout
-]);
+    value, isLoading, navigationPage, reconfigApiResponse,
+    reply, replyMessageId, replyIndex, messages,
+    socket, dispatch, resetReplyState, inactivityTimer,
+    setInactivityTimer, setnavigationPage, scrollToDown,
+    cleanupWebSocket, clearResponseTimeout
+  ]);
   const getReplyMessage = useCallback(() => {
-  const replyMessageObject = messages.find(
-    (msg) => msg?.messageId === replyMessageId
-  );
-  return {
-    text: replyMessageObject?.message?.text || replyMessageObject?.text || "",
-    messageTo: replyMessageObject?.messageTo,
-    media: replyMessageObject?.media || [],
-  };
-}, [messages, replyMessageId]);
+    const replyMessageObject = messages.find(
+      (msg) => msg?.messageId === replyMessageId
+    );
+    return {
+      text: replyMessageObject?.message?.text || replyMessageObject?.text || "",
+      messageTo: replyMessageObject?.messageTo,
+      media: replyMessageObject?.media || [],
+    };
+  }, [messages, replyMessageId]);
 
-const replyData = useMemo(() => {
-  if (!reply) return null;
-  return getReplyMessage();
-}, [reply, getReplyMessage]);
+  const replyData = useMemo(() => {
+    if (!reply) return null;
+    return getReplyMessage();
+  }, [reply, getReplyMessage]);
 
 
-const replyComponent = useMemo(() => {
-  if (!reply || !replyData) return null;
-  
-  return (
-    <ReplyMessage
-      replyFrom={
-        replyData?.messageTo?.toLowerCase() === stringConstants.bot ? 
-        stringConstants.you : stringConstants.botCaps
-      }
-      replyMessage={replyData.text}
-      media={replyData.media}
-      reply={reply}
-      handleClose={handleReplyClose}
-      replyIndex={replyIndex}
-    />
-  );
-}, [reply, replyData, handleReplyClose, replyIndex]);
+  const replyComponent = useMemo(() => {
+    if (!reply || !replyData) return null;
+
+    return (
+      <ReplyMessage
+        replyFrom={
+          replyData?.messageTo?.toLowerCase() === stringConstants.bot ?
+            stringConstants.you : stringConstants.botCaps
+        }
+        replyMessage={replyData.text}
+        media={replyData.media}
+        reply={reply}
+        handleClose={handleReplyClose}
+        replyIndex={replyIndex}
+      />
+    );
+  }, [reply, replyData, handleReplyClose, replyIndex]);
   let data = {};
   return (
     <View>
       {copied && <CopyTextClipboard reply={reply} />}
       <View style={styles.containerHead}>
         {replyComponent}
-        <View style={styles.container}>
+          <View
+            style={[
+              styles.container,
+              {
+                marginBottom: keyboardHeight > 100 ? keyboardHeight - 30 : null,
+              },
+            ]}
+          >
           <View style={styles.inputContainer}>
             <DynamicTextInput
               value={value}
@@ -164,7 +189,6 @@ const replyComponent = useMemo(() => {
               placeholder={dynamicPlaceholder}
               rows={3}
               fullWidth
-             
             />
           </View>
           <View style={styles.buttonContainer}>
@@ -190,28 +214,30 @@ const replyComponent = useMemo(() => {
   );
 });
 ChatFooter.propTypes = {
-    copied: PropTypes.bool.isRequired,
-    dropDownType: PropTypes.string.isRequired,
-    setReplyMessageId: PropTypes.func.isRequired,
-    replyMessageId: PropTypes.string,
-    navigationPage: PropTypes.string.isRequired,
-    setnavigationPage: PropTypes.func.isRequired,
-    setReply: PropTypes.func.isRequired,
-    reply: PropTypes.bool.isRequired,
-    handleReplyClose: PropTypes.func.isRequired,
-    handleReplyMessage: PropTypes.func.isRequired,
-    reconfigApiResponse: PropTypes.object.isRequired,
-    socket: PropTypes.object,
-    messages: PropTypes.array,
-    copyToClipboard: PropTypes.func,
-    scrollToDown: PropTypes.func,
-    inactivityTimer: PropTypes.number,
-    setInactivityTimer: PropTypes.func,
-    replyIndex: PropTypes.number,
-    setCopied: PropTypes.func,
-    cleanupWebSocket: PropTypes.func,
-    clearResponseTimeout: PropTypes.func,
-  };
+  copied: PropTypes.bool.isRequired,
+  dropDownType: PropTypes.string.isRequired,
+  setReplyMessageId: PropTypes.func.isRequired,
+  replyMessageId: PropTypes.string,
+  navigationPage: PropTypes.string.isRequired,
+  setnavigationPage: PropTypes.func.isRequired,
+  setReply: PropTypes.func.isRequired,
+  reply: PropTypes.bool.isRequired,
+  handleReplyClose: PropTypes.func.isRequired,
+  handleReplyMessage: PropTypes.func.isRequired,
+  reconfigApiResponse: PropTypes.object.isRequired,
+  socket: PropTypes.object,
+  messages: PropTypes.array,
+  copyToClipboard: PropTypes.func,
+  scrollToDown: PropTypes.func,
+  inactivityTimer: PropTypes.number,
+  setInactivityTimer: PropTypes.func,
+  replyIndex: PropTypes.number,
+  setCopied: PropTypes.func,
+  cleanupWebSocket: PropTypes.func,
+  clearResponseTimeout: PropTypes.func,
+  keyboardHeight: PropTypes.number,
+  setKeyboardHeight: PropTypes.func
+};
 const styles = StyleSheet.create({
   containerHead: {
     backgroundColor: colors.primaryColors.lightSurface,

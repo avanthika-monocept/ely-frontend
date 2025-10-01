@@ -8,11 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
+  TouchableOpacity,
 } from "react-native";
 import {LinearGradient} from "react-native-linear-gradient";
 import {platformName, stringConstants } from "../../constants/StringConstants";
 import { borderRadius, borderWidth, spacing, size, flex } from "../../constants/Dimensions";
 import {SuggestionList} from "./SuggestionList";
+import Timer from "../../../assets/timer.svg"
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
@@ -23,6 +25,7 @@ export const LandingPage = memo(({
   socket,
   startResponseTimeout,
   token,
+  hasMore,
 }) => {
   let scrollViewRef = null;
   const firstName=reconfigApiResponse?.userInfo?.userName?.split(" ")[0]
@@ -39,6 +42,14 @@ export const LandingPage = memo(({
           end={{ x: -0.3, y: 1 }}
           style={styles.chatBodyContainer}
         >
+          {hasMore && 
+          <TouchableOpacity
+              style={styles.recentConvoBtn}
+              onPress={() => setnavigationPage(stringConstants.agenda)}
+            >
+              <Timer width={20} height={20} style={{marginRight: spacing.space_s1}}/>
+              <Text style={styles.recentConvoText}>{stringConstants.showRecentConversations}</Text>
+            </TouchableOpacity>}
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -51,7 +62,7 @@ export const LandingPage = memo(({
               }
             }}
           >
-            <View style={styles.textContainer}>
+           <View style={styles.textContainer}>
               <Text style={styles.hiTextStyle}>
                 {stringConstants.hiThere}{" "}
                 {firstName}
@@ -92,6 +103,7 @@ LandingPage.propTypes = {
   socket: PropTypes.object,
   startResponseTimeout: PropTypes.func,
   token: PropTypes.string,
+  hasMore: PropTypes.bool,
 };
  
 const styles = StyleSheet.create({
@@ -102,7 +114,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: flex.one,
     justifyContent: "space-between",
-    paddingTop: size.fiftyPercent,
+    paddingTop: size.fortytThreePercent,
   },
   textContainer: {
     alignSelf: "center",
@@ -129,6 +141,23 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     paddingBottom: spacing.space_m2,
+  },
+  recentConvoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    marginTop: spacing.space_l1,
+    paddingVertical: spacing.space_s2,
+    paddingHorizontal: spacing.space_m1,
+    borderRadius: borderRadius.borderRadius200,
+    borderWidth: borderWidth.borderWidth1,
+    borderColor: colors.lightNeutrals.n80,
+    backgroundColor: colors.primaryColors.white,
+  },
+  recentConvoText: {
+    marginLeft: spacing.space_s2,
+    fontWeight: "700",
+    color: colors.primaryColors.charcoalGray,
   },
 });
  
