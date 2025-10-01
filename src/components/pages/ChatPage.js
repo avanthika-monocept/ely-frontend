@@ -62,7 +62,7 @@ export const ChatPage = ({ route }) => {
   const [token, settoken] = useState("");
   const [responseTimeout, setResponseTimeout] = useState(null);
   const [historyLoading, sethistoryLoading] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState("");
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
@@ -598,12 +598,26 @@ export const ChatPage = ({ route }) => {
     }
   }, [netInfo?.isConnected]);
 
-  console.log("Keyboard Height: ", keyboardHeight);
-
   return (
-    <SafeAreaView style={[styles.container, { marginTop: Platform.OS === "android" ? keyboardHeight : 0 }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { marginTop: Platform.OS === "android" ? keyboardHeight / 10 : 0 },
+      ]}
+    >
       <StatusBar backgroundColor={colors.primaryColors.darkBlue} />
-      {(Platform.OS === "android" && keyboardHeight > 100) && <View style={{ position: 'absolute', zIndex: 1, top: -36, backgroundColor: colors.primaryColors.darkBlue, height: 40, width: '100%' }} />}
+      {Platform.OS === "android" && keyboardHeight > 100 && (
+        <View
+          style={{
+            position: "absolute",
+            zIndex: 1,
+            top: -36,
+            backgroundColor: colors.primaryColors.darkBlue,
+            height: 40,
+            width: "100%",
+          }}
+        />
+      )}
       <ChatHeader
         reconfigApiResponse={reconfigApiResponse}
         setnavigationPage={setnavigationPage}

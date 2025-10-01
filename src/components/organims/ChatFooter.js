@@ -174,7 +174,14 @@ const ChatFooter = React.memo(({
       {copied && <CopyTextClipboard reply={reply} />}
       <View style={styles.containerHead}>
         {replyComponent}
-        <View style={styles.container}>
+          <View
+            style={[
+              styles.container,
+              {
+                marginBottom: keyboardHeight > 100 ? keyboardHeight - 30 : null,
+              },
+            ]}
+          >
           <View style={styles.inputContainer}>
             <DynamicTextInput
               value={value}
