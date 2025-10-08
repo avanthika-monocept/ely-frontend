@@ -17,6 +17,7 @@ import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
+import { useNavigation } from "@react-navigation/native";
 import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
@@ -34,6 +35,7 @@ import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoU
 import { useNetInfo } from "@react-native-community/netinfo";
 import { showToast } from "../../store/reducers/toastSlice";
 import ToastMessage from "../atoms/ToastMessage";
+import ErrorModal from "../atoms/ErrorModal";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
@@ -43,6 +45,7 @@ export const ChatPage = ({ route }) => {
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
   const isAtBottomRef = useRef(true);
@@ -65,6 +68,12 @@ export const ChatPage = ({ route }) => {
   const [historyLoading, sethistoryLoading] = useState(false);
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
+  const [modalData, setModalData] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    buttonText: "",
+  });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -122,7 +131,18 @@ export const ChatPage = ({ route }) => {
 
 
   }, []);
+  const showErrorModal = (title, message, buttonText = " ") => {
+    setModalData({
+      visible: true,
+      title,
+      message,
+      buttonText,
+    });
+  };
 
+  const hideModal = () => {
+    setModalData((prev) => ({ ...prev, visible: false }));
+  };
 
   const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
@@ -150,7 +170,7 @@ export const ChatPage = ({ route }) => {
     dispatch(showToast({
       title: "Session Expired",
       message: "session expired. Please login again.",
-      actions:[],
+      actions: [],
     }));
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
@@ -182,13 +202,13 @@ export const ChatPage = ({ route }) => {
         return;
       }
       newMessages?.content?.forEach((msg) => {
-      if (
-        msg?.messageTo === stringConstants.userCaps &&
-        msg?.status === socketConstants.delivered 
-      ) {
-        sendAcknowledgement(msg.messageId);
-      }
-    });
+        if (
+          msg?.messageTo === stringConstants.userCaps &&
+          msg?.status === socketConstants.delivered
+        ) {
+          sendAcknowledgement(msg.messageId);
+        }
+      });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -262,7 +282,7 @@ export const ChatPage = ({ route }) => {
           else if (decryptedData.type === socketConstants.acknowledgement) {
             handleAcknowledgement(decryptedData);
           }
-          }
+        }
         // Fallback for unencrypted messages (remove in production)
         else {
           console.warn('Received unencrypted message:', data);
@@ -479,6 +499,14 @@ export const ChatPage = ({ route }) => {
           showTokenToast();
         }
       }
+
+      if (error.message === "PLATFORM_TOKEN_EXPIRED") {
+        showErrorModal(
+          "Failed to Login",
+          "Unable to Authenticate details.",
+          "Go Back"
+        )
+      }
     } finally {
       setIsInitializing(false);
     }
@@ -540,7 +568,7 @@ export const ChatPage = ({ route }) => {
     }
     dispatch(addMessage(botMessage));
   };
- 
+
   const handleAcknowledgement = (data) => {
 
     if (data.acknowledgement === socketConstants.received) {
@@ -556,7 +584,7 @@ export const ChatPage = ({ route }) => {
         messageId: data.messageId,
         status: socketConstants.received,
       }));
-      
+
     }
   };
   const handleReplyClose = () => {
@@ -613,6 +641,20 @@ export const ChatPage = ({ route }) => {
 
       <View style={styles.content}>
         <ToastMessage />
+        <View style={styles.modalContainer}>
+
+          <ErrorModal
+            visible={modalData.visible}
+            title={modalData.title}
+            message={modalData.message}
+            buttonText={modalData.buttonText}
+            action={() => {
+              hideModal();
+              navigation.goBack()
+            }}
+          />
+        </View>
+
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}
@@ -722,7 +764,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: spacing.space_10,
     right: spacing.space_m3,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   }
+
 });
 ChatPage.propTypes = {
   route: PropTypes.shape({
