@@ -41,7 +41,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU5MjEwNDU0LCJleHAiOjE3NTkyOTY4NTR9.ds6S2nXeHdhOTEHGoQhB4aTP0rXYZkMqiSnLXI4Dj9IHIxxtOFKF6yHEZu2yhDfRq3hkF2fr_ClSORIpHTTvEg", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
+  } = { jwtToken: "eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU5OTkyMjIwLCJleHAiOjE3NjAwNzg2MjB9.LVJkBgV3FEriWbtVNrxMTGbjLKmsRmM98LIGIZK4Xok2Da-iypJLELPr7qjAlQ3WXJn9S7bRxdyP_QCw683IWw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -641,19 +641,22 @@ export const ChatPage = ({ route }) => {
 
       <View style={styles.content}>
         <ToastMessage />
-        <View style={styles.modalContainer}>
+        {modalData.visible &&
+          <View style={styles.modalContainer}>
+            <ErrorModal
+              visible={modalData.visible}
+              title={modalData.title}
+              message={modalData.message}
+              buttonText={modalData.buttonText}
+              action={() => {
+                hideModal();
+                navigation.goBack()
+              }}
+            />
+          </View>
 
-          <ErrorModal
-            visible={modalData.visible}
-            title={modalData.title}
-            message={modalData.message}
-            buttonText={modalData.buttonText}
-            action={() => {
-              hideModal();
-              navigation.goBack()
-            }}
-          />
-        </View>
+        }
+
 
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
