@@ -167,11 +167,16 @@ export const ChatPage = ({ route }) => {
     }
   }, []);
   const showTokenToast = () => {
-    dispatch(showToast({
-      title: "Session Expired",
-      message: "session expired. Please login again.",
-      actions: [],
-    }));
+    // dispatch(showToast({
+    //   title: "Session Expired",
+    //   message: "session expired. Please login again.",
+    //   actions: [],
+    // }));
+      showErrorModal(
+          "Failed to Login",
+          "Unable to Authenticate details.",
+          "Go Back"
+        )
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
