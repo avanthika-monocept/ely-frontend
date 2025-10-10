@@ -1,8 +1,8 @@
-export const env = "uat";
+export const env = "prod";
 const uatBaseUrl = "https://uatapi.maxlifeinsurance.com/hris";
-const prodBaseUrl = "https://api.axismaxlife.com/prod/hris";
+const prodBaseUrl = "https://api.axismaxlife.com/hris";
 const X_API_KEY_UAT = '4iNbPS8RzT4G9q7tBp3QZ36FwFBd5GhX6Lrl4oVK';
-const X_API_KEY_PROD = '';
+const X_API_KEY_PROD = 'cFtYU8IkzU1lMzQdTKsPs7ouNV22kSnl6nwRq8rk';
 const ENCRYPT_KEY_VALUE_UAT = "09876543345678900987654334567890";
 const ENCRYPT_IV_VALUE_UAT = "0987654334567890";
 const ENCRYPT_KEY_VALUE_PROD = "SyUh3AgP0PaEUwmZEDWTKYOLeblUSO5o";
