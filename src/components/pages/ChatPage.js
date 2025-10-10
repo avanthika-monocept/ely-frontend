@@ -41,7 +41,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzU5OTkyMjIwLCJleHAiOjE3NjAwNzg2MjB9.LVJkBgV3FEriWbtVNrxMTGbjLKmsRmM98LIGIZK4Xok2Da-iypJLELPr7qjAlQ3WXJn9S7bRxdyP_QCw683IWw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
+  } = { jwtToken: "eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwMDc5NDM1LCJleHAiOjE3NjAxNjU4MzV9.AEp3mUDYZ8zMuCyTGDjhMtIdNcX-PcT0LmkOqdzK7ou74cJoOSR6Ms1vmbxEDYmtS0wBAN4FlOcQkWUiZmAAQA", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -166,12 +166,8 @@ export const ChatPage = ({ route }) => {
       }, 300);
     }
   }, []);
-  const showTokenToast = () => {
-    // dispatch(showToast({
-    //   title: "Session Expired",
-    //   message: "session expired. Please login again.",
-    //   actions: [],
-    // }));
+  const showErrorModalTokenExpiry = () => {
+   
       showErrorModal(
           "Failed to Login",
           "Unable to Authenticate details.",
@@ -190,8 +186,9 @@ export const ChatPage = ({ route }) => {
     }
   };
   const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
+  
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -232,19 +229,20 @@ export const ChatPage = ({ route }) => {
           // retry only once with new token
           await loadChatHistory(agentId, page, message, refreshedToken, true);
         } catch (refreshError) {
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
       } else {
         // second time or other error
+        setHasMore(false)
         console.error(stringConstants.failToLoad, err);
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     }
   };
 
   const reconnectWebSocket = async () => {
     if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -256,7 +254,7 @@ export const ChatPage = ({ route }) => {
     } catch (error) {
       console.error("WebSocket reconnection failed:", error);
       if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     }
   };
@@ -272,7 +270,7 @@ export const ChatPage = ({ route }) => {
 
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected);
-      setTokenExpiryRetryCount(0); // Reset on successful connection
+      setTokenExpiryRetryCount(0);
     };
     ws.current.onmessage = (event) => {
       try {
@@ -340,11 +338,11 @@ export const ChatPage = ({ route }) => {
         }
       } catch (error) {
 
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     } else {
 
-      showTokenToast();
+      showErrorModalTokenExpiry();
     }
   };
   const cleanupWebSocket = (sendDisconnect = false) => {
@@ -415,7 +413,7 @@ export const ChatPage = ({ route }) => {
 
   const initialize = async (isRetry = false) => {
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -496,12 +494,12 @@ export const ChatPage = ({ route }) => {
           }
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
       } else {
         console.error("Initialize error:", error);
         if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
       }
 
