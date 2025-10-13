@@ -41,7 +41,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwMDc5NDM1LCJleHAiOjE3NjAxNjU4MzV9.AEp3mUDYZ8zMuCyTGDjhMtIdNcX-PcT0LmkOqdzK7ou74cJoOSR6Ms1vmbxEDYmtS0wBAN4FlOcQkWUiZmAAQA", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
+  } = { jwtToken: "eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwMzMzMTk0LCJleHAiOjE3NjA0MTk1OTR9.QHQKTH_fOf_tJ05_gWiEAZWkI4e59fBx3cJiq1PKG1RoBMIXVn1NNcIf_aG--LKd8QIiWRY2tnQUlcHbWexRcw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -279,6 +279,9 @@ export const ChatPage = ({ route }) => {
         // Handle encrypted payload
         if (data.payload) {
           const decryptedData = decryptSocketPayload(data);
+          if(decryptedData.type===socketConstants.error){
+            handleErrorMessage(decryptedData);
+          }
           if (decryptedData.type === socketConstants.botResponse) {
             handleBotMessage(decryptedData);
           }
@@ -571,7 +574,13 @@ export const ChatPage = ({ route }) => {
     }
     dispatch(addMessage(botMessage));
   };
-
+const handleErrorMessage = (errorData) => {
+  clearResponseTimeout();
+  dispatch(updateMessageStatus({
+    messageId: errorData.messageId,
+    status: socketConstants.failed,
+   }));
+};
   const handleAcknowledgement = (data) => {
 
     if (data.acknowledgement === socketConstants.received) {
@@ -643,7 +652,7 @@ export const ChatPage = ({ route }) => {
       )}
 
       <View style={styles.content}>
-        <ToastMessage />
+       
         {modalData.visible &&
           <View style={styles.modalContainer}>
             <ErrorModal

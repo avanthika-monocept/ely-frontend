@@ -7,9 +7,12 @@ import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import { sizeWithoutScale, spacing } from "../../constants/Dimensions";
+import TimerIcon from "../../../assets/timer.svg";
 export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
   const getTickIcon = () => {
     switch (status) {
+      case "PENDING":
+      return <TimerIcon testID="timer-icon" width={12}/>;
       case "READ":
         return <DoubleTickRead testID="double-tick-read" />;
       case "SENT":

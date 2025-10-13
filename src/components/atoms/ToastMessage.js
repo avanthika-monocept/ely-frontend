@@ -5,22 +5,12 @@ import { hideToast } from "../../store/reducers/toastSlice";
 import colors from "../../constants/Colors";
 import AlertIcon from "../../../assets/alert.svg";
 import {LinearGradient} from "react-native-linear-gradient";
+import PropTypes from 'prop-types';
 
-const ToastMessage = () => {
-  const dispatch = useDispatch();
-  const { visible,actions, title, message } = useSelector((state) => state.toast);
+const ToastMessage = ({actions, title, message }) => {
+ 
   
-  useEffect(() => {
-    if (visible) {
-     
-      const timer = setTimeout(() => {
-        dispatch(hideToast());
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
 
-  if (!visible) return null;
   const borderColor = colors.primaryColors.bloodRed
   
 const GRADIENT_COLORS = ['#ffeded','#fff8f8',  '#fffefe'];
@@ -32,8 +22,7 @@ const renderActions = () => {
           style={[styles.actionBtn, styles.secondaryBtn]}
           onPress={() => {
             actions[0]?.onPress?.();
-            dispatch(hideToast());
-          }}
+           }}
         >
           <Text style={[styles.actionText, styles.secondaryText]}>
             {actions[0]?.label}
@@ -55,7 +44,7 @@ const renderActions = () => {
               ]}
               onPress={() => {
                 action.onPress?.();
-                dispatch(hideToast());
+                
               }}
             >
               <Text
@@ -104,10 +93,7 @@ const renderActions = () => {
 };
 const styles = StyleSheet.create({
  outerContainer: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-    right: 20,
+    marginHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.primaryColors.bloodRed,
     borderRadius: 8,
@@ -184,4 +170,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 });
+ToastMessage.propTypes={
+   title: PropTypes.string.isRequired,
+   message: PropTypes.string,
+   actions: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      onPress: PropTypes.func,
+    })
+  ),
+};
 export default ToastMessage;
