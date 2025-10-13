@@ -8,12 +8,14 @@ import Dropdown from "../atoms/Dropdown";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessage } from "../../store/reducers/chatSlice";
 import { hideLoader } from "../../store/reducers/loaderSlice";
-import { setupDynamicPlaceholder, formatUserMessage } from "../../common/utils";
+import { setupDynamicPlaceholder, formatUserMessage, getMessageStatus } from "../../common/utils";
 import { borderWidth, flex, spacing } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import { socketMessageTypes, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import colors from "../../constants/Colors";
 import { encryptSocketPayload } from "../../common/cryptoUtils";
+import { useNetInfo } from "@react-native-community/netinfo";
+
  const ChatFooter = React.memo(({
   copied,
   dropDownType,
@@ -37,7 +39,7 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
   cleanupWebSocket,
   clearResponseTimeout,
 }) => {
-  
+  const netInfo = useNetInfo();
   const dispatch = useDispatch();
   const [value, setValue] = useState("");
   const [dynamicPlaceholder, setDynamicPlaceholder] = useState(stringConstants.typeMessage);
@@ -92,7 +94,8 @@ const resetReplyState = useCallback(() => {
       } else {
         messageType = socketMessageTypes.text;
       }
-      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, replyMessageId, replyIndex);
+      const status = getMessageStatus(netInfo, socket);
+      const { message, socketPayload } = formatUserMessage(value, reconfigApiResponse, messageType, replyMessageId, replyIndex, status);
       const action = socketPayload.action;
       const payload = socketPayload.message;
       const encryptedPayload = encryptSocketPayload(payload);
