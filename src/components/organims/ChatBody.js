@@ -229,6 +229,7 @@ const dispatch = useDispatch();
           errorMessage: msg.errorMessage || "Failed to send message.",
           errorCode: msg.errorCode,
           messageId: msg.messageId,
+          showRetry: msg.status === socketConstants.pending,
         });
       }
 
@@ -293,20 +294,23 @@ const dispatch = useDispatch();
       );
     }
     if (item.type === "inline_error_toast") {
-      // Inline error toast rendering
+      const showRetry = item.showRetry;
       return (
         <View style={{ marginBottom: 4 }}>
           <ToastMessage
             visible={true}
-            title={"Message Delivery Failed"}
+            title={showRetry? "Message Delivery Failed": "Something went wrong on our end!"}
             message={""}
-            actions={[
-              {
-                label: "Retry",
-                onPress: () => retrySendMessage(item.messageId),
-                disabled: isLoading
-              },
-            ]}
+            actions={
+              showRetry
+            ? [
+                {
+                  label: "Retry",
+                  onPress: () => retrySendMessage(item.messageId),
+                  disabled: isLoading,
+                },
+              ]
+            : []}
           />
         </View>
       );
