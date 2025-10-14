@@ -4,25 +4,28 @@ import { useDispatch, useSelector } from "react-redux";
 import { hideToast } from "../../store/reducers/toastSlice";
 import colors from "../../constants/Colors";
 import AlertIcon from "../../../assets/alert.svg";
-import {LinearGradient} from "react-native-linear-gradient";
+import { LinearGradient } from "react-native-linear-gradient";
 import PropTypes from 'prop-types';
 
-const ToastMessage = ({actions, title, message }) => {
- 
-  
+const ToastMessage = ({ actions, title, message }) => {
+
+
 
   const borderColor = colors.primaryColors.bloodRed
-  
-const GRADIENT_COLORS = ['#ffeded','#fff8f8',  '#fffefe'];
-const renderActions = () => {
+
+  const GRADIENT_COLORS = ['#ffeded', '#fff8f8', '#fffefe'];
+  const renderActions = () => {
     if (actions?.length === 1) {
       // Inline single action
       return (
         <TouchableOpacity
-          style={[styles.actionBtn, styles.secondaryBtn]}
+          style={[styles.actionBtn, styles.secondaryBtn,actions[0]?.disabled && { opacity: 0.5 }]}
           onPress={() => {
-            actions[0]?.onPress?.();
-           }}
+            if (!actions[0]?.disabled) {
+              actions[0]?.onPress?.();
+            }
+          }}
+          disabled={actions[0]?.disabled}
         >
           <Text style={[styles.actionText, styles.secondaryText]}>
             {actions[0]?.label}
@@ -44,7 +47,7 @@ const renderActions = () => {
               ]}
               onPress={() => {
                 action.onPress?.();
-                
+
               }}
             >
               <Text
@@ -72,27 +75,27 @@ const renderActions = () => {
         end={{ x: 0, y: 1 }}
         style={styles.gradient}
       >
-       
+
         <View style={{ flex: 1 }}>
           <View style={styles.rowBetween}>
-             <View style={styles.iconBox}>
-          <AlertIcon width={20} height={20} />
-        </View>
+            <View style={styles.iconBox}>
+              <AlertIcon width={20} height={20} />
+            </View>
             <View style={{ flex: 1 }}>
-              
-          <Text style={[styles.title, { color: borderColor }]}>{title}</Text>
-          { message && <Text style={styles.message}>{message}</Text>}
+
+              <Text style={[styles.title, { color: borderColor }]}>{title}</Text>
+              {message && <Text style={styles.message}>{message}</Text>}
+            </View>
+            {actions?.length === 1 && renderActions()}
           </View>
-          {actions?.length === 1 && renderActions()}
-          </View>
-           {actions?.length > 1 && renderActions()}
+          {actions?.length > 1 && renderActions()}
         </View>
       </LinearGradient>
     </View>
   );
 };
 const styles = StyleSheet.create({
- outerContainer: {
+  outerContainer: {
     marginHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.primaryColors.bloodRed,
@@ -125,8 +128,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 6,
-    borderRadius:25,
-    backgroundColor:colors.primaryColors.white,
+    borderRadius: 25,
+    backgroundColor: colors.primaryColors.white,
     shadowColor: colors.primaryColors.bloodRed,
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 1,
@@ -138,29 +141,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  actionBtn:{
+  actionBtn: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    borderWidth:1,
-    marginLeft:8,
+    borderWidth: 1,
+    marginLeft: 8,
   },
-  secondaryBtn:{
+  secondaryBtn: {
     backgroundColor: colors.primaryColors.white,
     borderColor: colors.lightNeutrals.n80,
   },
-  actionText:{
+  actionText: {
     fontSize: 14,
     fontWeight: "700",
   },
-  secondaryText:{
+  secondaryText: {
     color: colors.primaryColors.charcoalGray,
   },
-  primaryBtn:{
+  primaryBtn: {
     backgroundColor: colors.primaryColors.surface,
     borderColor: colors.primaryColors.surface,
   },
-  primaryText:{
+  primaryText: {
     color: colors.primaryColors.white,
   },
   actionsRow: {
@@ -170,13 +173,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 });
-ToastMessage.propTypes={
-   title: PropTypes.string.isRequired,
-   message: PropTypes.string,
-   actions: PropTypes.arrayOf(
+ToastMessage.propTypes = {
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string,
+  actions: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
       onPress: PropTypes.func,
+      disabled: PropTypes.bool,
     })
   ),
 };

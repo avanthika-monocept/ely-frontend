@@ -20,7 +20,7 @@ import { encryptSocketPayload } from "../../common/cryptoUtils";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { getMessageStatus } from "../../common/utils";
-import { updateMessageStatus } from "../../store/reducers/chatSlice";
+import { retryMessage, updateMessageStatus } from "../../store/reducers/chatSlice";
 
 const MessageItem = React.memo(({
   item,
@@ -242,10 +242,11 @@ const dispatch = useDispatch();
     const messageToRetry = messages.find(msg => msg.messageId === messageId);
     if (!messageToRetry) return;
     const status = getMessageStatus(netInfo, socket);
-     dispatch(updateMessageStatus({
-        messageId: messageId,
-        status: status,
-       }));
+     dispatch(retryMessage({
+      messageId: messageId,
+      status: status,
+      newDateTime: new Date().toISOString()
+    }));
     const retryPayload = {
       action: CHAT_MESSAGE_PROXY,
       message: {
@@ -302,7 +303,8 @@ const dispatch = useDispatch();
             actions={[
               {
                 label: "Retry",
-                onPress: () => retrySendMessage(item.messageId), // Implement retry logic
+                onPress: () => retrySendMessage(item.messageId),
+                disabled: isLoading
               },
             ]}
           />
