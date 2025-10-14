@@ -69,7 +69,7 @@ export default function App(props) {
         <KeyboardAvoidingView
           style={styles.innerContainer}
           behavior="padding"
-          keyboardVerticalOffset={insets.top + 30}
+          keyboardVerticalOffset={insets.top + 25}
         >
           <AppNavigator standalone={true} props={props} />
         </KeyboardAvoidingView>

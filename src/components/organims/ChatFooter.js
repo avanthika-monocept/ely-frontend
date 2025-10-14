@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { View, StyleSheet, Keyboard, Text } from "react-native";
+import { View, StyleSheet, Keyboard, Text, Platform } from "react-native";
 import DynamicTextInput from "../atoms/DynamicTextInput";
 import Button from "../atoms/Button";
 import ReplyMessage from "../atoms/ReplyMessage";
@@ -178,7 +178,7 @@ const ChatFooter = React.memo(({
             style={[
               styles.container,
               {
-                marginBottom: keyboardHeight > 100 ? keyboardHeight - 30 : null,
+                marginBottom: Platform.OS == 'android' &&  keyboardHeight > 100 ? keyboardHeight - 30 : null
               },
             ]}
           >
