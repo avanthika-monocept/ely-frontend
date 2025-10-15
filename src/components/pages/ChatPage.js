@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwMzUzMjI0LCJleHAiOjE3NjA0Mzk2MjR9.0eDlCEpnFtFXGorgDYLYZ5u7hh1hs7o3qrWC8tIfylKDZGgDOxfR3ZcvKGYv3EPOfa_knDtshHUjjeEIVTPYMQ", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwNDU1OTM4LCJleHAiOjE3NjA1NDIzMzh9.UaEzdWMrpC5aQ1_l6p1cs_UW6uOHLdhMWROTRUi21Ar8G2puA2UP0Jh3-TwZCHp4S_FywN4XYj8rFqmefTJoHQ", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -50,6 +50,7 @@ export const ChatPage = ({ route }) => {
   const reconfigApiResponseRef = useRef({});
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
+  const lastBackgroundTimeRef = useRef(null);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -539,11 +540,18 @@ export const ChatPage = ({ route }) => {
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+        lastBackgroundTimeRef.current = Date.now();
         safelyCleanupSocket();
       }
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          initialize();
+           const now = Date.now();
+      const delta = now - (lastBackgroundTimeRef.current || 0);
+      if (delta > 60000) {
+        initialize();
+      } else {
+        reconnectWebSocket();
+      }
         }
       }
       currentAppState = nextAppState;
