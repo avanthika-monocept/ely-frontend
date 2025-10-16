@@ -9,7 +9,7 @@ import {
   Dimensions,
   Pressable,
 } from "react-native";
-import Close from "../../../assets/Close.svg";
+import Close from "../../../assets/Error.svg";
 const { width } = Dimensions.get("window");
 
 const ErrorModal = ({
