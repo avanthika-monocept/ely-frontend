@@ -689,6 +689,7 @@ const handleErrorMessage = (errorData) => {
             startResponseTimeout={startResponseTimeout}
             token={token}
             hasMore={hasMore}
+            historyLoading={historyLoading}
           />
         )}
         {!isInitializing && navigationPage !== stringConstants.coach && (
