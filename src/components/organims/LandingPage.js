@@ -26,6 +26,7 @@ export const LandingPage = memo(({
   startResponseTimeout,
   token,
   hasMore,
+  historyLoading,
 }) => {
   let scrollViewRef = null;
   const firstName=reconfigApiResponse?.userInfo?.userName?.split(" ")[0]
@@ -42,7 +43,7 @@ export const LandingPage = memo(({
           end={{ x: -0.3, y: 1 }}
           style={styles.chatBodyContainer}
         >
-          {hasMore && 
+          {hasMore && !historyLoading &&
           <TouchableOpacity
               style={styles.recentConvoBtn}
               onPress={() => setnavigationPage(stringConstants.agenda)}
@@ -104,6 +105,7 @@ LandingPage.propTypes = {
   startResponseTimeout: PropTypes.func,
   token: PropTypes.string,
   hasMore: PropTypes.bool,
+  historyLoading: PropTypes.bool,
 };
  
 const styles = StyleSheet.create({

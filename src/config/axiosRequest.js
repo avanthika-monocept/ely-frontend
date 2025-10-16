@@ -1,4 +1,5 @@
 import axios from "axios";
+import { VALIDATE_JWT_TOKEN_URL } from "../config/apiUrls";
 
 // Function to create an axios instance dynamically
 const createAxiosInstance = (baseURL, headers = {}) => {
@@ -27,9 +28,17 @@ const apiCall = async ({
   } catch (error) {
     // Throw specific error for token expiry
     if (error.response?.status === 401 || error.response?.status === 403) {
-      const tokenError = new Error("TOKEN_EXPIRED");
-      tokenError.isTokenExpired = true;
-      throw tokenError;
+      if (url === VALIDATE_JWT_TOKEN_URL) {
+        const tokenError = new Error("PLATFORM_TOKEN_EXPIRED");
+        tokenError.isTokenExpired = true;
+        throw tokenError;
+      }
+      else {
+        const tokenError = new Error("TOKEN_EXPIRED");
+        tokenError.isTokenExpired = true;
+        throw tokenError;
+      }
+
     }
     console.error("API Error:", error?.response?.data || error.message);
     throw error;

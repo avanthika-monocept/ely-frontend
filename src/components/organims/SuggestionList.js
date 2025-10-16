@@ -13,25 +13,28 @@ import { socketMessageTypes, stringConstants } from "../../constants/StringConst
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
 import PropTypes from "prop-types";
-import { formatUserMessage } from "../../common/utils";
+import { formatUserMessage, getMessageStatus } from "../../common/utils";
 import { encryptSocketPayload } from "../../common/cryptoUtils";
+import { useNetInfo } from "@react-native-community/netinfo";
 export const SuggestionList = ({
   setnavigationPage,
   reconfigApiResponse,
   socket,
   }) => {
-
+ const netInfo = useNetInfo();
   const dispatch = useDispatch();
   const data = reconfigApiResponse?.options || [];
   const [selectedItemId, setSelectedItemId] = useState(null);
   const handleTopicSelect = async (topic) => {
     setnavigationPage(stringConstants.agenda);
+    const status = getMessageStatus(netInfo, socket);
     const { message, socketPayload } = formatUserMessage(
       topic,
       reconfigApiResponse,
       socketMessageTypes.replyToLandingPage,
       null,
-      0
+      0,
+      status
     );
     dispatch(addMessage(message));
     const action = socketPayload.action;

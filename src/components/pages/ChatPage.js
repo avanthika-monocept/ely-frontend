@@ -16,15 +16,16 @@ import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
-import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
+import { addChatHistory, clearMessages, addMessage, updateMessageStatus } from "../../store/reducers/chatSlice";
+import { useNavigation } from "@react-navigation/native";
 import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
-import { flex, size, spacing } from "../../constants/Dimensions";
+import { flex, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
-import { ApiResponseConstant, platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
+import { platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
@@ -32,8 +33,7 @@ import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { showToast } from "../../store/reducers/toastSlice";
-import ToastMessage from "../atoms/ToastMessage";
+import ErrorModal from "../atoms/ErrorModal";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
@@ -42,12 +42,14 @@ export const ChatPage = ({ route }) => {
   } = route?.params || {};
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
+  const navigation = useNavigation();
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
   const isAtBottomRef = useRef(true);
   const reconfigApiResponseRef = useRef({});
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
+  const lastBackgroundTimeRef = useRef(null);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -65,6 +67,12 @@ export const ChatPage = ({ route }) => {
   const [keyboardHeight, setKeyboardHeight] = useState("");
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
+  const [modalData, setModalData] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    buttonText: "",
+  });
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -122,7 +130,18 @@ export const ChatPage = ({ route }) => {
 
 
   }, []);
+  const showErrorModal = (title, message, buttonText = " ") => {
+    setModalData({
+      visible: true,
+      title,
+      message,
+      buttonText,
+    });
+  };
 
+  const hideModal = () => {
+    setModalData((prev) => ({ ...prev, visible: false }));
+  };
 
   const handleReplyMessage = useCallback(() => {
     if (messageObjectId) {
@@ -146,13 +165,13 @@ export const ChatPage = ({ route }) => {
       }, 300);
     }
   }, []);
-  const showTokenToast = () => {
-    dispatch(showToast({
-      type: "error",
-      title: "Session Expired",
-      message: "session expired. Please login again.",
-      actions:[],
-    }));
+  const showErrorModalTokenExpiry = () => {
+   
+      showErrorModal(
+          "Failed to Login",
+          "Unable to Authenticate details.",
+          "Go Back"
+        )
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
@@ -166,8 +185,9 @@ export const ChatPage = ({ route }) => {
     }
   };
   const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
+  
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -208,19 +228,20 @@ export const ChatPage = ({ route }) => {
           // retry only once with new token
           await loadChatHistory(agentId, page, message, refreshedToken, true);
         } catch (refreshError) {
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
       } else {
         // second time or other error
+        setHasMore(false)
         console.error(stringConstants.failToLoad, err);
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     }
   };
 
   const reconnectWebSocket = async () => {
     if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -232,7 +253,7 @@ export const ChatPage = ({ route }) => {
     } catch (error) {
       console.error("WebSocket reconnection failed:", error);
       if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     }
   };
@@ -248,7 +269,7 @@ export const ChatPage = ({ route }) => {
 
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected);
-      setTokenExpiryRetryCount(0); // Reset on successful connection
+      setTokenExpiryRetryCount(0);
     };
     ws.current.onmessage = (event) => {
       try {
@@ -257,6 +278,9 @@ export const ChatPage = ({ route }) => {
         // Handle encrypted payload
         if (data.payload) {
           const decryptedData = decryptSocketPayload(data);
+          if(decryptedData.type===socketConstants.error){
+            handleErrorMessage(decryptedData);
+          }
           if (decryptedData.type === socketConstants.botResponse) {
             handleBotMessage(decryptedData);
           }
@@ -316,11 +340,11 @@ export const ChatPage = ({ route }) => {
         }
       } catch (error) {
 
-        showTokenToast();
+        showErrorModalTokenExpiry();
       }
     } else {
 
-      showTokenToast();
+      showErrorModalTokenExpiry();
     }
   };
   const cleanupWebSocket = (sendDisconnect = false) => {
@@ -391,7 +415,7 @@ export const ChatPage = ({ route }) => {
 
   const initialize = async (isRetry = false) => {
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
-      showTokenToast();
+      showErrorModalTokenExpiry();
       return;
     }
 
@@ -472,13 +496,21 @@ export const ChatPage = ({ route }) => {
           }
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
       } else {
         console.error("Initialize error:", error);
         if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
-          showTokenToast();
+          showErrorModalTokenExpiry();
         }
+      }
+
+      if (error.message === "PLATFORM_TOKEN_EXPIRED") {
+        showErrorModal(
+          "Failed to Login",
+          "Unable to Authenticate details.",
+          "Go Back"
+        )
       }
     } finally {
       setIsInitializing(false);
@@ -508,11 +540,18 @@ export const ChatPage = ({ route }) => {
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+        lastBackgroundTimeRef.current = Date.now();
         safelyCleanupSocket();
       }
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          initialize();
+           const now = Date.now();
+      const delta = now - (lastBackgroundTimeRef.current || 0);
+      if (delta > 60000) {
+        initialize();
+      } else {
+        reconnectWebSocket();
+      }
         }
       }
       currentAppState = nextAppState;
@@ -541,7 +580,13 @@ export const ChatPage = ({ route }) => {
     }
     dispatch(addMessage(botMessage));
   };
-
+const handleErrorMessage = (errorData) => {
+  clearResponseTimeout();
+  dispatch(updateMessageStatus({
+    messageId: errorData.messageId,
+    status: socketConstants.failed,
+   }));
+};
   const handleAcknowledgement = (data) => {
 
     if (data.acknowledgement === socketConstants.received) {
@@ -630,7 +675,24 @@ export const ChatPage = ({ route }) => {
       )}
 
       <View style={styles.content}>
-        <ToastMessage />
+       
+        {modalData.visible &&
+          <View style={styles.modalContainer}>
+            <ErrorModal
+              visible={modalData.visible}
+              title={modalData.title}
+              message={modalData.message}
+              buttonText={modalData.buttonText}
+              action={() => {
+                hideModal();
+                navigation.goBack()
+              }}
+            />
+          </View>
+
+        }
+
+
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
             socket={ws.current}
@@ -639,6 +701,7 @@ export const ChatPage = ({ route }) => {
             startResponseTimeout={startResponseTimeout}
             token={token}
             hasMore={hasMore}
+            historyLoading={historyLoading}
           />
         )}
         {!isInitializing && navigationPage !== stringConstants.coach && (
@@ -742,7 +805,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: spacing.space_10,
     right: spacing.space_m3,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   }
+
 });
 ChatPage.propTypes = {
   route: PropTypes.shape({
