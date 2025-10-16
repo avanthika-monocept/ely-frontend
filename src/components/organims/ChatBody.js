@@ -222,7 +222,8 @@ const dispatch = useDispatch();
           },
         });
       }
-      if (msg.status === socketConstants.failed || msg.status === socketConstants.pending) {
+      const isHistoricalMessage = msg.isFromHistory === true;
+      if ((msg.status === socketConstants.failed || msg.status === socketConstants.pending) && !isHistoricalMessage) {
         result.push({
           id: `error-toast-${msg.messageId}`,
           type: "inline_error_toast",

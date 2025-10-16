@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import SingleTick from "../../../assets/singleTick.svg";
 import DoubleTickRead from "../../../assets/doubleTick.svg";
 import DoubleTickDelivered from "../../../assets/doubleTickSent.svg";
+import AlertIcon from "../../../assets/alert.svg";
 import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { fontStyle } from "../../constants/Fonts";
@@ -11,6 +12,8 @@ import TimerIcon from "../../../assets/timer.svg";
 export const TimeAndTick = ({ time, status, isBot, isImageOnly  }) => {
   const getTickIcon = () => {
     switch (status) {
+      case "FAILED":
+      return <AlertIcon testID="alert-icon" width={12} height={12} />;
       case "PENDING":
       return <TimerIcon testID="timer-icon" width={12}/>;
       case "READ":

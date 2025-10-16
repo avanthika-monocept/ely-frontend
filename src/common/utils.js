@@ -129,6 +129,7 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMe
         image: [],
          document: [],
       },
+      isFromHistory: false,
     },
     socketPayload: {
       action: CHAT_MESSAGE_PROXY,
@@ -165,9 +166,9 @@ export const formatHistoryMessage = (apiMessage) => {
     messageTo: isBot ? stringConstants.bot : stringConstants.user,
     dateTime: new Date(apiMessage.createdAt * 1000).toISOString(),
     activity: activity, 
-    replyId: apiMessage.replyToMessageId, 
+    replyId:apiMessage.replyToMessageId, 
     conversationEnded: false, 
-    status: socketConstants.read,
+    status:  apiMessage.status === socketConstants.failed? socketConstants.failed : socketConstants.read,
     message: {
       text: apiMessage.text,
       table: null, 
@@ -179,6 +180,7 @@ export const formatHistoryMessage = (apiMessage) => {
       image: [],
       document: [],
     },
+    isFromHistory: true,
   };
 };
  export const getFileExtension = (url) => {
