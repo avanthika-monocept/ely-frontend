@@ -73,6 +73,7 @@ export const ChatPage = ({ route }) => {
     message: "",
     buttonText: "",
   });
+  const [socket, setSocket] = useState(null);
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const ws = useRef(null);
   const backgroundColor = reconfigApiResponse?.theme?.backgroundColor || colors.primaryColors.lightSurface;
@@ -272,6 +273,7 @@ export const ChatPage = ({ route }) => {
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected);
       setTokenExpiryRetryCount(0);
+      setSocket(ws.current);
     };
     ws.current.onmessage = (event) => {
       try {
@@ -364,6 +366,7 @@ export const ChatPage = ({ route }) => {
       console.error(error);
     } finally {
       ws.current = null;
+      setSocket(ws.current);
     }
   };
   const sendAcknowledgement = (messageId) => {
@@ -697,7 +700,7 @@ export const ChatPage = ({ route }) => {
 
         {!isInitializing && navigationPage === stringConstants.coach && (
           <LandingPage
-            socket={ws.current}
+            socket={socket}
             setnavigationPage={setnavigationPage}
             reconfigApiResponse={reconfigApiResponse}
             startResponseTimeout={startResponseTimeout}
@@ -720,7 +723,7 @@ export const ChatPage = ({ route }) => {
             loadChatHistory={loadChatHistory}
             page={page}
             reconfigApiResponse={reconfigApiResponse}
-            socket={ws.current}
+            socket={socket}
             copyToClipboard={copyToClipboard}
             setCopied={setCopied}
             token={token}
@@ -757,7 +760,7 @@ export const ChatPage = ({ route }) => {
         setMessageObjectId={setMessageObjectId}
         setReplyMessageId={setReplyMessageId}
         replyMessageId={replyMessageId}
-        socket={ws.current}
+        socket={socket}
         setReply={setReply}
         replyIndex={replyIndex}
         reply={reply}
