@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiI0ODc1NENfQWR2aXNvciIsImlhdCI6MTc2MDUyNjQ3OSwiZXhwIjoxNzYwNjEyODc5fQ.nIPgQfuegv5e-pYjtzHqtBCoEF2z6JBVBG8KmoFIUQEUBPsWnI9fInehCpk_EGaQxKxbMkXf1cPFvywQUGDrIw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "sunildwivedi4040@gmail.com", firebaseId: undefined, role: "Advisor", userName: "SUNIL KUMAR DWIVEDI" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiI0ODc1NENfQWR2aXNvciIsImlhdCI6MTc2MDU5NDY4MCwiZXhwIjoxNzYwNjgxMDgwfQ.imDyOQuDXGKuH87K3stZ0Var936qgtiIn384xSmDTyO9PE8UkncjXvU5dViYiYFJT3Qa3ihAZssZIVkicmj0OA", platform: "MSPACE", userInfo: { agentId: "48754C", deviceId: "d29b3dbd9671ad50", email: "sunildwivedi4040@gmail.com", firebaseId: undefined, role: "Advisor", userName: "SUNIL KUMAR DWIVEDI" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -166,12 +166,12 @@ export const ChatPage = ({ route }) => {
     }
   }, []);
   const showErrorModalTokenExpiry = () => {
-   
-      showErrorModal(
-          "Failed to Login",
-          "Unable to Authenticate details.",
-          "Go Back"
-        )
+
+    showErrorModal(
+      "Failed to Login",
+      "Unable to Authenticate details.",
+      "Go Back"
+    )
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
   const onMomentumScrollEnd = ({ nativeEvent }) => {
@@ -185,7 +185,7 @@ export const ChatPage = ({ route }) => {
     }
   };
   const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
-  
+
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
@@ -208,11 +208,8 @@ export const ChatPage = ({ route }) => {
           msg?.status === socketConstants.delivered
         ) {
 
-          
+
           sendAcknowledgement(msg.messageId);
-        }
-        if(msg.messageId=="dcbeb799-79c1-45bd-bdfa-844869065474"){
-          console.log("msg",msg)
         }
       });
       const formattedMessages = newMessages?.content.map(msg =>
@@ -283,7 +280,7 @@ export const ChatPage = ({ route }) => {
         // Handle encrypted payload
         if (data.payload) {
           const decryptedData = decryptSocketPayload(data);
-          if(decryptedData.type===socketConstants.error){
+          if (decryptedData.type === socketConstants.error) {
             handleErrorMessage(decryptedData);
           }
           if (decryptedData.type === socketConstants.botResponse) {
@@ -417,6 +414,24 @@ export const ChatPage = ({ route }) => {
       throw error;
     }
   };
+  const waitForSocketOpen = (socket, timeout = 8000) => {
+    return new Promise((resolve, reject) => {
+      if (!socket) return reject(new Error("Socket not initialized"));
+      if (socket.readyState === WebSocket.OPEN) return resolve();
+
+      const checkInterval = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        reject(new Error("WebSocket connection timed out"));
+      }, timeout);
+    });
+  };
 
   const initialize = async (isRetry = false) => {
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
@@ -465,12 +480,11 @@ export const ChatPage = ({ route }) => {
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
 
         if (response.userInfo.agentId && newToken) {
+          connectWebSocket(response.userInfo.agentId, newToken);
+          await waitForSocketOpen(ws.current);
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
 
-        if (response.userInfo.agentId && newToken) {
-          connectWebSocket(response.userInfo.agentId, newToken);
-        }
       }
     } catch (error) {
       // 🔹 Check standardized error from thunk
@@ -550,13 +564,13 @@ export const ChatPage = ({ route }) => {
       }
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-           const now = Date.now();
-      const delta = now - (lastBackgroundTimeRef.current || 0);
-      if (delta > 60000) {
-        initialize();
-      } else {
-        reconnectWebSocket();
-      }
+          const now = Date.now();
+          const delta = now - (lastBackgroundTimeRef.current || 0);
+          if (delta > 60000) {
+            initialize();
+          } else {
+            reconnectWebSocket();
+          }
         }
       }
       currentAppState = nextAppState;
@@ -585,13 +599,13 @@ export const ChatPage = ({ route }) => {
     }
     dispatch(addMessage(botMessage));
   };
-const handleErrorMessage = (errorData) => {
-  clearResponseTimeout();
-  dispatch(updateMessageStatus({
-    messageId: errorData.messageId,
-    status: socketConstants.failed,
-   }));
-};
+  const handleErrorMessage = (errorData) => {
+    clearResponseTimeout();
+    dispatch(updateMessageStatus({
+      messageId: errorData.messageId,
+      status: socketConstants.failed,
+    }));
+  };
   const handleAcknowledgement = (data) => {
 
     if (data.acknowledgement === socketConstants.received) {
@@ -663,7 +677,7 @@ const handleErrorMessage = (errorData) => {
       )}
 
       <View style={styles.content}>
-       
+
         {modalData.visible &&
           <View style={styles.modalContainer}>
             <ErrorModal
