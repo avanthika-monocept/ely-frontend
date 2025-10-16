@@ -69,7 +69,20 @@ const chatSlice = createSlice({
         message.status = status;
       }
     },
-
+    retryMessage: (state, action) => {
+      const { messageId, status, newDateTime } = action.payload;
+      const messageIndex = state.messages.findIndex(msg => msg.messageId === messageId);
+      if (messageIndex !== -1) {
+        const message = state.messages[messageIndex];
+        const updatedMessage = {
+          ...message,
+          status: status,
+          dateTime: newDateTime || new Date().toISOString() 
+        };
+        state.messages.splice(messageIndex, 1);
+        state.messages.push(updatedMessage);
+      }
+    },
     markAllMessagesAsRead: (state) => {
       state.messages.forEach(msg => {
         if (msg.messageTo === "bot") {
@@ -80,6 +93,6 @@ const chatSlice = createSlice({
   },
 });
 
-export const { initializeMessages, addMessage, clearMessages, updateActivity, addChatHistory, updateMessageStatus, markAllMessagesAsRead } =
+export const { initializeMessages, addMessage, clearMessages, updateActivity, addChatHistory, updateMessageStatus, markAllMessagesAsRead, retryMessage } =
   chatSlice.actions;
 export default chatSlice.reducer;

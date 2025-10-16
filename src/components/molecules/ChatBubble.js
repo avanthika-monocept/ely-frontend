@@ -15,6 +15,7 @@ import { addMessage, updateActivity } from "../../store/reducers/chatSlice";
 import {
   splitMarkdownIntoTableAndText,
   formatUserMessage,
+  getMessageStatus
 } from "../../common/utils";
 const MediaMessageView = React.lazy(() => import('../atoms/MediaMessageView'));
 import TableBaseBubble from "../atoms/TableBaseBubble";
@@ -29,6 +30,8 @@ import PropTypes from "prop-types";
 import colors from "../../constants/Colors";
 import { socketMessageTypes, stringConstants } from "../../constants/StringConstants";
 import { encryptSocketPayload } from "../../common/cryptoUtils";
+import { useNetInfo } from "@react-native-community/netinfo";
+
 const ChatBubble = React.memo(({
   isBot,
   options,
@@ -62,6 +65,7 @@ const ChatBubble = React.memo(({
     ? reconfigApiResponse?.theme?.botMessageColor.trim() || colors.primaryColors.skyBlue
     : reconfigApiResponse?.theme?.userMessageColor.trim() || colors.primaryColors.lightSurface;
   const dispatch = useDispatch();
+  const netInfo = useNetInfo();
   const handleSelection = (id, messageId) => {
     dispatch(updateActivity({ messageId: messageId, activity: id }));
   };
@@ -95,13 +99,14 @@ const ChatBubble = React.memo(({
   };
   const handleFeedbackSelect = (feedback) => {
     setSelectedFeedback(feedback);
+    const status = getMessageStatus(netInfo, socket);
     const { message, socketPayload } = formatUserMessage(
       feedback,
       reconfigApiResponse,
       socketMessageTypes.quickReply,
       null,
       0,
-
+      status
     );
     dispatch(addMessage(message));
     const action = socketPayload.action;

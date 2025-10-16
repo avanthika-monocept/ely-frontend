@@ -107,7 +107,7 @@ export const getFormattedDividerDate = (dateString) => {
   };
 };
 
-export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMessageId = null,replyIndex=0) => {
+export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMessageId = null,replyIndex=0,status='SENT') => {
   const messageId = generateUniqueId();
   return {
      message: {
@@ -115,9 +115,10 @@ export const formatUserMessage = (text, reconfigApiResponse, messageType,replyMe
       messageTo: stringConstants.bot,
       dateTime: new Date().toISOString(),
       activity: null,
-      status: "SENT",
+      status: status,
       replyId: replyMessageId,
       replyIndex: replyIndex,
+      messageType,
       message: {
         text: text.trim(),
         botOption: false,
@@ -205,6 +206,12 @@ export const formatHistoryMessage = (apiMessage) => {
     png: "image/png"
   };
   return mimeTypes[extension];
+};
+
+export const getMessageStatus = (netInfo, socket) => {
+  const isOnline = netInfo?.isConnected ?? false;
+  const isWebSocketConnected = socket?.readyState === WebSocket.OPEN;
+  return (isOnline && isWebSocketConnected) ? "SENT" : "PENDING";
 };
 
  

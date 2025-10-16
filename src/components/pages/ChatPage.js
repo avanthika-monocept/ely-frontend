@@ -16,16 +16,16 @@ import FabFloatingButton from "../atoms/FabFloatingButton";
 import { LandingPage } from "../organims/LandingPage";
 import Clipboard from "@react-native-clipboard/clipboard";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
-import { addChatHistory, clearMessages, addMessage, updateMessageStatus, markAllMessagesAsRead } from "../../store/reducers/chatSlice";
+import { addChatHistory, clearMessages, addMessage, updateMessageStatus } from "../../store/reducers/chatSlice";
 import { useNavigation } from "@react-navigation/native";
 import { showLoader, hideLoader } from "../../store/reducers/loaderSlice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../store/actions";
 import { fetchChatHistory } from "../../config/api/chatHistory";
 import colors from "../../constants/Colors";
-import { flex, size, spacing } from "../../constants/Dimensions";
+import { flex, spacing } from "../../constants/Dimensions";
 import { splitMarkdownIntoTableAndText, formatBotMessage, formatHistoryMessage } from "../../common/utils";
-import { ApiResponseConstant, platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
+import { platformName, socketConstants, stringConstants, timeoutConstants } from "../../constants/StringConstants";
 import VideoLoader from "../atoms/VideoLoader";
 import { validateJwtToken } from "../../config/api/ValidateJwtToken";
 import { WEBSOCKET_BASE_URL } from "../../constants/constants";
@@ -33,15 +33,13 @@ import PropTypes from "prop-types";
 import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
 import { encryptSocketPayload, decryptSocketPayload } from "../../common/cryptoUtils";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { showToast } from "../../store/reducers/toastSlice";
-import ToastMessage from "../atoms/ToastMessage";
 import ErrorModal from "../atoms/ErrorModal";
 export const ChatPage = ({ route }) => {
   const {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwNDI1NDg2LCJleHAiOjE3NjA1MTE4ODZ9.i2URoI2z2mK9GvQY6Et5pyRPGqvixrn7vBfIngZcWBOFu41DQuE6vCufwBN3kfPWX7CLsB5r8Ps1_Wr0zSciIw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Suchit Pansare" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiI0ODc1NENfQWR2aXNvciIsImlhdCI6MTc2MDUyNjQ3OSwiZXhwIjoxNzYwNjEyODc5fQ.nIPgQfuegv5e-pYjtzHqtBCoEF2z6JBVBG8KmoFIUQEUBPsWnI9fInehCpk_EGaQxKxbMkXf1cPFvywQUGDrIw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "sunildwivedi4040@gmail.com", firebaseId: undefined, role: "Advisor", userName: "SUNIL KUMAR DWIVEDI" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -52,6 +50,7 @@ export const ChatPage = ({ route }) => {
   const reconfigApiResponseRef = useRef({});
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
+  const lastBackgroundTimeRef = useRef(null);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -208,7 +207,12 @@ export const ChatPage = ({ route }) => {
           msg?.messageTo === stringConstants.userCaps &&
           msg?.status === socketConstants.delivered
         ) {
+
+          
           sendAcknowledgement(msg.messageId);
+        }
+        if(msg.messageId=="dcbeb799-79c1-45bd-bdfa-844869065474"){
+          console.log("msg",msg)
         }
       });
       const formattedMessages = newMessages?.content.map(msg =>
@@ -541,11 +545,18 @@ export const ChatPage = ({ route }) => {
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
       if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+        lastBackgroundTimeRef.current = Date.now();
         safelyCleanupSocket();
       }
       if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-          initialize();
+           const now = Date.now();
+      const delta = now - (lastBackgroundTimeRef.current || 0);
+      if (delta > 60000) {
+        initialize();
+      } else {
+        reconnectWebSocket();
+      }
         }
       }
       currentAppState = nextAppState;

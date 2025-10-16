@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import ChatBubble from "../molecules/ChatBubble";
-import { shallowEqual, useSelector } from "react-redux";
+import { shallowEqual, useSelector, useDispatch } from "react-redux";
 import ChatDateSeparator from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
@@ -16,6 +16,12 @@ import { socketConstants, stringConstants } from "../../constants/StringConstant
 import { fontStyle } from "../../constants/Fonts";
 import ChatSkeletonLoader from "../atoms/ChatSkeletonLoader";
 import ToastMessage from "../atoms/ToastMessage";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
+import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
+import { useNetInfo } from "@react-native-community/netinfo";
+import { getMessageStatus } from "../../common/utils";
+import { retryMessage, updateMessageStatus } from "../../store/reducers/chatSlice";
+
 const MessageItem = React.memo(({
   item,
   index,
@@ -128,7 +134,8 @@ const ChatBody = React.memo(({
     handleScrollEnd: PropTypes.func,
 
   };
-
+const netInfo = useNetInfo();
+const dispatch = useDispatch();
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const isLoading = useSelector((state) => state.loader.isLoading);
 
@@ -215,13 +222,14 @@ const ChatBody = React.memo(({
           },
         });
       }
-      if (msg.status === socketConstants.failed) {
+      if (msg.status === socketConstants.failed || msg.status === socketConstants.pending) {
         result.push({
           id: `error-toast-${msg.messageId}`,
           type: "inline_error_toast",
           errorMessage: msg.errorMessage || "Failed to send message.",
           errorCode: msg.errorCode,
           messageId: msg.messageId,
+          showRetry: msg.status === socketConstants.pending,
         });
       }
 
@@ -233,10 +241,38 @@ const ChatBody = React.memo(({
   }, [messages]);
   const retrySendMessage = (messageId) => {
     const messageToRetry = messages.find(msg => msg.messageId === messageId);
-    if (messageToRetry) {
-      socket.emit('retryMessage', { messageId: messageToRetry.messageId, text: messageToRetry.message.text });
-    }
-  };
+    if (!messageToRetry) return;
+    const status = getMessageStatus(netInfo, socket);
+     dispatch(retryMessage({
+      messageId: messageId,
+      status: status,
+      newDateTime: new Date().toISOString()
+    }));
+    const retryPayload = {
+      action: CHAT_MESSAGE_PROXY,
+      message: {
+        emailId: reconfigApiResponse?.userInfo?.email,
+        userId: reconfigApiResponse?.userInfo?.agentId,
+        messageId: messageToRetry.messageId,
+        platform: reconfigApiResponse?.theme?.platform,
+        sendType: "MESSAGE",
+        messageTo: stringConstants.botCaps,
+        messageType: messageToRetry.messageType || "text",
+        text: messageToRetry.message?.text || messageToRetry.text,
+        replyToMessageId: messageToRetry.replyId,
+      }
+    };
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      const encryptedPayload = encryptSocketPayload(retryPayload.message);
+      const finalPayload = {
+        action: CHAT_MESSAGE_PROXY,
+        token: token,
+        payload: encryptedPayload
+      };
+      socket.send(JSON.stringify(finalPayload));
+    
+   }
+  }
   const renderItem = useCallback(({ item, index }) => {
     if (item.type === stringConstants.separator) {
       return <ChatDateSeparator date={item.date} />;
@@ -258,19 +294,23 @@ const ChatBody = React.memo(({
       );
     }
     if (item.type === "inline_error_toast") {
-      // Inline error toast rendering
+      const showRetry = item.showRetry;
       return (
         <View style={{ marginBottom: 4 }}>
           <ToastMessage
             visible={true}
-            title={"Message Delivery Failed"}
+            title={showRetry? "Message Delivery Failed": "Something went wrong on our end!"}
             message={""}
-            actions={[
-              {
-                label: "Retry",
-                onPress: () => retrySendMessage(item.messageId), // Implement retry logic
-              },
-            ]}
+            actions={
+              showRetry
+            ? [
+                {
+                  label: "Retry",
+                  onPress: () => retrySendMessage(item.messageId),
+                  disabled: isLoading,
+                },
+              ]
+            : []}
           />
         </View>
       );
