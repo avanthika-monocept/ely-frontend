@@ -6,15 +6,22 @@ import {
   Text,
 } from "react-native";
 import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
-import  ChatBubble  from "../molecules/ChatBubble";
-import { shallowEqual, useSelector } from "react-redux";
-import  ChatDateSeparator  from "../atoms/ChatDateSeparator";
+import ChatBubble from "../molecules/ChatBubble";
+import { shallowEqual, useSelector, useDispatch } from "react-redux";
+import ChatDateSeparator from "../atoms/ChatDateSeparator";
 import { spacing, size } from "../../constants/Dimensions";
 import PropTypes from "prop-types";
 import MessageBanner from "../atoms/MessageBanner";
-import { stringConstants } from "../../constants/StringConstants";
+import { socketConstants, stringConstants } from "../../constants/StringConstants";
 import { fontStyle } from "../../constants/Fonts";
 import ChatSkeletonLoader from "../atoms/ChatSkeletonLoader";
+import ToastMessage from "../atoms/ToastMessage";
+import { encryptSocketPayload } from "../../common/cryptoUtils";
+import { CHAT_MESSAGE_PROXY } from "../../config/apiUrls";
+import { useNetInfo } from "@react-native-community/netinfo";
+import { getMessageStatus } from "../../common/utils";
+import { retryMessage, updateMessageStatus } from "../../store/reducers/chatSlice";
+
 const MessageItem = React.memo(({
   item,
   index,
@@ -29,9 +36,9 @@ const MessageItem = React.memo(({
   socket,
   reconfigApiResponse,
   setCopied,
- 
+
 }) => {
-  const replyMessageObj = React.useMemo(() => 
+  const replyMessageObj = React.useMemo(() =>
     item?.replyId ? messages.find((msg) => msg?.messageId === item.replyId) : null,
     [item.replyId, messages]
   );
@@ -39,7 +46,7 @@ const MessageItem = React.memo(({
   const replyMessage = replyMessageObj?.message?.text || replyMessageObj?.text || null;
   const replyFrom = replyMessageObj?.messageTo.toLowerCase() || "";
   const isBot = item?.messageTo?.toLowerCase() === stringConstants.user;
-  
+
 
   return (
     <Animated.View
@@ -90,7 +97,7 @@ MessageItem.propTypes = {
   reconfigApiResponse: PropTypes.object.isRequired,
   setCopied: PropTypes.func.isRequired
 };
-const ChatBody =React.memo(({
+const ChatBody = React.memo(({
   scrollViewRef,
   handleScroll,
   setDropDownType,
@@ -107,7 +114,7 @@ const ChatBody =React.memo(({
   historyLoading,
   hasMore,
   handleScrollEnd,
-  }) => {
+}) => {
   ChatBody.propTypes = {
     scrollViewRef: PropTypes.object.isRequired,
     handleScroll: PropTypes.func.isRequired,
@@ -122,16 +129,17 @@ const ChatBody =React.memo(({
     setCopied: PropTypes.func,
     setReplyIndex: PropTypes.func,
     token: PropTypes.string,
-    historyLoading:PropTypes.bool,
+    historyLoading: PropTypes.bool,
     hasMore: PropTypes.bool,
     handleScrollEnd: PropTypes.func,
-    
-  };
 
+  };
+const netInfo = useNetInfo();
+const dispatch = useDispatch();
   const messages = useSelector((state) => state.chat.messages, shallowEqual);
   const isLoading = useSelector((state) => state.loader.isLoading);
- 
-const formatTime = useCallback((dateTime) => {
+
+  const formatTime = useCallback((dateTime) => {
     let date;
     if (typeof dateTime === "string") {
       date = new Date(dateTime);
@@ -202,7 +210,7 @@ const formatTime = useCallback((dateTime) => {
       }
       result.push({ ...msg, type: "message" });
       if (msg?.conversationEnded) {
-    
+
         result.push({
           id: `banner-conversation-ended-${msg.messageId}`,
           type: stringConstants.banner,
@@ -214,12 +222,58 @@ const formatTime = useCallback((dateTime) => {
           },
         });
       }
+      const isHistoricalMessage = msg.isFromHistory === true;
+      if ((msg.status === socketConstants.failed || msg.status === socketConstants.pending) && !isHistoricalMessage) {
+        result.push({
+          id: `error-toast-${msg.messageId}`,
+          type: "inline_error_toast",
+          errorMessage: msg.errorMessage || "Failed to send message.",
+          errorCode: msg.errorCode,
+          messageId: msg.messageId,
+          showRetry: msg.status === socketConstants.pending,
+        });
+      }
+
     }
     return result;
-  },[]);
+  }, []);
   const chatWithSeparators = React.useMemo(() => {
     return generateChatDataWithSeparators(messages);
   }, [messages]);
+  const retrySendMessage = (messageId) => {
+    const messageToRetry = messages.find(msg => msg.messageId === messageId);
+    if (!messageToRetry) return;
+    const status = getMessageStatus(netInfo, socket);
+     dispatch(retryMessage({
+      messageId: messageId,
+      status: status,
+      newDateTime: new Date().toISOString()
+    }));
+    const retryPayload = {
+      action: CHAT_MESSAGE_PROXY,
+      message: {
+        emailId: reconfigApiResponse?.userInfo?.email,
+        userId: reconfigApiResponse?.userInfo?.agentId,
+        messageId: messageToRetry.messageId,
+        platform: reconfigApiResponse?.theme?.platform,
+        sendType: "MESSAGE",
+        messageTo: stringConstants.botCaps,
+        messageType: messageToRetry.messageType || "text",
+        text: messageToRetry.message?.text || messageToRetry.text,
+        replyToMessageId: messageToRetry.replyId,
+      }
+    };
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      const encryptedPayload = encryptSocketPayload(retryPayload.message);
+      const finalPayload = {
+        action: CHAT_MESSAGE_PROXY,
+        token: token,
+        payload: encryptedPayload
+      };
+      socket.send(JSON.stringify(finalPayload));
+    
+   }
+  }
   const renderItem = useCallback(({ item, index }) => {
     if (item.type === stringConstants.separator) {
       return <ChatDateSeparator date={item.date} />;
@@ -240,13 +294,35 @@ const formatTime = useCallback((dateTime) => {
         </View>
       );
     }
+    if (item.type === "inline_error_toast") {
+      const showRetry = item.showRetry;
+      return (
+        <View style={{ marginBottom: 4 }}>
+          <ToastMessage
+            visible={true}
+            title={showRetry? "Message Delivery Failed": "Something went wrong on our end!"}
+            message={""}
+            actions={
+              showRetry
+            ? [
+                {
+                  label: "Retry",
+                  onPress: () => retrySendMessage(item.messageId),
+                  disabled: isLoading,
+                },
+              ]
+            : []}
+          />
+        </View>
+      );
+    }
 
-  return (
+    return (
       <MessageItem
         item={item}
         index={index}
         messages={messages}
-        
+
         formatTime={formatTime}
         setDropDownType={setDropDownType}
         setMessageObjectId={setMessageObjectId}
@@ -291,7 +367,7 @@ const formatTime = useCallback((dateTime) => {
         hasMore && !historyLoading && reconfigApiResponse?.userInfo?.agentId &&
         loadChatHistory(reconfigApiResponse?.userInfo?.agentId, page, 5, token)
       }
-   onMomentumScrollEnd={handleScrollEnd}
+      onMomentumScrollEnd={handleScrollEnd}
 
       initialNumToRender={5}
       removeClippedSubviews={true}
@@ -313,12 +389,12 @@ const formatTime = useCallback((dateTime) => {
         ) : null
       }
       ListFooterComponent={
-    historyLoading ? (
-      <View style={styles.historyLoaderContainer}>
-        <ChatSkeletonLoader />
-      </View>
-    ) : null
-  }
+        historyLoading ? (
+          <View style={styles.historyLoaderContainer}>
+            <ChatSkeletonLoader />
+          </View>
+        ) : null
+      }
     />
   );
 });

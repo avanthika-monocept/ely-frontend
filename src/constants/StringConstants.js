@@ -66,9 +66,12 @@ export const timeoutConstants = {
 };
 
 export const socketConstants = {
+  error:"ERROR",
   disconnect: "disconnect",
   botResponse: "BOT_RESPONSE",
   acknowledgement: "ACKNOWLEDGEMENT",
+  failed: "FAILED",
+  pending:"PENDING",
   read: "READ",
   received: "RECEIVED",
   delivered: "DELIVERED",
