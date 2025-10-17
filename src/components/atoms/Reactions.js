@@ -34,10 +34,16 @@ export const Reactions = ({
       action: CHAT_MESSAGE_PROXY,
       payload: encryptedPayload
     };
-    socket.send(JSON.stringify(finalPayload));
+    setTimeout(() => {
+    if (socket && socket.readyState === 1) {
+      socket.send(JSON.stringify(finalPayload));
+    } else {
+      console.warn("Socket is not ready.");
+    }
+  }, 500);
+    
   };
-
-  return (
+return (
     <View style={styles.container}>
       {options.map(({ id, svg }) => (
         <View
