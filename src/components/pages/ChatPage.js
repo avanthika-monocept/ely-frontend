@@ -446,8 +446,8 @@ export const ChatPage = ({ route }) => {
       setIsInitializing(true);
       dispatch(clearMessages());
       setPage(0);
-if(!jwtToken || !userInfo.agentId || !platform){
-   console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
+      if (!jwtToken || !userInfo.agentId || !platform) {
+        console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
         showErrorModal(
           "Something went wrong",
           "Please try logging in again.",
@@ -455,20 +455,29 @@ if(!jwtToken || !userInfo.agentId || !platform){
         );
         setIsInitializing(false);
         return;
-}
-    
-      const validationResponse = await validateJwtToken(
-        jwtToken,
-        platform,
-        {
-          agentId: userInfo?.agentId,
-          userName: userInfo?.userName,
-          email: userInfo?.email,
-          role: userInfo?.role,
-          firebaseId: userInfo?.firebaseId,
-          deviceId: userInfo?.deviceId,
-        }
-      );
+      }
+      let validationResponse = null;
+      try {
+        validationResponse = await validateJwtToken(
+          jwtToken,
+          platform,
+          {
+            agentId: userInfo?.agentId,
+            userName: userInfo?.userName,
+            email: userInfo?.email,
+            role: userInfo?.role,
+            firebaseId: userInfo?.firebaseId,
+            deviceId: userInfo?.deviceId,
+          }
+        );
+      }
+      catch (err) {
+        console.error("[initialize] ❌ Token validation failed:", err);
+        showErrorModal("something went wrong", "Please try logging in again.", "Go Back");
+        setIsInitializing(false);
+        return;
+      }
+
 
       if (!validationResponse || validationResponse.status !== stringConstants.success) {
         throw new Error("TOKEN_EXPIRED"); // standardize failure reason
