@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, use } from "react";
 import {
   View,
   StyleSheet,
@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiI0ODc1NENfQWR2aXNvciIsImlhdCI6MTc2MDU5NDY4MCwiZXhwIjoxNzYwNjgxMDgwfQ.imDyOQuDXGKuH87K3stZ0Var936qgtiIn384xSmDTyO9PE8UkncjXvU5dViYiYFJT3Qa3ihAZssZIVkicmj0OA", platform: "MSPACE", userInfo: { agentId: "48754C", deviceId: "d29b3dbd9671ad50", email: "sunildwivedi4040@gmail.com", firebaseId: undefined, role: "Advisor", userName: "SUNIL KUMAR DWIVEDI" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYwNjgzNjY2LCJleHAiOjE3NjA3NzAwNjZ9.qiyOcC0I4_eusIy8MrUcjieqRctvwK7rXSU_NV-wwMETJL6vjaxVNdAU5knAiCMhChOMTcT7laUGpVTuDHxYpQ", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "Advisor", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -446,8 +446,17 @@ export const ChatPage = ({ route }) => {
       setIsInitializing(true);
       dispatch(clearMessages());
       setPage(0);
-
-      // 🔹 validate token
+if(!jwtToken || !userInfo.agentId || !platform){
+   console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
+        showErrorModal(
+          "Something went wrong",
+          "Please try logging in again.",
+          "Go Back"
+        );
+        setIsInitializing(false);
+        return;
+}
+    
       const validationResponse = await validateJwtToken(
         jwtToken,
         platform,
