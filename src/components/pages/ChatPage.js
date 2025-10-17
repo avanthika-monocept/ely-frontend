@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, use } from "react";
 import {
   View,
   StyleSheet,
@@ -446,8 +446,17 @@ export const ChatPage = ({ route }) => {
       setIsInitializing(true);
       dispatch(clearMessages());
       setPage(0);
-
-      // 🔹 validate token
+if(!jwtToken || !userInfo.agentId || !platform){
+   console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
+        showErrorModal(
+          "Something went wrong",
+          "Please try logging in again.",
+          "Go Back"
+        );
+        setIsInitializing(false);
+        return;
+}
+    
       const validationResponse = await validateJwtToken(
         jwtToken,
         platform,
