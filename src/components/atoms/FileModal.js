@@ -54,11 +54,11 @@ const FileModal = ({
       if (file.startsWith(share.http) || file.startsWith(share.https)) {
         const fileName = `share_temp_${date.getTime()}.${file_ext}`;
         const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-        
+
         if (await fs.exists(filePath)) {
           await fs.unlink(filePath);
         }
-      
+
         const res = await config({
           fileCache: true,
           path: filePath,
@@ -319,7 +319,7 @@ const FileModal = ({
       const pathsToShare = [];
       for (const file of files) {
         const { type, url } = file;
-       let file_ext = url.split(".").pop().split("?")[0].toLowerCase();
+        let file_ext = url.split(".").pop().split("?")[0].toLowerCase();
         if (!["jpg", "jpeg", "png", "mp4", "mkv"].includes(file_ext)) {
           file_ext = "jpg";
         }
@@ -329,10 +329,10 @@ const FileModal = ({
         if (url.startsWith(share.http) || url.startsWith(share.https)) {
           const fileName = `ely_${date.getTime()}_${Math.random().toString(36).substring(7)}.${file_ext}`;
           const filePath = `${fs.dirs.CacheDir}/${fileName}`;
-         if (await fs.exists(filePath)) {
+          if (await fs.exists(filePath)) {
             await fs.unlink(filePath);
           }
-         const res = await config({
+          const res = await config({
             fileCache: true,
             path: filePath,
           }).fetch(share.get, url);
@@ -396,13 +396,13 @@ const FileModal = ({
   }
   const documentMenuItems = [
     {
- 
+
       label: labels.preview,
       icon: <Group />,
       action: () => PdfModalChildren(true),
     },
     {
-     
+
       label: labels.reply,
       icon: <Vector />,
       action: () => {
@@ -410,7 +410,7 @@ const FileModal = ({
       },
     },
     {
-  
+
       label: labels.download,
       icon: <Download />,
       action: () => {
@@ -418,7 +418,7 @@ const FileModal = ({
       },
     },
     {
-    
+
       label: labels.share,
       icon: <ShareSvg />,
       action: () => onShare(),
@@ -426,7 +426,7 @@ const FileModal = ({
   ];
   const imgWithTextMenuItems = [
     {
-    
+
       label: labels.copyText,
       icon: <Copy />,
       action: () => {
@@ -435,7 +435,7 @@ const FileModal = ({
       },
     },
     {
-     
+
       label: labels.reply,
       icon: <Vector />,
       action: () => {
@@ -443,7 +443,7 @@ const FileModal = ({
       },
     },
     {
-      
+
       label: labels.download,
       icon: <Download />,
       action: () => {
@@ -451,7 +451,7 @@ const FileModal = ({
       },
     },
     {
-    
+
       label: labels.share,
       icon: <ShareSvg />,
       action: () => {
@@ -461,21 +461,21 @@ const FileModal = ({
   ];
   const imgMenuItems = [
     {
-     label: labels.reply,
+      label: labels.reply,
       icon: <Vector />,
       action: () => {
         handleReply();
       },
     },
     {
-     label: labels.download,
+      label: labels.download,
       icon: <Download />,
       action: () => {
         handleDownload(files);
       },
     },
     {
-     label: labels.share,
+      label: labels.share,
       icon: <ShareSvg />,
       action: () => {
         handleShare();
@@ -493,15 +493,16 @@ const FileModal = ({
     {
       label: labels.share,
       icon: <ShareSvg />,
-      action: () => {
-        onShare();
-        onClose();
-      },
+      // action: () => {
+      //   onShare(); onClose();
+      // },
+      action: null, // Disabling share option in this phase
+      disabled: true,
     },
   ];
   const tableTextMenuItems = [
     {
-     label: labels.copyText,
+      label: labels.copyText,
       icon: <Copy />,
       action: () => {
         copyToClipboard();
@@ -518,9 +519,11 @@ const FileModal = ({
     {
       label: labels.share,
       icon: <ShareSvg />,
-      action: () => {
-        onShare(); onClose();
-      },
+      // action: () => {
+      //   onShare(); onClose();
+      // },
+      action: null, // Disabling share option in this phase
+      disabled: true,
     },
   ];
   let menuItems;
@@ -554,9 +557,10 @@ const FileModal = ({
               key={index}
               style={[
                 styles.listItem,
-                { paddingBottom: menuItems.length == index + 1 ? spacing.space_s0 : spacing.space_m4 },
+                { paddingBottom: menuItems.length == index + 1 ? spacing.space_s0 : spacing.space_m4 ,opacity: item.disabled ? 0.5 : 1,},
               ]}
               onPress={item.action}
+              disabled={item.disabled}
             >
               <View style={styles.iconContainer}>{item.icon}</View>
               <Text style={styles.label}>{item.label}</Text>
