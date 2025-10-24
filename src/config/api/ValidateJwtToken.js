@@ -23,6 +23,7 @@ export const validateJwtToken = async (
         "Content-Type": "application/json",
         "Authorization": jwtToken,
         "x-api-key": X_API_KEY,
+        "platform"  : platform,
       },
       data: encryptedPayload,
     });
