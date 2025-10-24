@@ -203,16 +203,16 @@ export const ChatPage = ({ route }) => {
         sethistoryLoading(false);
         return;
       }
-      newMessages?.content?.forEach((msg) => {
-        if (
-          msg?.messageTo === stringConstants.userCaps &&
-          msg?.status === socketConstants.delivered
-        ) {
+      // newMessages?.content?.forEach((msg) => {
+      //   if (
+      //     msg?.messageTo === stringConstants.userCaps &&
+      //     msg?.status === socketConstants.delivered
+      //   ) {
 
 
-          sendAcknowledgement(msg.messageId);
-        }
-      });
+      //     sendAcknowledgement(msg.messageId);
+      //   }
+      // });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -603,6 +603,24 @@ export const ChatPage = ({ route }) => {
       safelyCleanupSocket();
     };
   }, []);
+ 
+useEffect(() => {
+  if (navigationPage === stringConstants.agenda && messages.length > 0) {
+    const deliveredMessages = messages.filter(msg => 
+      msg?.messageTo === stringConstants.user &&
+      msg?.status === socketConstants.delivered &&
+      msg?.isFromHistory
+    );
+    console.log("delivreddddddddddddddddddddddd messagesssssss",deliveredMessages )
+    deliveredMessages.forEach(msg => {
+      sendAcknowledgement(msg.messageId);
+      updateMessageStatus({
+        messageId: msg.messageId,
+        status: socketConstants.read,
+      });
+      });
+  }
+}, [navigationPage, messages]);
   const handleBotMessage = (data) => {
     clearResponseTimeout();
     dispatch(hideLoader());
