@@ -39,7 +39,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiIxMDIzNkFfQURNIiwiaWF0IjoxNzYxMjA4MjEwLCJleHAiOjE3NjEyOTQ2MTB9.erIvK6LwcNoJbQlrwyH9pGNmvmwDYKs1pTGNztRaVKG4LUVs0qu_Cb_sfZGbfWjuxm5C9QouDFT3K3UaVTnTUw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "Advisor", userName: "Suchit Pansare" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzc29JZCI6IjEwMjM2QSIsImF1ZCI6InN1cGVyX2FwcF9jbGllbnQiLCJ1c2VyRGV0YWlscyI6IjEwMjM2QV9BRE0iLCJpYXQiOjE3NjEyOTg5MDYsImV4cCI6MTc2MTM4NTMwNn0.eKPd-mzY8OSygP6aBUviGzmMrnNBWnIt1QFv9Za-vOkrKq5W5m4ZaB09hwKY0IYmc45miTVyhKj6wdM6V3j6Hw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "Advisor", userName: "Suchit Pansare" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -203,16 +203,16 @@ export const ChatPage = ({ route }) => {
         sethistoryLoading(false);
         return;
       }
-      newMessages?.content?.forEach((msg) => {
-        if (
-          msg?.messageTo === stringConstants.userCaps &&
-          msg?.status === socketConstants.delivered
-        ) {
+      // newMessages?.content?.forEach((msg) => {
+      //   if (
+      //     msg?.messageTo === stringConstants.userCaps &&
+      //     msg?.status === socketConstants.delivered
+      //   ) {
 
 
-          sendAcknowledgement(msg.messageId);
-        }
-      });
+      //     sendAcknowledgement(msg.messageId);
+      //   }
+      // });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -603,6 +603,24 @@ export const ChatPage = ({ route }) => {
       safelyCleanupSocket();
     };
   }, []);
+ 
+useEffect(() => {
+  if (navigationPage === stringConstants.agenda && messages.length > 0) {
+    const deliveredMessages = messages.filter(msg => 
+      msg?.messageTo === stringConstants.user &&
+      msg?.status === socketConstants.delivered &&
+      msg?.isFromHistory
+    );
+    console.log("delivreddddddddddddddddddddddd messagesssssss",deliveredMessages )
+    deliveredMessages.forEach(msg => {
+      sendAcknowledgement(msg.messageId);
+      updateMessageStatus({
+        messageId: msg.messageId,
+        status: socketConstants.read,
+      });
+      });
+  }
+}, [navigationPage, messages]);
   const handleBotMessage = (data) => {
     clearResponseTimeout();
     dispatch(hideLoader());
