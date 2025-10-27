@@ -203,16 +203,6 @@ export const ChatPage = ({ route }) => {
         sethistoryLoading(false);
         return;
       }
-      // newMessages?.content?.forEach((msg) => {
-      //   if (
-      //     msg?.messageTo === stringConstants.userCaps &&
-      //     msg?.status === socketConstants.delivered
-      //   ) {
-
-
-      //     sendAcknowledgement(msg.messageId);
-      //   }
-      // });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -611,7 +601,6 @@ useEffect(() => {
       msg?.status === socketConstants.delivered &&
       msg?.isFromHistory
     );
-    console.log("delivreddddddddddddddddddddddd messagesssssss",deliveredMessages )
     deliveredMessages.forEach(msg => {
       sendAcknowledgement(msg.messageId);
       updateMessageStatus({
