@@ -318,7 +318,7 @@ const clearResponseTimeout = useCallback(() => {
       setPage(0);
       clearResponseTimeout();
 
-      if (e.code === 1001 && AppState.currentState === "active") {
+      if (e.code === 1001 && e.reason == "Going away" && AppState.currentState === "active") {
         reconnectWebSocket();
       }
     };
