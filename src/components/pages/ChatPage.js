@@ -46,6 +46,7 @@ export const ChatPage = ({ route }) => {
   const [copied, setCopied] = useState(false);
   const scrollViewRef = useRef(null);
   const isAtBottomRef = useRef(true);
+  const responseTimeoutRef = useRef(null);
   const reconfigApiResponseRef = useRef({});
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
@@ -91,21 +92,21 @@ export const ChatPage = ({ route }) => {
     [messages, messageObjectId]
   );
   const startResponseTimeout = useCallback(() => {
-    if (responseTimeout) {
-      clearTimeout(responseTimeout);
+    if (responseTimeoutRef.current) {
+    clearTimeout(responseTimeoutRef.current);
     }
-    const timeoutId = setTimeout(() => {
-      dispatch(hideLoader());
-    }, timeoutConstants.response);
-    setResponseTimeout(timeoutId);
-  }, []);
+    responseTimeoutRef.current = setTimeout(() => {
+    dispatch(hideLoader());
+    responseTimeoutRef.current = null;
+  }, timeoutConstants.response);
+}, [dispatch]);
 
-  const clearResponseTimeout = useCallback(() => {
-    if (responseTimeout) {
-      clearTimeout(responseTimeout);
-      setResponseTimeout(null);
-    }
-  }, []);
+const clearResponseTimeout = useCallback(() => {
+  if (responseTimeoutRef.current) {
+    clearTimeout(responseTimeoutRef.current);
+    responseTimeoutRef.current = null;
+  }
+}, []);
 
   const SCROLL_BOTTOM_THRESHOLD = 20;
   const handleScroll = useCallback(({ nativeEvent }) => {
@@ -203,16 +204,6 @@ export const ChatPage = ({ route }) => {
         sethistoryLoading(false);
         return;
       }
-      // newMessages?.content?.forEach((msg) => {
-      //   if (
-      //     msg?.messageTo === stringConstants.userCaps &&
-      //     msg?.status === socketConstants.delivered
-      //   ) {
-
-
-      //     sendAcknowledgement(msg.messageId);
-      //   }
-      // });
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
@@ -611,7 +602,6 @@ useEffect(() => {
       msg?.status === socketConstants.delivered &&
       msg?.isFromHistory
     );
-    console.log("delivreddddddddddddddddddddddd messagesssssss",deliveredMessages )
     deliveredMessages.forEach(msg => {
       sendAcknowledgement(msg.messageId);
       updateMessageStatus({
