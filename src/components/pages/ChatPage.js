@@ -309,7 +309,7 @@ const clearResponseTimeout = useCallback(() => {
     ws.current.onclose = (e) => {
       console.log(`WebSocket closed: ${e.code} - ${e.reason}`);
 
-      // Check if closure is due to token expiry (1008 = policy violation, often token related)
+      // Check closure is due to token expiry (1008 = policy violation, often token related)
       if (e.code === 1008 || e.code === 1006) {
         handleWebSocketTokenExpiry();
       }
