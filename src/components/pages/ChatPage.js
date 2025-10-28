@@ -309,7 +309,7 @@ export const ChatPage = ({ route }) => {
     ws.current.onerror = (error) => {
       clearResponseTimeout();
 
-      // Check if error is due to token expiry (WebSocket error code 1008)
+      // Check error is due to token expiry (WebSocket error code 1008)
       if (error.code === 1008) {
         handleWebSocketTokenExpiry();
       }
