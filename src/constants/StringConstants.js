@@ -57,6 +57,7 @@ export const stringConstants = {
   thumbsUpEmoji:"U+1F44D" ,
   thumbsDownEmoji:"U+1F44E",
   showRecentConversations: "Show recent conversations",
+  infoLandingScreen:"This is the new Ely (beta) for HR and benefits. For other queries, use the old Ely on MLO."
  };
 
 
