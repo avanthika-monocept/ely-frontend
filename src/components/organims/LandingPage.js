@@ -18,6 +18,8 @@ import Timer from "../../../assets/timer.svg"
 import { fontStyle } from "../../constants/Fonts";
 import colors from "../../constants/Colors";
 import PropTypes from "prop-types";
+import ToastMessage from "../atoms/ToastMessage";
+
  
 export const LandingPage = memo(({
   setnavigationPage,
@@ -51,6 +53,9 @@ export const LandingPage = memo(({
               <Timer width={20} height={20} style={{marginRight: spacing.space_s1}}/>
               <Text style={styles.recentConvoText}>{stringConstants.showRecentConversations}</Text>
             </TouchableOpacity>}
+            <View style={styles.infoLandingScreen}>
+            <ToastMessage visible={true} title={""} message={stringConstants.infoLandingScreen} actions={[]} type={"info"}/>
+            </View>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -116,7 +121,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: flex.one,
     justifyContent: "space-between",
-    paddingTop: size.fortytThreePercent,
+    paddingTop: size.twenty_4,
   },
   textContainer: {
     alignSelf: "center",
@@ -149,6 +154,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     marginTop: spacing.space_l1,
+    marginBottom: spacing.space_m2,
     paddingVertical: spacing.space_s2,
     paddingHorizontal: spacing.space_m1,
     borderRadius: borderRadius.borderRadius200,
@@ -160,6 +166,9 @@ const styles = StyleSheet.create({
     marginLeft: spacing.space_s2,
     fontWeight: "700",
     color: colors.primaryColors.charcoalGray,
+  },
+  infoLandingScreen: {
+    marginBottom: spacing.space_m2,
   },
 });
  

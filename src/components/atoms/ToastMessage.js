@@ -1,19 +1,16 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { hideToast } from "../../store/reducers/toastSlice";
 import colors from "../../constants/Colors";
 import AlertIcon from "../../../assets/alert.svg";
+import Info from "../../../assets/Info.svg"
 import { LinearGradient } from "react-native-linear-gradient";
 import PropTypes from 'prop-types';
 
-const ToastMessage = ({ actions, title, message }) => {
-
-
-
-  const borderColor = colors.primaryColors.bloodRed
-
+const ToastMessage = ({ actions, title, message, type }) => {
+  const isInfo= type === 'info'
+  const borderColorError = colors.primaryColors.bloodRed
   const GRADIENT_COLORS = ['#ffeded', '#fff8f8', '#fffefe'];
+  const GRADIENT_COLORS_INFO = ['#f2f9ffff', '#fbfcfdff', '#fdfdfdff'];
   const renderActions = () => {
     if (actions?.length === 1) {
       // Inline single action
@@ -35,7 +32,6 @@ const ToastMessage = ({ actions, title, message }) => {
     }
 
     if (actions?.length > 1) {
-      // Multiple actions under text
       return (
         <View style={styles.actionsRow}>
           {actions.map((action, index) => (
@@ -68,9 +64,9 @@ const ToastMessage = ({ actions, title, message }) => {
   };
 
   return (
-    <View style={styles.outerContainer}>
+    <View style={[styles.outerContainer,{borderColor: isInfo ? colors.primaryColors.borderBlue : borderColorError},]}>
       <LinearGradient
-        colors={GRADIENT_COLORS}
+        colors={ isInfo ? GRADIENT_COLORS_INFO :GRADIENT_COLORS}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.gradient}
@@ -78,12 +74,12 @@ const ToastMessage = ({ actions, title, message }) => {
 
         <View style={{ flex: 1 }}>
           <View style={styles.rowBetween}>
-            <View style={styles.iconBox}>
-              <AlertIcon width={20} height={20} />
+            <View style={[styles.iconBox,{ padding: isInfo ? 2 : 6, shadowColor: isInfo ? colors.primaryColors.borderBlue : borderColorError}]}>
+              {isInfo ? <Info width={30} height={30} /> :<AlertIcon width={20} height={20} />}
             </View>
             <View style={{ flex: 1 }}>
 
-              <Text style={[styles.title, { color: borderColor }]}>{title}</Text>
+              {title && <Text style={[styles.title, { color: borderColorError }]}>{title}</Text>}
               {message && <Text style={styles.message}>{message}</Text>}
             </View>
             {actions?.length === 1 && renderActions()}
@@ -183,5 +179,6 @@ ToastMessage.propTypes = {
       disabled: PropTypes.bool,
     })
   ),
+  type: PropTypes.oneOf(['info', 'warning', 'error']),
 };
 export default ToastMessage;
