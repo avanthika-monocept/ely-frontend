@@ -3,6 +3,7 @@ import apiCall from "../config/axiosRequest";
 import { USER_CONFIG } from "../config/apiUrls";
 import { baseUrl, X_API_KEY } from "../constants/constants";
 import { encNewPayload, decResPayload } from "../common/cryptoUtils";
+import { stringConstants } from "../constants/StringConstants";
 
 const MAX_TOKEN_RETRIES = 1;
 
@@ -43,7 +44,7 @@ export const getData = createAsyncThunk(
         (error.response?.status === 401 || error.response?.status === 403) &&
         retryCount < MAX_TOKEN_RETRIES
       ) {
-        return rejectWithValue("TOKEN_EXPIRED");
+        return rejectWithValue(stringConstants.tokenExpired);
       }
 
       console.warn("Using fallback response due to error:", error.message);

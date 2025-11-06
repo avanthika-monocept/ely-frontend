@@ -5,7 +5,6 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-  Text,
   AppState,
 
 } from "react-native";
@@ -64,7 +63,6 @@ export const ChatPage = ({ route }) => {
   const [hasMore, setHasMore] = useState(true);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [token, settoken] = useState("");
-  const [responseTimeout, setResponseTimeout] = useState(null);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
@@ -170,9 +168,9 @@ const clearResponseTimeout = useCallback(() => {
   const showErrorModalTokenExpiry = () => {
 
     showErrorModal(
-      "Failed to Login",
-      "Unable to Authenticate details.",
-      "Go Back"
+      stringConstants.failedToLogin,
+      stringConstants.unableToAuthenticate,
+      stringConstants.goBack
     )
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
@@ -214,7 +212,7 @@ const clearResponseTimeout = useCallback(() => {
     } catch (err) {
       sethistoryLoading(false);
 
-      if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (err.message === stringConstants.tokenExpired && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
         try {
           const refreshedToken = await refreshToken(); // validateJwtToken inside
           setTokenExpiryRetryCount(prev => prev + 1);
@@ -245,7 +243,7 @@ const clearResponseTimeout = useCallback(() => {
         connectWebSocket(agentId, tokenRef.current);
       }
     } catch (error) {
-      console.error("WebSocket reconnection failed:", error);
+      console.error(stringConstants.webSocketReconnectionFailed, error);
       if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
         showErrorModalTokenExpiry();
       }
@@ -255,7 +253,7 @@ const clearResponseTimeout = useCallback(() => {
     const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
 
     if (!agentId || !token) {
-      console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+      console.error(stringConstants.agentIdOrTokenMissing);
       return;
     }
 
@@ -285,7 +283,7 @@ const clearResponseTimeout = useCallback(() => {
         }
         // Fallback for unencrypted messages (remove in production)
         else {
-          console.warn('Received unencrypted message:', data);
+          console.warn(stringConstants.receivedUnencryptedMessage, data);
           if (data.type === socketConstants.botResponse) {
             handleBotMessage(data);
           }
@@ -294,7 +292,7 @@ const clearResponseTimeout = useCallback(() => {
           }
         }
       } catch (err) {
-        console.error('Message processing error:', err);
+        console.error(stringConstants.messageProccessingError, err);
       }
     };
     ws.current.onerror = (error) => {
@@ -318,7 +316,7 @@ const clearResponseTimeout = useCallback(() => {
       setPage(0);
       clearResponseTimeout();
 
-      if (e.code === 1001 && e.reason == "Going away" && AppState.currentState === "active") {
+      if (e.code === 1001 && e.reason == socketConstants.goingAway && AppState.currentState === stringConstants.active) {
         reconnectWebSocket();
       }
     };
@@ -396,7 +394,7 @@ const clearResponseTimeout = useCallback(() => {
         }
       );
       if (!validationResponse || validationResponse.status !== stringConstants.success) {
-        throw new Error("Token validation failed");
+        throw new Error(stringConstants.tokenValidationFailed);
       }
 
       const newToken = validationResponse?.data?.elyAuthToken;
@@ -404,13 +402,13 @@ const clearResponseTimeout = useCallback(() => {
       setTokenExpiryRetryCount(0);
       return newToken;
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.error(stringConstants.tokenRefreshFailed, error);
       throw error;
     }
   };
   const waitForSocketOpen = (socket, timeout = 8000) => {
     return new Promise((resolve, reject) => {
-      if (!socket) return reject(new Error("Socket not initialized"));
+      if (!socket) return reject(new Error(stringConstants.socketNotInitialized));
       if (socket.readyState === WebSocket.OPEN) return resolve();
 
       const checkInterval = setInterval(() => {
@@ -422,7 +420,7 @@ const clearResponseTimeout = useCallback(() => {
 
       setTimeout(() => {
         clearInterval(checkInterval);
-        reject(new Error("WebSocket connection timed out"));
+        reject(new Error(stringConstants.webSocketTimeOut));
       }, timeout);
     });
   };
@@ -438,11 +436,11 @@ const clearResponseTimeout = useCallback(() => {
       dispatch(clearMessages());
       setPage(0);
       if (!jwtToken || !userInfo.agentId || !platform) {
-        console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
+        console.error(stringConstants.initializeError);
         showErrorModal(
-          "Something went wrong",
-          "Please try logging in again.",
-          "Go Back"
+          stringConstants.somethingWentWrong,
+          stringConstants.PleaseTryAgain,
+          stringConstants.goBack
         );
         setIsInitializing(false);
         return;
@@ -463,15 +461,15 @@ const clearResponseTimeout = useCallback(() => {
         );
       }
       catch (err) {
-        console.error("[initialize] ❌ Token validation failed:", err);
-        showErrorModal("something went wrong", "Please try logging in again.", "Go Back");
+        console.error(stringConstants.initializeTokenValidationError, err);
+        showErrorModal(stringConstants.somethingWentWrong, stringConstants.PleaseTryAgain, stringConstants.goBack);
         setIsInitializing(false);
         return;
       }
 
 
       if (!validationResponse || validationResponse.status !== stringConstants.success) {
-        throw new Error("TOKEN_EXPIRED"); // standardize failure reason
+        throw new Error(stringConstants.tokenExpired); // standardize failure reason
       }
 
       const newToken = validationResponse?.data?.elyAuthToken;
@@ -500,7 +498,7 @@ const clearResponseTimeout = useCallback(() => {
       }
     } catch (error) {
       // 🔹 Check standardized error from thunk
-      if (error === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (error === stringConstants.tokenExpired && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
         try {
           const refreshResponse = await validateJwtToken(
             jwtToken,
@@ -523,10 +521,10 @@ const clearResponseTimeout = useCallback(() => {
             setTokenExpiryRetryCount(prev => prev + 1);
             await initialize(true);
           } else {
-            throw new Error("Token refresh failed");
+            throw new Error(stringConstants.tokenRefreshFailed);
           }
         } catch (refreshError) {
-          console.error("Token refresh failed:", refreshError);
+          console.error(stringConstants.tokenRefreshFailed, refreshError);
           showErrorModalTokenExpiry();
         }
       } else {
@@ -536,11 +534,11 @@ const clearResponseTimeout = useCallback(() => {
         }
       }
 
-      if (error.message === "PLATFORM_TOKEN_EXPIRED") {
+      if (error.message === stringConstants.platformTokenExpired) {
         showErrorModal(
-          "Failed to Login",
-          "Unable to Authenticate details.",
-          "Go Back"
+          stringConstants.failedToLogin,
+          stringConstants.unableToAuthenticate,
+          stringConstants.goBack
         )
       }
     } finally {
@@ -570,11 +568,11 @@ const clearResponseTimeout = useCallback(() => {
     let isMounted = true; // Track mounted state
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
-      if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+      if (currentAppState === stringConstants.active && nextAppState.match(/inactive|background/)) {
         lastBackgroundTimeRef.current = Date.now();
         safelyCleanupSocket();
       }
-      if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
+      if (currentAppState.match(/inactive|background/) && nextAppState === stringConstants.active) {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
           const now = Date.now();
           const delta = now - (lastBackgroundTimeRef.current || 0);

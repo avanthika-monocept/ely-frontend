@@ -2,6 +2,7 @@ import apiCall from "../axiosRequest";
 import { CHAT_HISTORY } from "../apiUrls";
 import { baseUrl, X_API_KEY } from "../../constants/constants";
 import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
+import { stringConstants } from "../../constants/StringConstants";
 
 const MAX_TOKEN_RETRIES = 1;
 export const fetchChatHistory = async (agentId, page = 0, size = 10, token, retryCount = 0) => {
@@ -31,7 +32,7 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10, token, retr
   } catch (error) {
     // Check for token expiry
     if ((error.response?.status === 401 || error.response?.status === 403) && retryCount < MAX_TOKEN_RETRIES) {
-      throw new Error("TOKEN_EXPIRED");
+      throw new Error(stringConstants.tokenExpired);
     }
     
     console.error("Error fetching chat history:", error);
