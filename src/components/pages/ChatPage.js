@@ -38,7 +38,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzc29JZCI6IjEwMjM2QSIsImF1ZCI6InN1cGVyX2FwcF9jbGllbnQiLCJ1c2VyRGV0YWlscyI6IjEwMjM2QV9BRE0iLCJpYXQiOjE3NjE3MzE1NzAsImV4cCI6MTc2MTgxNzk3MH0.ieFCAFGYjFhuSe-zaxMlaAxMZXs9hQFAUHh-am8h9yduwfVabcnt3UW89wsw24QH88LYUuR4sLVhcmjqAaaSZw", platform: "MSPACE", userInfo: { agentId: "10236A", deviceId: "d29b3dbd9671ad50", email: "suchit.pansare@maxlifeinsurance.com", firebaseId: undefined, role: "Advisor", userName: "Suchit Pansare" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzc29JZCI6Ijk3NTc2VSIsImF1ZCI6InN1cGVyX2FwcF9jbGllbnQiLCJ1c2VyRGV0YWlscyI6Ijk3NTc2VV9BZHZpc29yIiwiaWF0IjoxNzYyNDE2NTM2LCJleHAiOjE3NjI1MDI5MzZ9.UuL5CExuKvUECLoxD7f40Nx84gIc7x1rscG2EymTEAk2cC3wTNeBmVt8P9H4Q-9UDQgMok2d22YstVETf2VvTg", platform: "MSPACE", userInfo: { agentId: "97576U", deviceId: "d29b3dbd9671ad50", email: "polisingh05@gmail.com", firebaseId: undefined, role: "Advisor", userName: "POLI SINGH" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
