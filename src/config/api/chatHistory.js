@@ -5,7 +5,7 @@ import { encNewPayload, decResPayload } from "../../common/cryptoUtils";
 import { stringConstants } from "../../constants/StringConstants";
 
 const MAX_TOKEN_RETRIES = 1;
-export const fetchChatHistory = async (agentId, page = 0, size = 10, token, retryCount = 0) => {
+export const fetchChatHistory = async (agentId, page = 0, size = 10, token, retryCount = 0, platform) => {
   try {
     const rawPayload = { agentId: agentId, page: page, size: size };
     const encryptedPayload = encNewPayload(rawPayload);
@@ -19,6 +19,7 @@ export const fetchChatHistory = async (agentId, page = 0, size = 10, token, retr
         'x-api-key': X_API_KEY,
         'userId': agentId,
         'elyAuthToken': token,
+        "platform"  : platform,
       },
       data: encryptedPayload,
     });

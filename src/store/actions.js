@@ -25,6 +25,7 @@ export const getData = createAsyncThunk(
           "x-api-key": X_API_KEY,
           userId: agentId,
           elyAuthToken: token,
+          "platform"  : platform,
         },
         data: encryptedPayload,
       });

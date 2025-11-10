@@ -196,7 +196,7 @@ const clearResponseTimeout = useCallback(() => {
 
     try {
       sethistoryLoading(true);
-      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
+      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount,platform);
       if (!newMessages || newMessages.length === 0) {
         setHasMore(false);
         sethistoryLoading(false);
