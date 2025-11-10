@@ -474,7 +474,13 @@ const clearResponseTimeout = useCallback(() => {
 
       const newToken = validationResponse?.data?.elyAuthToken;
       settoken(newToken);
-
+     let agentIdToSend = userInfo?.agentId;
+      if (agentIdToSend) {
+        const idStr = agentIdToSend.toString();
+        if (idStr.length === 9 || idStr.length === 10) {
+          agentIdToSend = idStr.slice(-7);
+        }
+      }
       // 🔹 fetch user config
       const response = await dispatch(
         getData({
