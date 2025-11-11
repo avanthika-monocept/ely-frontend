@@ -51,7 +51,7 @@ export const ChatPage = ({ route }) => {
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
   const lastBackgroundTimeRef = useRef(null);
-  const isInitializingRef = useRef(false);
+  const tokenExpiryRetryCountRef = useRef(0);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -65,7 +65,6 @@ export const ChatPage = ({ route }) => {
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [token, settoken] = useState("");
   const [historyLoading, sethistoryLoading] = useState(false);
-  const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const [modalData, setModalData] = useState({
     visible: false,
@@ -184,7 +183,7 @@ const clearResponseTimeout = useCallback(() => {
   };
   const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
 
-    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    if (!isRetry && tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -194,7 +193,7 @@ const clearResponseTimeout = useCallback(() => {
 
     try {
       sethistoryLoading(true);
-      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount,platform);
+      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCountRef.current,platform);
       if (!newMessages || newMessages.length === 0) {
         setHasMore(false);
         sethistoryLoading(false);
@@ -203,6 +202,7 @@ const clearResponseTimeout = useCallback(() => {
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
+      tokenExpiryRetryCountRef.current = 0;
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
       sethistoryLoading(false);
@@ -210,10 +210,10 @@ const clearResponseTimeout = useCallback(() => {
     } catch (err) {
       sethistoryLoading(false);
 
-      if (err.message === stringConstants.tokenExpired && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (err.message === stringConstants.tokenExpired && tokenExpiryRetryCountRef.current < MAX_TOKEN_RETRIES) {
         try {
           const refreshedToken = await refreshToken(); // validateJwtToken inside
-          setTokenExpiryRetryCount(prev => prev + 1);
+          tokenExpiryRetryCountRef.current += 1;
 
           // retry only once with new token
           await loadChatHistory(agentId, page, message, refreshedToken, true);
@@ -230,7 +230,7 @@ const clearResponseTimeout = useCallback(() => {
   };
 
   const reconnectWebSocket = async () => {
-    if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    if (tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -242,7 +242,7 @@ const clearResponseTimeout = useCallback(() => {
       }
     } catch (error) {
       console.error(stringConstants.webSocketReconnectionFailed, error);
-      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      if (tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
         showErrorModalTokenExpiry();
       }
     }
@@ -259,7 +259,7 @@ const clearResponseTimeout = useCallback(() => {
 
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected);
-      setTokenExpiryRetryCount(0);
+      tokenExpiryRetryCountRef.current = 0;
       setSocket(ws.current);
     };
     ws.current.onmessage = (event) => {
@@ -321,10 +321,10 @@ const clearResponseTimeout = useCallback(() => {
   };
 
   const handleWebSocketTokenExpiry = async () => {
-    if (tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+    if (tokenExpiryRetryCountRef.current <= MAX_TOKEN_RETRIES) {
       try {
         const newToken = await refreshToken();
-        setTokenExpiryRetryCount(prev => prev + 1);
+        tokenExpiryRetryCountRef.current += 1;
 
         if (reconfigApiResponseRef.current?.userInfo?.agentId && newToken) {
           connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
@@ -397,7 +397,7 @@ const clearResponseTimeout = useCallback(() => {
 
       const newToken = validationResponse?.data?.elyAuthToken;
       settoken(newToken);
-      setTokenExpiryRetryCount(0);
+      tokenExpiryRetryCountRef.current = 0;
       return newToken;
     } catch (error) {
       console.error(stringConstants.tokenRefreshFailed, error);
@@ -424,8 +424,8 @@ const clearResponseTimeout = useCallback(() => {
   };
 
   const initialize = async (isRetry = false) => {
-     console.log("initialize called, isRetry:", isRetry, "retryCount:", tokenExpiryRetryCount);
-    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+     
+    if (!isRetry && tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -477,7 +477,7 @@ const clearResponseTimeout = useCallback(() => {
         }
       }
       // 🔹 fetch user config
-      const response = await dispatch(getData({token: newToken,agentId: agentIdToSend?.toLowerCase(),platform,retryCount: tokenExpiryRetryCount,})).unwrap();
+      const response = await dispatch(getData({token: newToken,agentId: agentIdToSend?.toLowerCase(),platform,retryCount: tokenExpiryRetryCountRef.current,})).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
@@ -486,9 +486,10 @@ const clearResponseTimeout = useCallback(() => {
           await waitForSocketOpen(ws.current);
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
+        tokenExpiryRetryCountRef.current = 0;
       }
     } catch (error) {
-      if (error === stringConstants.tokenExpired && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (error === stringConstants.tokenExpired && tokenExpiryRetryCountRef.current < MAX_TOKEN_RETRIES) {
         try {
           const refreshResponse = await validateJwtToken(
             jwtToken,
@@ -506,7 +507,7 @@ const clearResponseTimeout = useCallback(() => {
           if (refreshResponse && refreshResponse.status === stringConstants.success) {
             const refreshedToken = refreshResponse?.data?.elyAuthToken;
             settoken(refreshedToken);
-            setTokenExpiryRetryCount(prev => prev + 1);
+            tokenExpiryRetryCountRef.current += 1;
             await initialize(true);
           } else {
             throw new Error(stringConstants.tokenRefreshFailed);
@@ -517,7 +518,7 @@ const clearResponseTimeout = useCallback(() => {
         }
       } else {
         console.error("Initialize error:", error);
-        if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
+        if (tokenExpiryRetryCountRef.current >= MAX_TOKEN_RETRIES) {
           showErrorModalTokenExpiry();
         }
       }
