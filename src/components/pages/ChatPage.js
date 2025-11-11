@@ -5,7 +5,6 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-  Text,
   AppState,
 
 } from "react-native";
@@ -51,6 +50,7 @@ export const ChatPage = ({ route }) => {
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
   const lastBackgroundTimeRef = useRef(null);
+  const tokenExpiryRetryCountRef = useRef(0);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -63,10 +63,8 @@ export const ChatPage = ({ route }) => {
   const [hasMore, setHasMore] = useState(true);
   const [inactivityTimer, setInactivityTimer] = useState(null);
   const [token, settoken] = useState("");
-  const [responseTimeout, setResponseTimeout] = useState(null);
   const [historyLoading, sethistoryLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState("");
-  const [tokenExpiryRetryCount, setTokenExpiryRetryCount] = useState(0);
   const [fabState, setFabState] = useState({ showFab: false, showNewMessageAlert: false, newMessageCount: 0 });
   const [modalData, setModalData] = useState({
     visible: false,
@@ -168,11 +166,8 @@ const clearResponseTimeout = useCallback(() => {
     }
   }, []);
   const showErrorModalTokenExpiry = () => {
-
-    showErrorModal(
-      "Failed to Login",
-      "Unable to Authenticate details.",
-      "Go Back"
+    showErrorModal(stringConstants.failedToLogin,stringConstants.unableToAuthenticate,
+      stringConstants.goBack
     )
   }
   const getIsAtBottom = (contentOffset) => contentOffset.y <= SCROLL_BOTTOM_THRESHOLD;
@@ -188,7 +183,7 @@ const clearResponseTimeout = useCallback(() => {
   };
   const loadChatHistory = async (agentId, page, message, currentToken, isRetry = false) => {
 
-    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    if (!isRetry && tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -198,7 +193,7 @@ const clearResponseTimeout = useCallback(() => {
 
     try {
       sethistoryLoading(true);
-      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCount);
+      const newMessages = await fetchChatHistory(agentId, page, message, currentToken, tokenExpiryRetryCountRef.current,platform);
       if (!newMessages || newMessages.length === 0) {
         setHasMore(false);
         sethistoryLoading(false);
@@ -207,6 +202,7 @@ const clearResponseTimeout = useCallback(() => {
       const formattedMessages = newMessages?.content.map(msg =>
         formatHistoryMessage(msg)
       );
+      tokenExpiryRetryCountRef.current = 0;
       dispatch(addChatHistory(formattedMessages));
       setPage((prev) => prev + 1);
       sethistoryLoading(false);
@@ -214,10 +210,10 @@ const clearResponseTimeout = useCallback(() => {
     } catch (err) {
       sethistoryLoading(false);
 
-      if (err.message === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (err.message === stringConstants.tokenExpired && tokenExpiryRetryCountRef.current < MAX_TOKEN_RETRIES) {
         try {
           const refreshedToken = await refreshToken(); // validateJwtToken inside
-          setTokenExpiryRetryCount(prev => prev + 1);
+          tokenExpiryRetryCountRef.current += 1;
 
           // retry only once with new token
           await loadChatHistory(agentId, page, message, refreshedToken, true);
@@ -234,7 +230,7 @@ const clearResponseTimeout = useCallback(() => {
   };
 
   const reconnectWebSocket = async () => {
-    if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+    if (tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -245,17 +241,17 @@ const clearResponseTimeout = useCallback(() => {
         connectWebSocket(agentId, tokenRef.current);
       }
     } catch (error) {
-      console.error("WebSocket reconnection failed:", error);
-      if (tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+      console.error(stringConstants.webSocketReconnectionFailed, error);
+      if (tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
         showErrorModalTokenExpiry();
       }
     }
   };
   const connectWebSocket = (agentId, token) => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}&platform=${platform}`;
 
     if (!agentId || !token) {
-      console.error("Agent ID or token is missing. Cannot connect WebSocket.");
+      console.error(stringConstants.agentIdOrTokenMissing);
       return;
     }
 
@@ -263,7 +259,7 @@ const clearResponseTimeout = useCallback(() => {
 
     ws.current.onopen = () => {
       console.log(stringConstants.socketConnected);
-      setTokenExpiryRetryCount(0);
+      tokenExpiryRetryCountRef.current = 0;
       setSocket(ws.current);
     };
     ws.current.onmessage = (event) => {
@@ -285,7 +281,7 @@ const clearResponseTimeout = useCallback(() => {
         }
         // Fallback for unencrypted messages (remove in production)
         else {
-          console.warn('Received unencrypted message:', data);
+          console.warn(stringConstants.receivedUnencryptedMessage, data);
           if (data.type === socketConstants.botResponse) {
             handleBotMessage(data);
           }
@@ -294,7 +290,7 @@ const clearResponseTimeout = useCallback(() => {
           }
         }
       } catch (err) {
-        console.error('Message processing error:', err);
+        console.error(stringConstants.messageProccessingError, err);
       }
     };
     ws.current.onerror = (error) => {
@@ -318,17 +314,17 @@ const clearResponseTimeout = useCallback(() => {
       setPage(0);
       clearResponseTimeout();
 
-      if (e.code === 1001 && e.reason == "Going away" && AppState.currentState === "active") {
+      if (e.code === 1001 && e.reason == socketConstants.goingAway && AppState.currentState === stringConstants.active) {
         reconnectWebSocket();
       }
     };
   };
 
   const handleWebSocketTokenExpiry = async () => {
-    if (tokenExpiryRetryCount <= MAX_TOKEN_RETRIES) {
+    if (tokenExpiryRetryCountRef.current <= MAX_TOKEN_RETRIES) {
       try {
         const newToken = await refreshToken();
-        setTokenExpiryRetryCount(prev => prev + 1);
+        tokenExpiryRetryCountRef.current += 1;
 
         if (reconfigApiResponseRef.current?.userInfo?.agentId && newToken) {
           connectWebSocket(reconfigApiResponseRef.current.userInfo.agentId, newToken);
@@ -396,21 +392,21 @@ const clearResponseTimeout = useCallback(() => {
         }
       );
       if (!validationResponse || validationResponse.status !== stringConstants.success) {
-        throw new Error("Token validation failed");
+        throw new Error(stringConstants.tokenValidationFailed);
       }
 
       const newToken = validationResponse?.data?.elyAuthToken;
       settoken(newToken);
-      setTokenExpiryRetryCount(0);
+      tokenExpiryRetryCountRef.current = 0;
       return newToken;
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.error(stringConstants.tokenRefreshFailed, error);
       throw error;
     }
   };
   const waitForSocketOpen = (socket, timeout = 8000) => {
     return new Promise((resolve, reject) => {
-      if (!socket) return reject(new Error("Socket not initialized"));
+      if (!socket) return reject(new Error(stringConstants.socketNotInitialized));
       if (socket.readyState === WebSocket.OPEN) return resolve();
 
       const checkInterval = setInterval(() => {
@@ -422,13 +418,14 @@ const clearResponseTimeout = useCallback(() => {
 
       setTimeout(() => {
         clearInterval(checkInterval);
-        reject(new Error("WebSocket connection timed out"));
+        reject(new Error(stringConstants.webSocketTimeOut));
       }, timeout);
     });
   };
 
   const initialize = async (isRetry = false) => {
-    if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
+     
+    if (!isRetry && tokenExpiryRetryCountRef.current > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
     }
@@ -438,12 +435,8 @@ const clearResponseTimeout = useCallback(() => {
       dispatch(clearMessages());
       setPage(0);
       if (!jwtToken || !userInfo.agentId || !platform) {
-        console.error("[initialize] ❌ Critical payload field not found. Aborting initialization.");
-        showErrorModal(
-          "Something went wrong",
-          "Please try logging in again.",
-          "Go Back"
-        );
+        console.error(stringConstants.initializeError);
+        showErrorModal(stringConstants.somethingWentWrong,stringConstants.PleaseTryAgain,stringConstants.goBack);
         setIsInitializing(false);
         return;
       }
@@ -463,44 +456,40 @@ const clearResponseTimeout = useCallback(() => {
         );
       }
       catch (err) {
-        console.error("[initialize] ❌ Token validation failed:", err);
-        showErrorModal("something went wrong", "Please try logging in again.", "Go Back");
+        console.error(stringConstants.initializeTokenValidationError, err);
+        showErrorModal(stringConstants.somethingWentWrong, stringConstants.PleaseTryAgain, stringConstants.goBack);
         setIsInitializing(false);
         return;
       }
 
 
       if (!validationResponse || validationResponse.status !== stringConstants.success) {
-        throw new Error("TOKEN_EXPIRED"); // standardize failure reason
+        throw new Error(stringConstants.tokenExpired); // standardize failure reason
       }
 
       const newToken = validationResponse?.data?.elyAuthToken;
       settoken(newToken);
-
+     let agentIdToSend = userInfo?.agentId;
+      if (agentIdToSend) {
+        const idStr = agentIdToSend.toString();
+        if (idStr.length === 9 || idStr.length === 10) {
+          agentIdToSend = idStr.slice(-7);
+        }
+      }
       // 🔹 fetch user config
-      const response = await dispatch(
-        getData({
-          token: newToken,
-          agentId: userInfo?.agentId?.toLowerCase(),
-          platform,
-          retryCount: tokenExpiryRetryCount,
-        })
-      ).unwrap();
-
+      const response = await dispatch(getData({token: newToken,agentId: agentIdToSend?.toLowerCase(),platform,retryCount: tokenExpiryRetryCountRef.current,})).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
-
         if (response.userInfo.agentId && newToken) {
           connectWebSocket(response.userInfo.agentId, newToken);
           await waitForSocketOpen(ws.current);
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-
+        tokenExpiryRetryCountRef.current = 0;
       }
     } catch (error) {
-      // 🔹 Check standardized error from thunk
-      if (error === "TOKEN_EXPIRED" && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
+      if (error === stringConstants.tokenExpired && tokenExpiryRetryCountRef.current < MAX_TOKEN_RETRIES) {
         try {
           const refreshResponse = await validateJwtToken(
             jwtToken,
@@ -518,30 +507,23 @@ const clearResponseTimeout = useCallback(() => {
           if (refreshResponse && refreshResponse.status === stringConstants.success) {
             const refreshedToken = refreshResponse?.data?.elyAuthToken;
             settoken(refreshedToken);
-
-            // 🔹 increment before retry to avoid infinite recursion
-            setTokenExpiryRetryCount(prev => prev + 1);
+            tokenExpiryRetryCountRef.current += 1;
             await initialize(true);
           } else {
-            throw new Error("Token refresh failed");
+            throw new Error(stringConstants.tokenRefreshFailed);
           }
         } catch (refreshError) {
-          console.error("Token refresh failed:", refreshError);
+          console.error(stringConstants.tokenRefreshFailed, refreshError);
           showErrorModalTokenExpiry();
         }
       } else {
         console.error("Initialize error:", error);
-        if (tokenExpiryRetryCount >= MAX_TOKEN_RETRIES) {
+        if (tokenExpiryRetryCountRef.current >= MAX_TOKEN_RETRIES) {
           showErrorModalTokenExpiry();
         }
       }
-
-      if (error.message === "PLATFORM_TOKEN_EXPIRED") {
-        showErrorModal(
-          "Failed to Login",
-          "Unable to Authenticate details.",
-          "Go Back"
-        )
+      if (error.message === stringConstants.platformTokenExpired) {
+        showErrorModal(stringConstants.failedToLogin,stringConstants.unableToAuthenticate,stringConstants.goBack)
       }
     } finally {
       setIsInitializing(false);
@@ -570,11 +552,11 @@ const clearResponseTimeout = useCallback(() => {
     let isMounted = true; // Track mounted state
     const handleAppStateChange = (nextAppState) => {
       if (!isMounted) return;
-      if (currentAppState === 'active' && nextAppState.match(/inactive|background/)) {
+      if (currentAppState === stringConstants.active && nextAppState.match(/inactive|background/)) {
         lastBackgroundTimeRef.current = Date.now();
         safelyCleanupSocket();
       }
-      if (currentAppState.match(/inactive|background/) && nextAppState === 'active') {
+      if (currentAppState.match(/inactive|background/) && nextAppState === stringConstants.active) {
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
           const now = Date.now();
           const delta = now - (lastBackgroundTimeRef.current || 0);

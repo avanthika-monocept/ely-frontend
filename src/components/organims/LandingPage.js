@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     marginTop: spacing.space_l1,
-    marginBottom: spacing.space_m2,
     paddingVertical: spacing.space_s2,
     paddingHorizontal: spacing.space_m1,
     borderRadius: borderRadius.borderRadius200,
@@ -169,6 +168,7 @@ const styles = StyleSheet.create({
   },
   infoLandingScreen: {
     marginBottom: spacing.space_m2,
+    marginTop: spacing.space_m2,
   },
 });
  

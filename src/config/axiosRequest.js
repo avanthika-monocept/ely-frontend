@@ -1,5 +1,6 @@
 import axios from "axios";
 import { VALIDATE_JWT_TOKEN_URL } from "../config/apiUrls";
+import { stringConstants } from "../constants/StringConstants";
 
 // Function to create an axios instance dynamically
 const createAxiosInstance = (baseURL, headers = {}) => {
@@ -29,12 +30,12 @@ const apiCall = async ({
     // Throw specific error for token expiry
     if (error.response?.status === 401 || error.response?.status === 403) {
       if (url === VALIDATE_JWT_TOKEN_URL) {
-        const tokenError = new Error("PLATFORM_TOKEN_EXPIRED");
+        const tokenError = new Error(stringConstants.platformTokenExpired);
         tokenError.isTokenExpired = true;
         throw tokenError;
       }
       else {
-        const tokenError = new Error("TOKEN_EXPIRED");
+        const tokenError = new Error(stringConstants.tokenExpired);
         tokenError.isTokenExpired = true;
         throw tokenError;
       }
