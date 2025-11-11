@@ -57,8 +57,27 @@ export const stringConstants = {
   thumbsUpEmoji:"U+1F44D" ,
   thumbsDownEmoji:"U+1F44E",
   showRecentConversations: "Show recent conversations",
-  infoLandingScreen:"This is the new Ely (beta) for HR and benefits. For other queries, use the old Ely on MLO."
- };
+  infoLandingScreen:"This is the new Ely (beta) for HR and benefits. For other queries, use the old Ely on MLO.",
+  failedToLogin:"Failed to Login",
+  unableToAuthenticate:"Unable to Authenticate details.",
+  goBack:"Go Back",
+  agentIdOrTokenMissing : "Agent ID or token is missing. Cannot connect WebSocket.",
+  webSocketReconnectionFailed:"WebSocket reconnection failed:",
+  tokenExpired: "TOKEN_EXPIRED",
+  platformTokenExpired: "PLATFORM_TOKEN_EXPIRED",
+  somethingWentWrong:"Something went wrong.",
+  PleaseTryAgain:"Please try logging in again.",
+  initializeError:"[initialize] ❌ Critical payload field not found. Aborting initialization.",
+  initializeTokenValidationError:"[initialize] ❌ Token validation failed. Aborting initialization.",
+  receivedUnencryptedMessage:"Received unencrypted message.",
+  messageProccessingError:"Message processing error:",
+  active:'active',
+  background:"background",
+  tokenValidationFailed:"Token validation failed.",
+  tokenRefreshFailed:"Token refresh failed.",
+  socketNotInitialized:"WebSocket is not initialized.",
+  webSocketTimeOut:"WebSocket connection timed out.",
+  };
 
 
 export const timeoutConstants = {
@@ -79,6 +98,7 @@ export const socketConstants = {
   reaction:"REACTION",
   selected:"SELECTED",
   deselected:"DESELECTED",
+  goingAway: "Going away"
 };
 
 export const socketMessageTypes = {
