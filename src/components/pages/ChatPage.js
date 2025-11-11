@@ -38,7 +38,7 @@ export const ChatPage = ({ route }) => {
     jwtToken,
     userInfo,
     platform
-  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzc29JZCI6IlNLTUFINTExOSIsImF1ZCI6InN1cGVyX2FwcF9jbGllbnQiLCJ1c2VyRGV0YWlscyI6IlNLTUFINTExOV9BRE0iLCJpYXQiOjE3NjI0MjI1ODYsImV4cCI6MTc2MjUwODk4Nn0.oZb5_sQKsU0ojlvz_RiJ5i8-6engU7pTzzaIWMR0nBS7cJNlzr1R38HAuZOa9vY9Pa3YR1uF5XoJVl5EnEa9qA", platform: "MSPACE", userInfo: { agentId: "skmah5119", deviceId: "d29b3dbd9671ad50", email: "sachin.kalel@maxlifeinsurance.com", firebaseId: undefined, role: "ADM", userName: "Sachin Kalel" } }
+  } = { jwtToken: "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzc29JZCI6IlBLQk1BSDI4ODIiLCJhdWQiOiJzdXBlcl9hcHBfY2xpZW50IiwidXNlckRldGFpbHMiOiJQS0JNQUgyODgyX1pWUCIsImlhdCI6MTc2MjgzODUzNCwiZXhwIjoxNzYyOTI0OTM0fQ.-sAyKaP4d6K8Rx6PCq_FeIpfstqiCTfAf6xBdSxVyXkk0XJhTEP-oWYJggak5ZKBBiyWATTrPNZA5H26-BCgnw", platform: "MSPACE", userInfo: { agentId: "PKBMAH2882", deviceId: "d29b3dbd9671ad50", email: "prabhat.bhaskar@maxlifeinsurance.com", firebaseId: undefined, role: "ZVP", userName: "Prabhat Bhaskar" } }
 
   const MAX_TOKEN_RETRIES = 1;
   const dispatch = useDispatch();
@@ -51,6 +51,7 @@ export const ChatPage = ({ route }) => {
   const tokenRef = useRef(token);
   const isAutoScrollingRef = useRef(false);
   const lastBackgroundTimeRef = useRef(null);
+  const isInitializingRef = useRef(false);
   const [dropDownType, setDropDownType] = useState("");
   const [messageObjectId, setMessageObjectId] = useState(null);
   const [replyMessageId, setReplyMessageId] = useState(null);
@@ -166,10 +167,7 @@ const clearResponseTimeout = useCallback(() => {
     }
   }, []);
   const showErrorModalTokenExpiry = () => {
-
-    showErrorModal(
-      stringConstants.failedToLogin,
-      stringConstants.unableToAuthenticate,
+    showErrorModal(stringConstants.failedToLogin,stringConstants.unableToAuthenticate,
       stringConstants.goBack
     )
   }
@@ -250,7 +248,7 @@ const clearResponseTimeout = useCallback(() => {
     }
   };
   const connectWebSocket = (agentId, token) => {
-    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}`;
+    const WEBSOCKET_URL = `${WEBSOCKET_BASE_URL}${agentId}&Auth=${token}&platform=${platform}`;
 
     if (!agentId || !token) {
       console.error(stringConstants.agentIdOrTokenMissing);
@@ -426,6 +424,7 @@ const clearResponseTimeout = useCallback(() => {
   };
 
   const initialize = async (isRetry = false) => {
+     console.log("initialize called, isRetry:", isRetry, "retryCount:", tokenExpiryRetryCount);
     if (!isRetry && tokenExpiryRetryCount > MAX_TOKEN_RETRIES) {
       showErrorModalTokenExpiry();
       return;
@@ -437,11 +436,7 @@ const clearResponseTimeout = useCallback(() => {
       setPage(0);
       if (!jwtToken || !userInfo.agentId || !platform) {
         console.error(stringConstants.initializeError);
-        showErrorModal(
-          stringConstants.somethingWentWrong,
-          stringConstants.PleaseTryAgain,
-          stringConstants.goBack
-        );
+        showErrorModal(stringConstants.somethingWentWrong,stringConstants.PleaseTryAgain,stringConstants.goBack);
         setIsInitializing(false);
         return;
       }
@@ -482,28 +477,17 @@ const clearResponseTimeout = useCallback(() => {
         }
       }
       // 🔹 fetch user config
-      const response = await dispatch(
-        getData({
-          token: newToken,
-          agentId: userInfo?.agentId?.toLowerCase(),
-          platform,
-          retryCount: tokenExpiryRetryCount,
-        })
-      ).unwrap();
-
+      const response = await dispatch(getData({token: newToken,agentId: agentIdToSend?.toLowerCase(),platform,retryCount: tokenExpiryRetryCount,})).unwrap();
       if (response && response.userInfo?.agentId) {
         setnavigationPage(response.statusFlag);
         setReconfigApiResponse(prev => ({ ...prev, ...response }));
-
         if (response.userInfo.agentId && newToken) {
           connectWebSocket(response.userInfo.agentId, newToken);
           await waitForSocketOpen(ws.current);
           await loadChatHistory(response.userInfo.agentId, page, 10, newToken);
         }
-
       }
     } catch (error) {
-      // 🔹 Check standardized error from thunk
       if (error === stringConstants.tokenExpired && tokenExpiryRetryCount < MAX_TOKEN_RETRIES) {
         try {
           const refreshResponse = await validateJwtToken(
@@ -522,8 +506,6 @@ const clearResponseTimeout = useCallback(() => {
           if (refreshResponse && refreshResponse.status === stringConstants.success) {
             const refreshedToken = refreshResponse?.data?.elyAuthToken;
             settoken(refreshedToken);
-
-            // 🔹 increment before retry to avoid infinite recursion
             setTokenExpiryRetryCount(prev => prev + 1);
             await initialize(true);
           } else {
@@ -539,13 +521,8 @@ const clearResponseTimeout = useCallback(() => {
           showErrorModalTokenExpiry();
         }
       }
-
       if (error.message === stringConstants.platformTokenExpired) {
-        showErrorModal(
-          stringConstants.failedToLogin,
-          stringConstants.unableToAuthenticate,
-          stringConstants.goBack
-        )
+        showErrorModal(stringConstants.failedToLogin,stringConstants.unableToAuthenticate,stringConstants.goBack)
       }
     } finally {
       setIsInitializing(false);
